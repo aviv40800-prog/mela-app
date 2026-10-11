@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { UPLOAD_DIR } from "@/lib/paths";
 import { handle, json, error, requireUser } from "@/lib/api";
 
-const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
 const TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const MAX_BYTES = 8 * 1024 * 1024;
 

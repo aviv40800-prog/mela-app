@@ -1,0 +1,23 @@
+# Render Blueprint: New > Blueprint > pick this repo.
+# A persistent disk requires a paid instance type (starter or above); on the free plan the data is wiped on every deploy/restart.
+services:
+  - type: web
+    name: mela
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: mela-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: MELA_DATA_DIR
+        value: /data
+      - key: MELA_SHOW_OTP
+        value: "1"
+      - key: SMS_PROVIDER
+        value: console
+      - key: BILLING_PROVIDER
+        value: mock

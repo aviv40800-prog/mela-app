@@ -120,7 +120,7 @@ export default function PhonePage() {
           </p>
           {devCode && (
             <p className="mt-4 rounded-xl border border-dashed border-gold/40 px-3 py-2 text-xs text-gold-2">
-              מצב פיתוח — הקוד שלך: <b dir="ltr">{devCode}</b>
+              מצב הדגמה — הקוד שלך: <b dir="ltr">{devCode}</b>
             </p>
           )}
           <div className="mt-8 flex justify-between gap-2" dir="ltr">

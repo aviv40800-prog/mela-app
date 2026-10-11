@@ -70,6 +70,10 @@ Every mutual match calls `triggerMatchWhatsApp` (`src/lib/whatsapp.ts`). Configu
 
 Every attempt is recorded in `webhook_deliveries`. With nothing configured, the payload is logged to the console.
 
+## Deploying
+
+See **[DEPLOY.md](DEPLOY.md)**. It covers Railway and Render step by step, using the included `Dockerfile`, `railway.json` and `render.yaml`.
+
 ## Before going to production
 
 Copy `.env.example` to `.env` and set it up. Several pieces are intentionally stubbed behind small seams:
@@ -79,7 +83,7 @@ Copy `.env.example` to `.env` and set it up. Several pieces are intentionally st
 - **SMS**: set `SMS_PROVIDER=twilio` and the Twilio credentials. The console provider never shows the code when `NODE_ENV=production`.
 - **Secrets**: `SESSION_SECRET` (32+ chars) is required. The server refuses to sign sessions without it in production.
 - **Demo data**: set `MELA_SKIP_SEED=1` and `MELA_DEMO_MODE=off` so there are no demo members, fake likes or auto-replies.
-- **Photos**: uploads go to `data/uploads` (local disk). For anything beyond one server, move them to S3/R2/Cloudinary in `src/app/api/photos`.
+- **Photos**: uploads go to `$MELA_DATA_DIR/uploads` (local disk / volume). For anything beyond one server, move them to S3/R2/Cloudinary in `src/app/api/photos`.
 - **Scale-out**: SQLite and the in-process SSE bus assume a single Node instance on a persistent disk (a VPS, Fly.io, Railway).
   For multiple instances or serverless, move to Postgres and Redis pub/sub. The data access is concentrated in `src/lib/*` for that reason.
 - **Photography**: the demo members and the landing hero use gold monogram cards. Add licensed photos of Habesha / Ethiopian-Israeli

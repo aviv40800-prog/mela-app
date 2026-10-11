@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { UPLOAD_DIR } from "@/lib/paths";
 
-const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
 const MIME: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
 
 export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {

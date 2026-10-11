@@ -8,5 +8,5 @@ export default defineConfig({
       "server-only": path.resolve(import.meta.dirname, "tests/server-only.ts"),
     },
   },
-  test: { environment: "node", env: { MELA_DB_PATH: ":memory:", MELA_SKIP_SEED: "1", MELA_DEMO_MODE: "off" } },
+  test: { include: ["tests/**/*.test.ts"], environment: "node", env: { MELA_DB_PATH: ":memory:", MELA_SKIP_SEED: "1", MELA_DEMO_MODE: "off" } },
 });

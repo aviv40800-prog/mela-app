@@ -17,10 +17,11 @@ export async function issueOtp(phone: string): Promise<{ devCode?: string }> {
   ).run(phone, hash(phone, code), Date.now() + TTL_MS);
 
   await sendSms(phone, `קוד האימות שלך ל־MELA: ${code}`);
-  // In dev (console provider) we hand the code back so the flow can be tested without SMS.
-  return (process.env.SMS_PROVIDER ?? "console") === "console" && process.env.NODE_ENV !== "production"
-    ? { devCode: code }
-    : {};
+  // With the console provider we hand the code back so the flow works without SMS: always in dev, and in
+  // production only when MELA_SHOW_OTP=1 (preview/demo deploys — anyone can then sign in as any number).
+  const consoleSms = (process.env.SMS_PROVIDER ?? "console") === "console";
+  const reveal = process.env.NODE_ENV !== "production" || process.env.MELA_SHOW_OTP === "1";
+  return consoleSms && reveal ? { devCode: code } : {};
 }
 
 export type OtpResult = "ok" | "invalid" | "expired" | "locked";

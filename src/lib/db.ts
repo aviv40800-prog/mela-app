@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { seedDemoData } from "./seed";
+import { DB_PATH } from "./paths";
 
 const SCHEMA = `
 PRAGMA foreign_keys = ON;
@@ -98,9 +99,9 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
 `;
 
 function open(): DatabaseSync {
-  const file = process.env.MELA_DB_PATH ?? path.join(process.cwd(), "data", "mela.db");
+  const file = DB_PATH;
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
-  const db = new DatabaseSync(file);
+  const db = new DatabaseSync(file, { timeout: 5000 });
   plainRows(db);
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA);
@@ -127,9 +128,18 @@ function plainRows(db: DatabaseSync) {
   };
 }
 
-// Reuse a single connection across hot reloads in dev.
+// Opened lazily on first query (not at import, so `next build` workers never touch the file) and
+// reused across hot reloads in dev.
 const g = globalThis as unknown as { __melaDb?: DatabaseSync };
-export const db: DatabaseSync = g.__melaDb ?? (g.__melaDb = open());
+const connection = () => g.__melaDb ?? (g.__melaDb = open());
+
+export const db = new Proxy({} as DatabaseSync, {
+  get(_, prop) {
+    const real = connection();
+    const value = Reflect.get(real, prop, real);
+    return typeof value === "function" ? value.bind(real) : value;
+  },
+});
 
 export function tx<T>(fn: () => T): T {
   db.exec("BEGIN IMMEDIATE");
