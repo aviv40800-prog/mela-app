@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Check, Crown, Loader2, Lock } from "lucide-react";
+import { api } from "@/lib/client";
+import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
+
+const PERKS = ["לייקים ללא הגבלה", "3 בחירות אישיות בכל יום", "תגובה ישירה על שאלות בפרופיל", "צ'אט בזמן אמת + פתיחי שיחה", "התראת וואטסאפ על כל התאמה"];
+
+function chargeDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + TRIAL_DAYS);
+  return d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+}
+
+export function PlanPicker({ firstName, returning }: { firstName: string; returning: boolean }) {
+  const router = useRouter();
+  const [plan, setPlan] = useState<PlanType>("quarterly_119");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const selected = PLANS[plan];
+
+  async function start() {
+    setBusy(true);
+    setErr(null);
+    try {
+      await api("/api/subscription", { method: "POST", json: { plan } });
+      router.replace("/discover");
+      router.refresh();
+    } catch (e) {
+      setErr((e as Error).message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="animate-rise mt-8 flex flex-1 flex-col pb-40">
+      <div className="text-center">
+        {!returning && (
+          <div className="glow mx-auto mb-4 w-fit rounded-full bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold-2">
+            🎁 {TRIAL_DAYS} ימים חינם · ₪0 היום
+          </div>
+        )}
+        <h1 className="font-display text-[2rem] leading-tight font-bold">
+          {firstName ? `${firstName}, ` : ""}מוכנ/ה <span className="gold-text">למצוא אהבה?</span>
+        </h1>
+        <p className="mt-2 text-sm text-mute">בחר/י מסלול. אפשר לבטל בכל רגע לפני סוף הניסיון ולא תחויב/י.</p>
+      </div>
+
+      <div className="mt-8 space-y-3" role="radiogroup">
+        {(["quarterly_119", "monthly_49"] as const).map((id) => {
+          const p = PLANS[id];
+          const active = plan === id;
+          return (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={active}
+              onClick={() => setPlan(id)}
+              className={`relative w-full rounded-3xl p-5 text-right transition-all duration-300 ${
+                active ? "glow bg-gradient-to-b from-gold/[0.14] to-gold/[0.03]" : "glass opacity-80"
+              }`}
+            >
+              {"badge" in p && (
+                <span className="absolute -top-3 right-5 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[11px] font-bold text-ink shadow-lg">
+                  <Crown size={12} /> {p.badge}
+                </span>
+              )}
+              <div className="flex items-center gap-4">
+                <span
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-ink" : "border-white/25"}`}
+                >
+                  {active && <Check size={14} strokeWidth={3} />}
+                </span>
+                <div className="flex-1">
+                  <div className="text-lg font-semibold">{p.title}</div>
+                  <div className="text-xs text-mute">{p.note}</div>
+                </div>
+                <div className="text-left">
+                  <div className="font-display text-2xl font-bold" dir="ltr">
+                    {p.priceLabel}
+                  </div>
+                  <div className="text-[11px] text-mute">{id === "quarterly_119" ? `≈ ₪${p.perMonth.toFixed(0)} לחודש` : p.period}</div>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <ul className="mt-8 space-y-2.5">
+        {PERKS.map((perk) => (
+          <li key={perk} className="flex items-center gap-3 text-sm">
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-gold/15 text-gold">
+              <Check size={12} strokeWidth={3} />
+            </span>
+            {perk}
+          </li>
+        ))}
+      </ul>
+
+      {!returning && (
+        <div className="glass mt-8 rounded-2xl p-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-mute">לתשלום היום</span>
+            <span className="font-bold text-gold-2">₪0.00</span>
+          </div>
+          <div className="mt-2 flex justify-between">
+            <span className="text-mute">החל מ־{chargeDate()}</span>
+            <span dir="ltr">
+              {selected.priceLabel} / {selected.months === 1 ? "חודש" : "3 חודשים"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md bg-gradient-to-t from-ink via-ink/95 to-transparent px-6 pt-8 pb-[max(env(safe-area-inset-bottom),20px)]">
+        {err && <p className="mb-2 text-center text-sm text-danger">{err}</p>}
+        <button className="btn-gold w-full text-lg" onClick={start} disabled={busy}>
+          {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "חידוש מנוי" : `התחלת ${TRIAL_DAYS} ימי ניסיון חינם`}
+        </button>
+        <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-mute">
+          <Lock size={11} /> תשלום מאובטח · ביטול בלחיצה מהפרופיל
+        </p>
+      </div>
+    </div>
+  );
+}

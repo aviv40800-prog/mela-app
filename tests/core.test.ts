@@ -1,0 +1,158 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { db } from "@/lib/db";
+import { normalizeIsraeliPhone } from "@/lib/phone";
+import { issueOtp, verifyOtp } from "@/lib/otp";
+import { createVerifiedUser, updateProfile, getUser, isProfileComplete, type Gender } from "@/lib/users";
+import { swipe, discoveryDeck, dailyPicks, listMatches, likesReceived, matchPartner } from "@/lib/matching";
+import { getSubscription, hasAccess, startTrial, cancelSubscription } from "@/lib/billing";
+import { subscribe } from "@/lib/events";
+import { sendMessage, listMessages } from "@/lib/chat";
+
+let phoneSeq = 1000000;
+function member(name: string, gender: Gender, seeking: Gender | "everyone" = gender === "male" ? "female" : "male") {
+  const u = createVerifiedUser(`+972501${phoneSeq++}`);
+  updateProfile(u.id, {
+    full_name: name,
+    age: 28,
+    gender,
+    seeking,
+    location: "תל אביב",
+    occupation: "מהנדס/ת",
+    bio: "ביו לבדיקה ארוכה מספיק",
+    photos: ["/api/photos/x.jpg"],
+    prompts: [
+      { question_key: "buna", answer_text: "פופקורן" },
+      { question_key: "sigd", answer_text: "ירושלים" },
+    ],
+  });
+  return getUser(u.id)!;
+}
+
+beforeEach(() => {
+  db.exec("DELETE FROM users; DELETE FROM otp_codes;");
+});
+
+describe("phone", () => {
+  it("normalises Israeli mobile numbers", () => {
+    expect(normalizeIsraeliPhone("050-123-4567")).toBe("+972501234567");
+    expect(normalizeIsraeliPhone("+972 52 765 4321")).toBe("+972527654321");
+    expect(normalizeIsraeliPhone("03-1234567")).toBeNull();
+  });
+});
+
+describe("otp", () => {
+  it("verifies once, rejects wrong codes and locks after 5 attempts", async () => {
+    const { devCode } = await issueOtp("+972501111111");
+    expect(devCode).toMatch(/^\d{6}$/);
+    const wrong = devCode === "000000" ? "111111" : "000000";
+    expect(verifyOtp("+972501111111", wrong)).toBe("invalid");
+    expect(verifyOtp("+972501111111", devCode!)).toBe("ok");
+    expect(verifyOtp("+972501111111", devCode!)).toBe("expired"); // single use
+
+    const again = await issueOtp("+972502222222");
+    for (let i = 0; i < 5; i++) verifyOtp("+972502222222", again.devCode === "000000" ? "111111" : "000000");
+    expect(verifyOtp("+972502222222", again.devCode!)).toBe("locked");
+  });
+});
+
+describe("matching", () => {
+  it("creates a mutual match, fires realtime events and exposes the chat", () => {
+    const a = member("אבי", "male");
+    const b = member("ביתי", "female");
+    expect(isProfileComplete(a)).toBe(true);
+
+    const events: unknown[] = [];
+    const off = subscribe(b.id, (e) => events.push(e));
+
+    const first = swipe(a.id, b.id, "like", { text: "אהבתי!", promptKey: "buna" });
+    expect(first).toMatchObject({ status: "pending", isNewMatch: false });
+    expect(likesReceived(b.id).map((l) => l.id)).toEqual([a.id]);
+    expect(likesReceived(b.id)[0].comment).toContain("אהבתי!");
+    expect(matchPartner(first.matchId, b.id)).toBeNull(); // chat locked until mutual
+
+    const second = swipe(b.id, a.id, "like");
+    expect(second).toMatchObject({ status: "matched", isNewMatch: true, matchId: first.matchId });
+    expect(events).toContainEqual({ type: "match", matchId: first.matchId, withUserId: a.id });
+    expect(matchPartner(first.matchId, b.id)?.id).toBe(a.id);
+    expect(listMatches(a.id)).toHaveLength(1);
+    off();
+
+    sendMessage(first.matchId, b.id, a.id, "היי 👋");
+    expect(listMessages(first.matchId).map((m) => m.text_content)).toHaveLength(2);
+  });
+
+  it("pass rejects a pending like and removes both from each other's deck", () => {
+    const a = member("אבי", "male");
+    const b = member("ביתי", "female");
+    swipe(a.id, b.id, "like");
+    expect(swipe(b.id, a.id, "pass").status).toBe("rejected");
+    expect(discoveryDeck(a).map((c) => c.id)).not.toContain(b.id);
+    expect(discoveryDeck(b).map((c) => c.id)).not.toContain(a.id);
+  });
+
+  it("respects gender preferences in discovery and limits daily picks to 3", () => {
+    const me = member("אני", "female", "male");
+    const men = [1, 2, 3, 4].map((i) => member(`גבר ${i}`, "male"));
+    member("אישה אחרת", "female", "male");
+    member("גבר שמחפש גברים", "male", "male");
+    const deck = discoveryDeck(me).map((c) => c.id);
+    expect(deck.sort()).toEqual(men.map((m) => m.id).sort());
+    const picks = dailyPicks(me);
+    expect(picks).toHaveLength(3);
+    expect(dailyPicks(me).map((p) => p.id)).toEqual(picks.map((p) => p.id)); // stable for the day
+  });
+});
+
+describe("billing", () => {
+  it("starts a 7-day trial once and keeps access after cancel until period end", () => {
+    const u = member("משתמש", "male");
+    expect(hasAccess(getSubscription(u.id))).toBe(false);
+    const sub = startTrial(u.id, "quarterly_119");
+    expect(sub.status).toBe("trialing");
+    const days = (new Date(sub.trial_ends_at! + "Z").getTime() - Date.now()) / 86_400_000;
+    expect(days).toBeGreaterThan(6.9);
+    expect(days).toBeLessThan(7.1);
+
+    cancelSubscription(u.id);
+    expect(getSubscription(u.id)!.status).toBe("canceled");
+    expect(hasAccess(getSubscription(u.id))).toBe(true);
+
+    // Re-subscribing does not grant a second free trial window.
+    const again = startTrial(u.id, "monthly_49");
+    expect(again.trial_ends_at).toBe(sub.trial_ends_at);
+    expect(again.plan_type).toBe("monthly_49");
+  });
+});
+
+describe("whatsapp trigger", () => {
+  it("posts a signed payload to the configured webhook on mutual match", async () => {
+    process.env.WHATSAPP_WEBHOOK_URL = "https://hooks.example.com/mela";
+    process.env.WHATSAPP_WEBHOOK_SECRET = "s3cret";
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+    const a = member("אבי", "male");
+    const b = member("ביתי", "female");
+    swipe(a.id, b.id, "like");
+    const { matchId } = swipe(b.id, a.id, "like");
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("https://hooks.example.com/mela");
+    const body = JSON.parse(init.body as string);
+    expect(body).toMatchObject({ event: "match.created", match_id: matchId });
+    expect(body.users.map((u: { phone_number: string }) => u.phone_number)).toEqual([b.phone_number, a.phone_number]);
+    expect((init.headers as Record<string, string>)["X-Mela-Signature"]).toMatch(/^sha256=[0-9a-f]{64}$/);
+    await vi.waitFor(() =>
+      expect(db.prepare("SELECT status_code FROM webhook_deliveries WHERE match_id = ?").get(matchId)).toEqual({ status_code: 200 }),
+    );
+    fetchMock.mockRestore();
+    delete process.env.WHATSAPP_WEBHOOK_URL;
+  });
+});
+
+describe("db rows", () => {
+  it("are plain objects (serialisable to Client Components)", () => {
+    const u = member("אבי", "male");
+    const row = db.prepare("SELECT * FROM cultural_prompts WHERE user_id = ?").get(u.id)!;
+    expect(Object.getPrototypeOf(row)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(db.prepare("SELECT 1 AS x").all()[0])).toBe(Object.prototype);
+  });
+});
