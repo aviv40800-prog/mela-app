@@ -18,6 +18,7 @@ import { Logo } from "@/components/Logo";
 import { HeroVisual } from "@/components/HeroVisual";
 import { PhoneMockup } from "@/components/landing/PhoneMockup";
 import { Reveal } from "@/components/landing/Reveal";
+import { StickyCta } from "@/components/landing/StickyCta";
 
 // "אהבה עם שורשים" — the founders' story, verbatim.
 const STORY_INTRO = [
@@ -86,7 +87,7 @@ export default async function Landing() {
   return (
     <div className="relative overflow-x-clip">
       {/* ---------- nav ---------- */}
-      <header className="sticky top-0 z-40 border-b border-transparent bg-ink/70 backdrop-blur-xl supports-[backdrop-filter]:bg-ink/55">
+      <header className="sticky top-0 z-40 border-b border-line bg-ink/90 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-ink/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-8" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <Link href="/" aria-label="MELA">
             <Logo size="sm" />
@@ -121,7 +122,7 @@ export default async function Landing() {
             אפליקציית ההיכרויות הראשונה שנבנתה במיוחד לצעירות וצעירים מהקהילה האתיופית־ישראלית — לאנשים שמחפשים קשר אמיתי, עם מישהו שמבין מאיפה הם באים.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
-            <Link href="/signup" className="btn-gold px-8 text-[17px]">
+            <Link href="/signup" data-cta className="btn-gold px-8 text-[17px]">
               הצטרפות חינם
             </Link>
             <Link href="/login" className="btn-ghost px-8">
@@ -129,7 +130,7 @@ export default async function Landing() {
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-mute md:justify-start">
-            {["חינם לגמרי", "בלי כרטיס אשראי", "כל פרופיל מאומת"].map((t) => (
+            {["הרשמה חינם", "בלי כרטיס אשראי", "כל פרופיל מאומת"].map((t) => (
               <li key={t} className="flex items-center gap-1.5">
                 <Check size={14} className="text-gold" /> {t}
               </li>
@@ -152,50 +153,64 @@ export default async function Landing() {
       </div>
 
       {/* ---------- story ---------- */}
-      <section id="story" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 md:px-8 md:py-28">
-        <div className="grid gap-12 md:grid-cols-[1fr_1.2fr] md:gap-16">
+      <section id="story" className="relative scroll-mt-20 overflow-hidden px-5 py-24 md:px-8 md:py-32">
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[420px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(212,175,55,0.10),transparent_70%)]" />
+        <div className="relative mx-auto max-w-[40rem] text-center">
           <Reveal>
             <p className="eyebrow">הסיפור שלנו</p>
-            <h2 className="font-display mt-3 text-[2.2rem] leading-tight font-bold md:text-5xl">
-              אהבה
-              <br />
-              <span className="gold-text">עם שורשים</span>
+            <h2 className="font-display mt-4 text-[2.6rem] leading-[1.05] font-bold md:text-[3.6rem]">
+              אהבה <span className="gold-text">עם שורשים</span>
             </h2>
-            <div className="mt-8 rounded-[26px] border border-gold/25 bg-gradient-to-b from-gold/[0.08] to-transparent p-6">
-              <div className="font-display text-4xl text-gold-2" dir="ltr">
+            <div className="gold-hairline mx-auto mt-8 w-24" />
+          </Reveal>
+
+          <div className="mt-10 space-y-6 text-[17px] leading-[1.9] text-cream/80 md:text-[18.5px]">
+            {STORY_INTRO.map((t, i) => (
+              <Reveal key={t} delay={0.04}>
+                <p className={i === 0 ? "font-display text-[1.35rem] leading-snug text-cream md:text-[1.6rem]" : undefined}>{t}</p>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal className="my-16 md:my-20">
+            <div className="tilet mx-auto max-w-xs opacity-50" />
+            <p className="font-display mt-10 text-[2.6rem] leading-none font-bold md:text-[3.4rem]">
+              הקמנו את <span className="gold-text">MELA.</span>
+            </p>
+            <div className="mx-auto mt-10 inline-flex items-center gap-3 rounded-full border border-gold/20 bg-gold/[0.05] px-5 py-2.5 text-[13.5px] text-cream/75">
+              <span className="font-display text-xl text-gold-2" dir="ltr">
                 መላ
-              </div>
-              <p className="mt-3 text-[15px] leading-relaxed text-cream/85">
-                באמהרית, <b>״מֶלָה״</b> היא דרך, פתרון — הרעיון שתמיד יש דרך. בשבילנו MELA היא הדרך להכיר את האדם הנכון, בלי לוותר על מי שאנחנו.
-              </p>
+              </span>
+              באמהרית: דרך, פתרון — תמיד יש דרך
             </div>
           </Reveal>
-          <Reveal delay={0.1} className="space-y-5 text-[16.5px] leading-[1.85] text-cream/85">
-            {STORY_INTRO.map((t) => (
-              <p key={t}>{t}</p>
+
+          <Reveal className="space-y-4 text-[17px] leading-[1.9] text-cream/80 md:text-[18.5px]">
+            <p className="font-display text-[1.5rem] leading-snug text-cream md:text-[1.8rem]">{STORY_WHY[0]}</p>
+            <p>{STORY_WHY[1]}</p>
+          </Reveal>
+
+          <ul className="mx-auto mt-12 max-w-xl space-y-3">
+            {STORY_NO_EXPLAIN.map((t, i) => (
+              <Reveal key={t} delay={i * 0.08}>
+                <li className="glass rounded-[22px] px-6 py-5 text-[16.5px] leading-relaxed text-cream/90 md:text-[17.5px]">{t}</li>
+              </Reveal>
             ))}
-            <p className="font-display pt-2 text-[1.9rem] leading-tight font-bold text-cream md:text-[2.3rem]">הקמנו את MELA.</p>
-            {STORY_WHY.map((t, i) => (
+          </ul>
+
+          <Reveal className="mt-12 space-y-4 text-[17px] leading-[1.9] text-cream/80 md:text-[18.5px]">
+            {STORY_CLOSE.map((t, i) => (
               <p key={t} className={i === 0 ? "font-semibold text-cream" : undefined}>
                 {t}
               </p>
             ))}
-            <ul className="space-y-3 border-r-2 border-gold/40 py-1 pr-5">
-              {STORY_NO_EXPLAIN.map((t) => (
-                <li key={t} className="text-cream/90">
-                  {t}
-                </li>
-              ))}
-            </ul>
-            {STORY_CLOSE.map((t) => (
-              <p key={t}>{t}</p>
-            ))}
-            <p className="font-display text-[1.45rem] leading-snug text-gold-2 md:text-[1.7rem]">זה הזמן להפסיק להתפשר על מי שלא מבינה את מי שאתה.</p>
-            <div className="pt-4">
-              <Link href="/signup" className="btn-gold w-full px-10 text-[17px] sm:w-auto">
-                מתחילים – 7 ימים חינם
-              </Link>
-            </div>
+          </Reveal>
+
+          <Reveal className="mt-14">
+            <p className="font-display mx-auto max-w-lg text-[1.75rem] leading-snug text-gold-2 md:text-[2.2rem]">זה הזמן להפסיק להתפשר על מי שלא מבינה את מי שאתה.</p>
+            <Link href="/signup" data-cta className="btn-gold mt-9 w-full px-12 text-[17px] sm:w-auto">
+              מתחילים – 7 ימים חינם
+            </Link>
           </Reveal>
         </div>
       </section>
@@ -210,9 +225,9 @@ export default async function Landing() {
           <ol className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map(({ Icon, t, d }, i) => (
               <Reveal key={t} delay={i * 0.08}>
-                <li className="surface relative h-full rounded-[26px] p-6">
+                <li className="surface relative h-full rounded-[26px] p-6 text-center">
                   <span className="tabular absolute top-5 left-5 font-display text-4xl font-bold text-gold/15">{i + 1}</span>
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl border border-gold/25 bg-gold/[0.08] text-gold-2">
+                  <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-gold/25 bg-gold/[0.08] text-gold-2">
                     <Icon size={22} />
                   </span>
                   <h3 className="mt-5 text-lg font-semibold">{t}</h3>
@@ -359,7 +374,7 @@ export default async function Landing() {
             </h2>
             <p className="mx-auto mt-4 max-w-md text-mute">שתי דקות להרשמה, חינם ובלי כרטיס אשראי, וקהילה שמחכה להכיר אתכם.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link href="/signup" className="btn-gold px-10 text-[17px]">
+              <Link href="/signup" data-cta className="btn-gold px-10 text-[17px]">
                 הצטרפו ל־MELA
               </Link>
               <Link href="/login" className="btn-ghost px-8">
@@ -392,12 +407,7 @@ export default async function Landing() {
         </div>
       </footer>
 
-      {/* mobile sticky CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-ink via-ink/95 to-transparent px-5 pt-8 safe-bottom md:hidden">
-        <Link href="/signup" className="btn-gold w-full text-[17px]">
-          הצטרפות חינם
-        </Link>
-      </div>
+      <StickyCta />
     </div>
   );
 }

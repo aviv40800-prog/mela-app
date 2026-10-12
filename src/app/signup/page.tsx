@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { AuthShell } from "@/components/AuthShell";
 import { PhoneAuth } from "@/components/PhoneAuth";
 
-export const metadata: Metadata = { title: "הרשמה · MELA" };
+export const metadata: Metadata = { title: "הרשמה" };
 
 export default function SignupPage() {
   return (

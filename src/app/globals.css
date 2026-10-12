@@ -71,7 +71,8 @@
     font-optical-sizing: auto;
     font-feature-settings: "kern", "liga";
   }
-  html {
+  /* Smooth in-page anchor jumps only — Next.js turns this off during route changes. */
+  html[data-scroll-behavior="smooth"] {
     scroll-behavior: smooth;
   }
   p {

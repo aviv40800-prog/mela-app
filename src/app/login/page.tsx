@@ -7,7 +7,7 @@ import { getSessionUserId } from "@/lib/session";
 import { getUser } from "@/lib/users";
 import { nextOnboardingStep } from "@/lib/onboarding";
 
-export const metadata: Metadata = { title: "כניסה · MELA" };
+export const metadata: Metadata = { title: "כניסה" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   // Already signed in → straight in (sessions last 30 days).

@@ -3,7 +3,7 @@ import { requireAdminPage } from "@/lib/guard";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { isSuperAdmin } from "@/lib/admin";
 
-export const metadata: Metadata = { title: "ניהול · MELA", robots: { index: false } };
+export const metadata: Metadata = { title: "ניהול", robots: { index: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
