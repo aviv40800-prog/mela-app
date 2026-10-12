@@ -9,6 +9,7 @@ import { PLANS, promptQuestion } from "@/lib/content";
 import { Photo } from "@/components/Photo";
 import { MembershipActions, LogoutRow } from "@/components/AccountActions";
 import { PreferencesCard } from "@/components/PreferencesCard";
+import { SearchPrefsRow } from "@/components/SearchPrefsRow";
 import { ProfilePreviewButton } from "@/components/ProfilePreviewButton";
 
 const STATUS: Record<string, { label: string; tone: string }> = {
@@ -178,7 +179,10 @@ export default async function ProfilePage() {
 
       <section className="mt-9">
         <SectionTitle>העדפות</SectionTitle>
-        <PreferencesCard />
+        <div className="space-y-3">
+          <SearchPrefsRow prefs={{ seeking: user.seeking, pref_age_min: user.pref_age_min, pref_age_max: user.pref_age_max, pref_distance_km: user.pref_distance_km }} />
+          <PreferencesCard />
+        </div>
       </section>
 
       <section className="mt-9">

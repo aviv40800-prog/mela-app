@@ -350,3 +350,42 @@ html[data-reduce-motion] *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
+
+/* Range slider: transparent native tracks, custom gold thumbs (see RangeSlider). Two inputs overlap, so
+   only thumbs take pointer events. */
+.range-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  pointer-events: none;
+  height: 2rem;
+  margin: 0;
+}
+.range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
+  border: 3px solid var(--color-ink);
+  box-shadow: 0 0 0 1px rgb(212 175 55 / 0.6), 0 4px 12px rgb(0 0 0 / 0.6);
+  cursor: grab;
+}
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
+  border: 3px solid var(--color-ink);
+  box-shadow: 0 0 0 1px rgb(212 175 55 / 0.6), 0 4px 12px rgb(0 0 0 / 0.6);
+  cursor: grab;
+}
+.range-thumb:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgb(212 175 55 / 0.35);
+}
+.range-thumb::-webkit-slider-runnable-track,
+.range-thumb::-moz-range-track {
+  background: transparent;
+}

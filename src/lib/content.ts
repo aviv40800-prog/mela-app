@@ -18,17 +18,26 @@ export function promptQuestion(key: string): string {
   return CULTURAL_PROMPTS.find((p) => p.key === key)?.question ?? key;
 }
 
+/** "This or That": a mix of heritage ("culture") and everyday ("general") questions. Order = onboarding order. */
 export const QUIZ_QUESTIONS = [
-  { key: "bread", a: "אינג'רה", b: "פיתה" },
-  { key: "coffee", a: "בונה בג'בנה", b: "אספרסו כפול" },
-  { key: "music", a: "טדי אפרו", b: "מזרחית ישראלית" },
-  { key: "wedding", a: "חתונה של 800 איש", b: "חתונה אינטימית" },
-  { key: "shabbat", a: "שישי אצל ההורים", b: "סופ״ש בצפון" },
-  { key: "city", a: "תל אביב", b: "ירושלים" },
-  { key: "dance", a: "אסקסטה עד הבוקר", b: "סלואו בפינה" },
-  { key: "trip", a: "טיול שורשים לגונדר", b: "חופשה ביוון" },
-  { key: "dinner", a: "דורו וואט", b: "שקשוקה" },
-  { key: "plans", a: "מתכננים הכל", b: "זורמים" },
+  { key: "coffee", cat: "culture", a: "בונה בג'בנה", b: "אספרסו כפול" },
+  { key: "morning", cat: "general", a: "ציפור בוקר", b: "ינשוף לילה" },
+  { key: "bread", cat: "culture", a: "אינג'רה", b: "פיתה" },
+  { key: "weekend", cat: "general", a: "בית ונטפליקס", b: "יוצאים לבלות" },
+  { key: "music", cat: "culture", a: "טדי אפרו", b: "מזרחית ישראלית" },
+  { key: "texting", cat: "general", a: "הודעות קוליות", b: "הודעות כתובות" },
+  { key: "wedding", cat: "culture", a: "חתונה של 800 איש", b: "חתונה אינטימית" },
+  { key: "vacation", cat: "general", a: "טבע ושקט", b: "עיר תוססת" },
+  { key: "shabbat", cat: "culture", a: "שישי אצל ההורים", b: "סופ״ש בצפון" },
+  { key: "pets", cat: "general", a: "כלבים", b: "חתולים" },
+  { key: "dance", cat: "culture", a: "אסקסטה עד הבוקר", b: "סלואו בפינה" },
+  { key: "sport", cat: "general", a: "חדר כושר", b: "ריצה בפארק" },
+  { key: "trip", cat: "culture", a: "טיול שורשים לגונדר", b: "חופשה ביוון" },
+  { key: "money", cat: "general", a: "חוסכים לעתיד", b: "חיים את הרגע" },
+  { key: "dinner", cat: "culture", a: "דורו וואט", b: "שקשוקה" },
+  { key: "city", cat: "general", a: "תל אביב", b: "ירושלים" },
+  { key: "plans", cat: "general", a: "מתכננים הכל", b: "זורמים" },
+  { key: "kids", cat: "general", a: "משפחה גדולה", b: "משפחה קטנה" },
 ] as const;
 
 export const ICEBREAKERS = [

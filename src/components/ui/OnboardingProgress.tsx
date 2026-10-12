@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export const ONBOARDING_STEPS = 7; // phone, code, photos, basics, about, prompts, plan
+export const ONBOARDING_STEPS = 9; // phone, code, photos, basics, looking, about, prompts, quiz, plan
 
 /** Sleek continuous progress bar for the signup wizard. */
 export function OnboardingProgress({ step, label }: { step: number; label?: string }) {

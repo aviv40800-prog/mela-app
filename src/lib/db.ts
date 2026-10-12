@@ -123,6 +123,10 @@ function migrate(db: DatabaseSync) {
   const cols = new Set((db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name));
   if (!cols.has("is_banned")) db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0");
   if (!cols.has("last_seen_at")) db.exec("ALTER TABLE users ADD COLUMN last_seen_at TEXT");
+  // Discovery preferences: who the member wants to see (NULL = no limit).
+  if (!cols.has("pref_age_min")) db.exec("ALTER TABLE users ADD COLUMN pref_age_min INTEGER");
+  if (!cols.has("pref_age_max")) db.exec("ALTER TABLE users ADD COLUMN pref_age_max INTEGER");
+  if (!cols.has("pref_distance_km")) db.exec("ALTER TABLE users ADD COLUMN pref_distance_km INTEGER");
 }
 
 /**

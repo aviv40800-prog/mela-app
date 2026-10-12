@@ -21,6 +21,9 @@ export default async function ProfileSetupPage({ searchParams }: { searchParams:
         bio: user.bio ?? "",
         photos: user.photos,
         prompts: getPrompts(user.id),
+        pref_age_min: user.pref_age_min,
+        pref_age_max: user.pref_age_max,
+        pref_distance_km: user.pref_distance_km,
       }}
     />
   );

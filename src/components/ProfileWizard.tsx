@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, Loader2, Plus, X } from "lucide-react";
 import { api, haptic } from "@/lib/client";
-import { CULTURAL_PROMPTS, LOCATIONS, promptQuestion } from "@/lib/content";
+import { CULTURAL_PROMPTS, QUIZ_QUESTIONS, promptQuestion } from "@/lib/content";
+import { CITY_NAMES } from "@/lib/cities";
+import { PreferencesFields } from "./PreferencesFields";
+import { QuizStepper } from "./QuizStepper";
 import type { Prompt } from "@/lib/types";
 import { FloatingField } from "./ui/FloatingField";
 import { Segmented } from "./ui/Segmented";
@@ -24,6 +27,9 @@ export type ProfileDraft = {
   bio: string;
   photos: string[];
   prompts: Prompt[];
+  pref_age_min: number | null;
+  pref_age_max: number | null;
+  pref_distance_km: number | null;
 };
 
 
@@ -31,31 +37,37 @@ const META: Record<WizardStep, { title: string; subtitle: string; tab: string }>
   photos: { title: "התמונות שלך", subtitle: "לפחות תמונה אחת, עד 6. הראשונה היא מה שרואים קודם.", tab: "תמונות" },
   basics: { title: "נעים להכיר", subtitle: "הפרטים הבסיסיים שיעזרו לנו להתאים לך אנשים.", tab: "פרטים" },
   about: { title: "קצת עליך", subtitle: "מה את/ה עושה ומה חשוב לך. כנות מנצחת.", tab: "עליי" },
+  looking: { title: "את מי את/ה מחפש/ת?", subtitle: "אפשר לשנות את זה בכל רגע, ישירות ממסך הגילוי.", tab: "חיפוש" },
   prompts: { title: "שאלות מהבית", subtitle: "בחר/י 2–3 שאלות. כאן מתחילות השיחות הכי טובות.", tab: "שאלות" },
+  quiz: { title: "זה או זה?", subtitle: `${QUIZ_QUESTIONS.length} שאלות מהירות — מהבית ומהחיים. כל תשובה משפרת את ההתאמות.`, tab: "שאלון" },
 };
 
 // Mirrors the server-side zod rules in /api/me.
 const emailOk = (e: string) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
-function errors(d: ProfileDraft, tiles: Tile[]) {
+function errors(d: ProfileDraft, tiles: Tile[], quiz: Record<string, "a" | "b"> | null) {
+  const quizLeft = quiz ? QUIZ_QUESTIONS.filter((q) => !quiz[q.key]).length : QUIZ_QUESTIONS.length;
   const answered = d.prompts.filter((p) => p.answer_text.trim().length >= 2);
   return {
     photos: tiles.some((t) => !t.url && !t.error) ? "התמונות עדיין עולות…" : tiles.filter((t) => t.url).length === 0 ? "צריך לפחות תמונה אחת" : null,
     full_name: d.full_name.trim().length < 2 ? "שם מלא — לפחות 2 תווים" : null,
     age: !d.age ? "נא להזין גיל" : d.age < 18 ? "MELA מיועדת לגילאי 18 ומעלה" : d.age > 99 ? "גיל לא תקין" : null,
-    location: !d.location ? "בחר/י עיר" : null,
+    location: d.location.trim().length < 2 ? "נא לכתוב עיר מגורים" : null,
     gender: !d.gender ? "נא לבחור" : null,
     occupation: d.occupation.trim().length < 2 ? "ספר/י במה את/ה עוסק/ת" : null,
     bio: d.bio.trim().length < 10 ? `עוד ${10 - d.bio.trim().length} תווים לפחות` : null,
     email: emailOk(d.email.trim()) ? null : "כתובת אימייל לא תקינה",
     prompts: answered.length < 2 ? `ענה/י על ${2 - answered.length} שאלות נוספות` : null,
+    quiz: quizLeft > 0 ? `נשארו ${quizLeft} שאלות` : null,
   };
 }
 type Errors = ReturnType<typeof errors>;
 const STEP_FIELDS: Record<WizardStep, (keyof Errors)[]> = {
   photos: ["photos"],
   basics: ["full_name", "age", "location", "gender"],
+  looking: [],
   about: ["occupation", "bio", "email"],
   prompts: ["prompts"],
+  quiz: ["quiz"],
 };
 const stepValid = (e: Errors, s: WizardStep) => STEP_FIELDS[s].every((k) => !e[k]);
 
@@ -71,6 +83,12 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
         ],
   }));
   const [tiles, setTiles] = useState<Tile[]>(() => tilesFromUrls(initial.photos));
+  const [quiz, setQuiz] = useState<Record<string, "a" | "b"> | null>(null);
+  useEffect(() => {
+    api<{ answers: Record<string, "a" | "b"> }>("/api/quiz")
+      .then((r) => setQuiz(r.answers))
+      .catch(() => setQuiz({}));
+  }, []);
   const [stepIdx, setStepIdx] = useState(Math.max(0, WIZARD_STEPS.indexOf(startStep ?? "photos")));
   const [dir, setDir] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
@@ -80,7 +98,7 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
   const nudge = useAnimationControls();
 
   const step = WIZARD_STEPS[stepIdx];
-  const errs = errors(d, tiles);
+  const errs = errors(d, tiles, quiz);
   const set = <K extends keyof ProfileDraft>(k: K, v: ProfileDraft[K]) => setD((s) => ({ ...s, [k]: v }));
   const last = stepIdx === WIZARD_STEPS.length - 1;
 
@@ -192,12 +210,32 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
                     label="גיל"
                     inputMode="numeric"
                     value={d.age ? String(d.age) : ""}
-                    onChange={(v) => set("age", Number(v.replace(/\D/g, "").slice(0, 2)) || undefined)}
+                    onChange={(v) => {
+                      const age = Number(v.replace(/\D/g, "").slice(0, 2)) || undefined;
+                      // First time: suggest a range around the member's own age (editable on the next step).
+                      setD((s) => ({
+                        ...s,
+                        age,
+                        ...(age && age >= 18 && !initial.pref_age_min && !initial.pref_age_max
+                          ? { pref_age_min: Math.max(18, age - 5), pref_age_max: Math.min(70, age + 6) }
+                          : {}),
+                      }));
+                    }}
                     error={errs.age}
                     valid={!errs.age}
                     showErrors={showErrors}
                   />
-                  <FloatingField as="select" label="עיר" options={LOCATIONS} value={d.location} onChange={(v) => set("location", v)} error={errs.location} valid={!errs.location} showErrors={showErrors} />
+                  <FloatingField
+                    label="עיר מגורים"
+                    suggestions={CITY_NAMES}
+                    autoComplete="address-level2"
+                    maxLength={60}
+                    value={d.location}
+                    onChange={(v) => set("location", v)}
+                    error={errs.location}
+                    valid={!errs.location}
+                    showErrors={showErrors}
+                  />
                 </div>
                 <div className="space-y-4 pt-2">
                   <Segmented
@@ -210,18 +248,22 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
                     ]}
                   />
                   {showErrors && errs.gender && <p className="-mt-2 px-1 text-[12px] text-danger">{errs.gender}</p>}
-                  <Segmented
-                    label="מחפש/ת"
-                    value={d.seeking}
-                    onChange={(v) => set("seeking", v)}
-                    options={[
-                      ["female", "נשים"],
-                      ["male", "גברים"],
-                      ["everyone", "כולם"],
-                    ]}
-                  />
                 </div>
               </div>
+            )}
+
+            {step === "looking" && (
+              <PreferencesFields
+                value={{ seeking: d.seeking, pref_age_min: d.pref_age_min, pref_age_max: d.pref_age_max, pref_distance_km: d.pref_distance_km }}
+                onChange={(p) => setD((s) => ({ ...s, ...p }))}
+              />
+            )}
+
+            {step === "quiz" && (
+              <>
+                <QuizStepper answers={quiz} onAnswer={(key, choice) => setQuiz((a) => ({ ...(a ?? {}), [key]: choice }))} />
+                {showErrors && errs.quiz && <p className="mt-3 px-1 text-[12px] text-danger">{errs.quiz}</p>}
+              </>
             )}
 
             {step === "about" && (

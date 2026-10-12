@@ -250,6 +250,7 @@ const MORE: Row[] = [
 const WIDER: DemoProfile[] = MORE.map(([name, age, gender, location, occupation, bio, prompts, quiz]) => ({ name, age, gender, location, occupation, bio, prompts, quiz }));
 const ALL_PROFILES = [...PROFILES, ...WIDER];
 
+const GENERAL_KEYS = ["morning", "weekend", "texting", "vacation", "pets", "sport", "money", "kids"];
 const QUIZ_KEYS = ["bread", "coffee", "music", "wedding", "shabbat", "city", "dance", "trip", "dinner", "plans"];
 
 /**
@@ -292,6 +293,10 @@ export function seedDemoData(db: DatabaseSync) {
     insertSub.run(id);
   });
   db.exec("COMMIT");
+  // Questions added after a demo member was seeded get a stable, varied answer (keeps compatibility meaningful).
+  const fill = db.prepare("INSERT OR IGNORE INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, ?)");
+  const demos = db.prepare("SELECT id FROM users WHERE is_demo = 1").all() as { id: number }[];
+  for (const { id } of demos) GENERAL_KEYS.forEach((key, i) => fill.run(id, key, (id * 7 + i * 3) % 5 < 3 ? "a" : "b"));
   assignSeedPhotos(db);
 }
 

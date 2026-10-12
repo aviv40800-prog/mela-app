@@ -57,6 +57,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
             {c.location && (
               <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-md">
                 <MapPin size={13} className="text-gold-2" /> {c.location}
+                {c.distanceKm != null && <span className="tabular text-cream/60">· {c.distanceKm < 3 ? "קרוב אליך" : `${c.distanceKm} ק״מ`}</span>}
               </span>
             )}
           </div>

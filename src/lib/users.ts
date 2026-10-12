@@ -20,6 +20,9 @@ export type User = {
   is_demo: boolean;
   is_banned: boolean;
   last_seen_at: string | null;
+  pref_age_min: number | null;
+  pref_age_max: number | null;
+  pref_distance_km: number | null;
   created_at: string;
 };
 
@@ -93,7 +96,19 @@ export type ProfileInput = {
   bio: string;
   photos: string[];
   prompts: Prompt[];
-};
+} & Partial<Preferences>;
+
+export type Preferences = { seeking: Seeking; pref_age_min: number | null; pref_age_max: number | null; pref_distance_km: number | null };
+
+export function updatePreferences(userId: number, p: Preferences) {
+  db.prepare("UPDATE users SET seeking = ?, pref_age_min = ?, pref_age_max = ?, pref_distance_km = ? WHERE id = ?").run(
+    p.seeking,
+    p.pref_age_min,
+    p.pref_age_max,
+    p.pref_distance_km,
+    userId,
+  );
+}
 
 export function updateProfile(userId: number, p: ProfileInput) {
   db.exec("BEGIN");
@@ -102,6 +117,14 @@ export function updateProfile(userId: number, p: ProfileInput) {
       `UPDATE users SET full_name = ?, email = ?, age = ?, gender = ?, seeking = ?, location = ?, occupation = ?, bio = ?, photos = ?
        WHERE id = ?`,
     ).run(p.full_name, p.email || null, p.age, p.gender, p.seeking, p.location, p.occupation, p.bio, JSON.stringify(p.photos), userId);
+    if (p.pref_age_min !== undefined || p.pref_age_max !== undefined || p.pref_distance_km !== undefined) {
+      db.prepare("UPDATE users SET pref_age_min = ?, pref_age_max = ?, pref_distance_km = ? WHERE id = ?").run(
+        p.pref_age_min ?? null,
+        p.pref_age_max ?? null,
+        p.pref_distance_km ?? null,
+        userId,
+      );
+    }
     db.prepare("DELETE FROM cultural_prompts WHERE user_id = ?").run(userId);
     const ins = db.prepare("INSERT INTO cultural_prompts (user_id, question_key, answer_text) VALUES (?, ?, ?)");
     for (const pr of p.prompts) ins.run(userId, pr.question_key, pr.answer_text);

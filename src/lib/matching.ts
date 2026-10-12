@@ -5,11 +5,12 @@ import { publish } from "./events";
 import { triggerMatchWhatsApp } from "./whatsapp";
 import { insertMessage } from "./chat";
 import { promptQuestion } from "./content";
+import { cityDistanceKm } from "./cities";
 
 export type MatchStatus = "pending" | "matched" | "rejected";
 type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null };
 
-export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean };
+export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null };
 
 /** SQL fragment: other users that are mutually compatible by gender preference with :me. */
 const COMPATIBLE = `
@@ -34,17 +35,27 @@ export function compatibility(me: number, other: number): number {
   return Math.max(50, Math.min(99, score));
 }
 
+/** Discovery candidates honouring the member's preferences: gender, age range and max distance. */
 function candidateIds(me: User, limit: number): number[] {
   const rows = db
     .prepare(
-      `SELECT u.id FROM users u
+      `SELECT u.id, u.location FROM users u
        WHERE ${COMPATIBLE}
+         AND (:amin IS NULL OR u.age >= :amin) AND (:amax IS NULL OR u.age <= :amax)
          AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = :me AND m.user_2_id = u.id)
          AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = u.id AND m.user_2_id = :me AND m.status <> 'pending')
-       ORDER BY u.id DESC LIMIT :limit`,
+       ORDER BY u.id DESC LIMIT 1000`,
     )
-    .all({ me: me.id, seeking: me.seeking, gender: me.gender, limit }) as { id: number }[];
-  return rows.map((r) => r.id);
+    .all({ me: me.id, seeking: me.seeking, gender: me.gender, amin: me.pref_age_min, amax: me.pref_age_max }) as { id: number; location: string | null }[];
+  const maxKm = me.pref_distance_km;
+  return rows
+    .filter((r) => {
+      if (!maxKm) return true;
+      const km = cityDistanceKm(me.location, r.location);
+      return km === null || km <= maxKm; // unknown places are never hidden by distance
+    })
+    .slice(0, limit)
+    .map((r) => r.id);
 }
 
 function likedMe(me: number, other: number): boolean {
@@ -52,7 +63,13 @@ function likedMe(me: number, other: number): boolean {
 }
 
 function toCandidate(me: number, id: number): Candidate {
-  return { ...toPublic(getUser(id)!), compatibility: compatibility(me, id), likedYou: likedMe(me, id) };
+  const other = getUser(id)!;
+  return {
+    ...toPublic(other),
+    compatibility: compatibility(me, id),
+    likedYou: likedMe(me, id),
+    distanceKm: cityDistanceKm(getUser(me)?.location, other.location),
+  };
 }
 
 export function discoveryDeck(me: User, limit = 20): Candidate[] {

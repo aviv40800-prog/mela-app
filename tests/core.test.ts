@@ -255,3 +255,36 @@ describe("freemium", () => {
     expect(swipe(b.id, a.id, "like")).toMatchObject({ recorded: true, isNewMatch: true });
   });
 });
+
+describe("discovery preferences", () => {
+  it("computes approximate distances between known cities", async () => {
+    const { cityDistanceKm } = await import("@/lib/cities");
+    const tlvJlm = cityDistanceKm("תל אביב", "ירושלים")!;
+    expect(tlvJlm).toBeGreaterThan(45);
+    expect(tlvJlm).toBeLessThan(65);
+    expect(cityDistanceKm("קרית גת", "קריית גת")).toBe(0); // spelling variants
+    expect(cityDistanceKm("תל אביב", "כפר לא קיים")).toBeNull();
+  });
+
+  it("filters discovery by age range and distance; unknown places are kept", async () => {
+    const { updatePreferences } = await import("@/lib/users");
+    const me = member("אני", "female", "male");
+    const near = member("קרוב", "male"); // Tel Aviv, 28
+    const far = member("רחוק", "male");
+    const unknown = member("לא ידוע", "male");
+    const older = member("מבוגר", "male");
+    db.prepare("UPDATE users SET location = 'באר שבע' WHERE id = ?").run(far.id);
+    db.prepare("UPDATE users SET location = 'מושב קטן' WHERE id = ?").run(unknown.id);
+    db.prepare("UPDATE users SET age = 45 WHERE id = ?").run(older.id);
+
+    updatePreferences(me.id, { seeking: "male", pref_age_min: 25, pref_age_max: 35, pref_distance_km: 30 });
+    const ids = discoveryDeck(getUser(me.id)!).map((c) => c.id);
+    expect(ids).toContain(near.id);
+    expect(ids).toContain(unknown.id);
+    expect(ids).not.toContain(far.id);
+    expect(ids).not.toContain(older.id);
+
+    updatePreferences(me.id, { seeking: "male", pref_age_min: null, pref_age_max: null, pref_distance_km: null });
+    expect(discoveryDeck(getUser(me.id)!).map((c) => c.id)).toEqual(expect.arrayContaining([near.id, far.id, unknown.id, older.id]));
+  });
+});

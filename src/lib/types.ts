@@ -12,7 +12,7 @@ export type PublicProfile = {
   is_demo: boolean;
   prompts: Prompt[];
 };
-export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; locked?: boolean };
+export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm?: number | null; locked?: boolean };
 export type ChatMessage = { id: number; match_id: number; sender_id: number; text_content: string; is_read: boolean; sent_at: string };
 export type RealtimeEvent =
   | { type: "message"; matchId: number; message: ChatMessage }

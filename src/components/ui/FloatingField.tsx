@@ -22,7 +22,14 @@ type Common = {
 };
 
 type Props =
-  | (Common & { as?: "input"; type?: string; inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]; autoComplete?: string })
+  | (Common & {
+      as?: "input";
+      type?: string;
+      inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+      autoComplete?: string;
+      /** Suggestions shown while typing; any other value is still allowed. */
+      suggestions?: readonly string[];
+    })
   | (Common & { as: "textarea"; rows?: number })
   | (Common & { as: "select"; options: string[] });
 
@@ -83,12 +90,20 @@ export function FloatingField(props: Props) {
             type={props.type ?? "text"}
             inputMode={props.inputMode}
             autoComplete={props.autoComplete}
+            list={props.suggestions ? `${id}-list` : undefined}
             placeholder={props.label}
             onChange={(e) => props.onChange(e.target.value)}
             className={`${shared.className} h-[58px] px-4 pt-5 pr-4 pl-11`}
           />
         )}
 
+        {props.as !== "textarea" && props.as !== "select" && props.suggestions && (
+          <datalist id={`${id}-list`}>
+            {props.suggestions.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
+        )}
         <AnimatePresence>
           {props.valid && (
             <motion.span

@@ -12,7 +12,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
   const welcome = !!(await searchParams).welcome;
   return (
     <div className="flex flex-1 flex-col">
-      {welcome && <OnboardingProgress step={7} label="בחירת מסלול" />}
+      {welcome && <OnboardingProgress step={9} label="בחירת מסלול" />}
       <PlanPicker firstName={(user.full_name ?? "").split(" ")[0]} returning={!!sub} welcome={welcome} freeLikes={FREE_DAILY_LIKES} />
     </div>
   );

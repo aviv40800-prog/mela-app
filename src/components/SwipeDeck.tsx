@@ -256,18 +256,7 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
   const likeHalo = useTransform(x, [0, 160], [0.55, 1]);
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[100px] z-30 mx-auto flex max-w-md items-center justify-center gap-7">
-      {quota && !quota.premium && (
-        <motion.span
-          key={quota.left ?? 0}
-          initial={{ y: 6, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className={`tabular absolute -top-9 rounded-full border px-3 py-1 text-[11.5px] backdrop-blur-md ${
-            quota.left === 0 ? "border-gold/40 bg-gold/15 text-gold-2" : "border-white/10 bg-black/50 text-cream/80"
-          }`}
-        >
-          {quota.left === 0 ? "נגמרו הלייקים להיום" : `נותרו ${quota.left} לייקים היום`}
-        </motion.span>
-      )}
+
       <motion.button
         style={{ scale: passScale }}
         whileTap={{ scale: 0.82 }}
@@ -286,6 +275,20 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
       >
         <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(212,175,55,0.85)]" />
         <Heart size={32} className="fill-current" />
+        {quota && !quota.premium && (
+          <motion.span
+            key={quota.left ?? 0}
+            initial={{ scale: 0.4 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 600, damping: 18 }}
+            aria-label={quota.left === 0 ? "נגמרו הלייקים להיום" : `נותרו ${quota.left} לייקים היום`}
+            className={`tabular absolute -top-1 -left-1 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[11px] font-bold ring-2 ring-ink ${
+              quota.left === 0 ? "bg-ink-4 text-mute" : "bg-cream text-ink"
+            }`}
+          >
+            {quota.left}
+          </motion.span>
+        )}
         <AnimatePresence>
           {burst > 0 && <Burst key={burst} />}
         </AnimatePresence>

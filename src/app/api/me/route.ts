@@ -14,13 +14,16 @@ const Profile = z.object({
   age: z.number().int().min(18).max(99),
   gender: z.enum(["male", "female"]),
   seeking: z.enum(["male", "female", "everyone"]),
-  location: z.string().trim().min(2).max(60),
+  location: z.string().trim().min(2, "נא לכתוב עיר").max(60),
   occupation: z.string().trim().min(2).max(80),
   bio: z.string().trim().min(10).max(500),
   photos: z
     .array(z.string().regex(/^\/api\/photos\/[\w-]+\.(jpg|png|webp)$/))
     .min(1)
     .max(6),
+  pref_age_min: z.number().int().min(18).max(99).nullable().optional(),
+  pref_age_max: z.number().int().min(18).max(99).nullable().optional(),
+  pref_distance_km: z.number().int().min(1).max(500).nullable().optional(),
   prompts: z
     .array(z.object({ question_key: z.enum(promptKeys), answer_text: z.string().trim().min(2).max(200) }))
     .min(2)
