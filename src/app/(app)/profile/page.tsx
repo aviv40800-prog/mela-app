@@ -10,6 +10,7 @@ import { Photo } from "@/components/Photo";
 import { MembershipActions, LogoutRow } from "@/components/AccountActions";
 import { PreferencesCard } from "@/components/PreferencesCard";
 import { SearchPrefsRow } from "@/components/SearchPrefsRow";
+import { ImproveProfile } from "@/components/ImproveProfile";
 import { ProfilePreviewButton } from "@/components/ProfilePreviewButton";
 
 const STATUS: Record<string, { label: string; tone: string }> = {
@@ -72,6 +73,11 @@ export default async function ProfilePage() {
         </div>
       </section>
 
+      <section className="mt-9">
+        <SectionTitle>שיפור ההתאמות</SectionTitle>
+        <ImproveProfile />
+      </section>
+
       {/* membership card */}
       <section className="mt-9">
         <SectionTitle>המנוי שלי</SectionTitle>
@@ -111,6 +117,11 @@ export default async function ProfilePage() {
               {sub.status === "canceled" && `הגישה נשמרת עד ${fmtDate(sub.current_period_end)}.`}
               {sub.status === "past_due" && "נא לעדכן אמצעי תשלום כדי להמשיך."}
             </p>
+            {sub.payment_last4 && (
+              <p className="tabular mb-3 text-[12px] text-cream/60" dir="ltr" style={{ textAlign: "right" }}>
+                {(sub.payment_brand ?? "card").toUpperCase()} •••• {sub.payment_last4} · {sub.payment_exp}
+              </p>
+            )}
           </div>
         </div>
             <MembershipActions canceled={sub.status === "canceled"} />

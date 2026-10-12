@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { handle, json, error, requireUser } from "@/lib/api";
-import { QUIZ_QUESTIONS } from "@/lib/content";
+import { ALL_QUESTIONS } from "@/lib/content";
 
-const keys = QUIZ_QUESTIONS.map((q) => q.key) as [string, ...string[]];
+const keys = ALL_QUESTIONS.map((q) => q.key) as [string, ...string[]];
 const Body = z.object({ questionKey: z.enum(keys), choice: z.enum(["a", "b"]) });
 
 export const GET = handle(async () => {

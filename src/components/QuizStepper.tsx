@@ -4,12 +4,25 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Loader2, RotateCcw } from "lucide-react";
 import { api, haptic } from "@/lib/client";
-import { QUIZ_QUESTIONS } from "@/lib/content";
+import { QUESTION_CATEGORIES, QUIZ_QUESTIONS } from "@/lib/content";
 
 type Choice = "a" | "b";
+type Question = { key: string; cat: string; a: string; b: string };
 
 /** Onboarding questionnaire: one "this or that" card at a time, mixing heritage and everyday questions. */
-export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Choice> | null; onAnswer: (key: string, c: Choice) => void }) {
+export function QuizStepper({
+  answers,
+  onAnswer,
+  questions = QUIZ_QUESTIONS,
+  doneView,
+}: {
+  answers: Record<string, Choice> | null;
+  onAnswer: (key: string, c: Choice) => void;
+  questions?: readonly Question[];
+  /** Replaces the default "finished" panel. */
+  doneView?: React.ReactNode;
+}) {
+  const QUIZ = questions;
   const [idx, setIdx] = useState<number | null>(null);
   const [picked, setPicked] = useState<{ c: Choice; agree: number } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -17,8 +30,8 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
   // Start at the first unanswered question once answers load.
   useEffect(() => {
     if (answers && idx === null) {
-      const first = QUIZ_QUESTIONS.findIndex((q) => !answers[q.key]);
-      setIdx(first === -1 ? QUIZ_QUESTIONS.length : first);
+      const first = QUIZ.findIndex((q) => !answers[q.key]);
+      setIdx(first === -1 ? QUIZ.length : first);
     }
   }, [answers, idx]);
 
@@ -29,9 +42,9 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
       </div>
     );
 
-  const total = QUIZ_QUESTIONS.length;
-  const done = QUIZ_QUESTIONS.filter((q) => answers[q.key]).length;
-  const q = QUIZ_QUESTIONS[idx];
+  const total = QUIZ.length;
+  const done = QUIZ.filter((q) => answers[q.key]).length;
+  const q = QUIZ[idx];
 
   async function choose(c: Choice) {
     if (!q || busy) return;
@@ -45,7 +58,7 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
         setPicked(null);
         setBusy(false);
         // next unanswered after this one, else the end
-        const next = QUIZ_QUESTIONS.findIndex((x, i) => i > idx! && !answers![x.key] && x.key !== q.key);
+        const next = QUIZ.findIndex((x, i) => i > idx! && !answers![x.key] && x.key !== q.key);
         setIdx(next === -1 ? total : next);
       }, 900);
     } catch {
@@ -57,7 +70,7 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
     <div>
       {/* progress dots */}
       <div className="mb-6 flex flex-wrap justify-center gap-1.5" aria-label={`${done} מתוך ${total}`}>
-        {QUIZ_QUESTIONS.map((x, i) => (
+        {QUIZ.map((x, i) => (
           <button
             key={x.key}
             type="button"
@@ -79,7 +92,7 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
           >
             <div className="mb-4 flex items-center justify-between px-1">
               <span className={`rounded-full px-3 py-1 text-[11.5px] font-semibold ${q.cat === "culture" ? "bg-gold/15 text-gold-2" : "bg-white/[0.07] text-cream/80"}`}>
-                {q.cat === "culture" ? "☕ מהבית" : "✨ מהחיים"}
+                {QUESTION_CATEGORIES[q.cat] ?? q.cat}
               </span>
               <span className="tabular text-xs text-mute">
                 {idx + 1}/{total}
@@ -120,6 +133,10 @@ export function QuizStepper({ answers, onAnswer }: { answers: Record<string, Cho
                 <ArrowRight size={15} /> לשאלה הקודמת
               </button>
             )}
+          </motion.div>
+        ) : doneView ? (
+          <motion.div key="done-custom" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+            {doneView}
           </motion.div>
         ) : (
           <motion.div key="done" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="surface rounded-[26px] p-8 text-center">

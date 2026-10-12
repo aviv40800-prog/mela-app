@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Lock } from "lucide-react";
-import { api, haptic } from "@/lib/client";
+import { haptic } from "@/lib/client";
 import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
 
 const PERKS = ["לייקים ללא הגבלה", "כל 3 הבחירות האישיות בכל יום", "לראות מי אהב/ה אותך", "צ'אט בזמן אמת + פתיחים מהבית", "התראת וואטסאפ על כל התאמה"];
@@ -22,17 +22,10 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
   const [err, setErr] = useState<string | null>(null);
   const selected = PLANS[plan];
 
-  async function start() {
+  function start() {
     setBusy(true);
     setErr(null);
-    try {
-      await api("/api/subscription", { method: "POST", json: { plan } });
-      router.replace("/discover");
-      router.refresh();
-    } catch (e) {
-      setErr((e as Error).message);
-      setBusy(false);
-    }
+    router.push(`/onboarding/checkout?plan=${plan}${welcome ? "&welcome=1" : ""}`);
   }
 
   return (
@@ -151,7 +144,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
       <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md bg-gradient-to-t from-ink via-ink/95 to-transparent px-6 pt-8 pb-[max(env(safe-area-inset-bottom),20px)]">
         {err && <p className="mb-2 text-center text-sm text-danger">{err}</p>}
         <button className="btn-gold w-full text-lg" onClick={start} disabled={busy}>
-          {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "חידוש מנוי" : `התחלת ${TRIAL_DAYS} ימי ניסיון חינם`}
+          {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "המשך לתשלום" : `המשך · ${TRIAL_DAYS} ימי ניסיון חינם`}
         </button>
         <button
           onClick={() => router.replace("/discover")}

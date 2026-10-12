@@ -288,3 +288,43 @@ describe("discovery preferences", () => {
     expect(discoveryDeck(getUser(me.id)!).map((c) => c.id)).toEqual(expect.arrayContaining([near.id, far.id, unknown.id, older.id]));
   });
 });
+
+describe("improve-your-profile check-ins", () => {
+  it("opens a batch of 3, closes it once answered, then waits 3 days", async () => {
+    const { getCheckin } = await import("@/lib/checkin");
+    const u = member("סקרנית", "female");
+    const first = getCheckin(u.id);
+    expect(first.questions).toHaveLength(3);
+    expect(new Set(first.questions.map((q) => q.cat)).size).toBe(3); // spread across areas
+    // the batch is stable until answered
+    expect(getCheckin(u.id).questions.map((q) => q.key)).toEqual(first.questions.map((q) => q.key));
+
+    const ins = db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, 'a')");
+    first.questions.forEach((q) => ins.run(u.id, q.key));
+    const after = getCheckin(u.id);
+    expect(after.questions).toHaveLength(0);
+    expect(new Date(after.nextAt!).getTime()).toBeGreaterThan(Date.now() + 2.9 * 86_400_000);
+
+    db.prepare("UPDATE users SET last_checkin_at = datetime('now', '-4 days') WHERE id = ?").run(u.id);
+    const next = getCheckin(u.id);
+    expect(next.questions).toHaveLength(3);
+    expect(next.questions.some((q) => first.questions.find((f) => f.key === q.key))).toBe(false);
+  });
+
+  it("lists answers two members share", async () => {
+    const { sharedAnswers } = await import("@/lib/checkin");
+    const a = member("א", "male");
+    const b = member("ב", "female");
+    const ins = db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, ?)");
+    ins.run(a.id, "coffee", "a");
+    ins.run(b.id, "coffee", "a");
+    ins.run(a.id, "pets", "a");
+    ins.run(b.id, "pets", "b");
+    expect(sharedAnswers(a.id, b.id)).toEqual(["בונה בג'בנה"]);
+  });
+
+  it("free tier defaults to 5 likes a day", async () => {
+    const { FREE_DAILY_LIKES } = await import("@/lib/quota");
+    expect(FREE_DAILY_LIKES).toBe(5);
+  });
+});

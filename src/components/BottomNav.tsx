@@ -13,7 +13,7 @@ const TABS = [
   { href: "/profile", label: "פרופיל", Icon: UserRound },
 ];
 
-export function BottomNav({ unread = 0 }: { unread?: number }) {
+export function BottomNav({ unread = 0, profileDot = false }: { unread?: number; profileDot?: boolean }) {
   const path = usePathname();
   if (/^\/matches\/\d+/.test(path)) return null; // full-screen chat
 
@@ -50,6 +50,9 @@ export function BottomNav({ unread = 0 }: { unread?: number }) {
               </motion.span>
               <span className="relative">{label}</span>
 
+              {href === "/profile" && profileDot && !active && (
+                <span className="absolute top-1.5 left-[calc(50%-16px)] h-2.5 w-2.5 animate-pulse rounded-full bg-gold-2 ring-2 ring-ink-2" aria-label="שאלות חדשות לשיפור הפרופיל" />
+              )}
               <AnimatePresence>
                 {href === "/matches" && unread > 0 && (
                   <motion.span

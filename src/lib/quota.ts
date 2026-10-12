@@ -3,7 +3,7 @@ import { db } from "./db";
 import { getSubscription, hasAccess } from "./billing";
 
 /** Likes per day on the free tier (no card). Passes are always unlimited. */
-export const FREE_DAILY_LIKES = Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 10);
+export const FREE_DAILY_LIKES = Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 5);
 /** Daily picks a free member can open (of 3). */
 export const FREE_DAILY_PICKS = 1;
 

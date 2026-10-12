@@ -74,6 +74,19 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
       </div>
 
       <div className={deck ? "space-y-3 px-3 pt-3" : "space-y-3"}>
+        {c.shared && c.shared.length > 0 && (
+          <section className="rounded-[26px] border border-gold/25 bg-gradient-to-b from-gold/[0.08] to-transparent p-5">
+            <div className="eyebrow mb-3">מה משותף לכם</div>
+            <div className="flex flex-wrap gap-2">
+              {c.shared.map((t) => (
+                <span key={t} className="rounded-full border border-gold/30 bg-black/20 px-3 py-1.5 text-[13px] text-cream/90">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
         {c.bio && (
           <section className="rounded-[26px] border border-line bg-white/[0.025] p-5">
             <div className="eyebrow mb-2">על {first}</div>

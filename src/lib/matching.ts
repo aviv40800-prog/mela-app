@@ -6,11 +6,12 @@ import { triggerMatchWhatsApp } from "./whatsapp";
 import { insertMessage } from "./chat";
 import { promptQuestion } from "./content";
 import { cityDistanceKm } from "./cities";
+import { sharedAnswers } from "./checkin";
 
 export type MatchStatus = "pending" | "matched" | "rejected";
 type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null };
 
-export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null };
+export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[] };
 
 /** SQL fragment: other users that are mutually compatible by gender preference with :me. */
 const COMPATIBLE = `
@@ -69,6 +70,7 @@ function toCandidate(me: number, id: number): Candidate {
     compatibility: compatibility(me, id),
     likedYou: likedMe(me, id),
     distanceKm: cityDistanceKm(getUser(me)?.location, other.location),
+    shared: sharedAnswers(me, id),
   };
 }
 

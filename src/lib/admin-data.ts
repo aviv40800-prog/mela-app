@@ -36,7 +36,7 @@ export function overview() {
     likeLimitHitsToday: count(
       "SELECT COUNT(*) AS n FROM daily_usage WHERE day = ? AND likes >= ?",
       new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date()),
-      Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 10),
+      Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 5),
     ),
     users: count(`SELECT COUNT(*) AS n FROM users WHERE ${real}`),
     demoUsers: count("SELECT COUNT(*) AS n FROM users WHERE is_demo = 1"),

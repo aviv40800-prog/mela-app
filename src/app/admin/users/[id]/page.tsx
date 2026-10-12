@@ -119,6 +119,14 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                     <dd>{when(sub.trial_ends_at)}</dd>
                   </div>
                 )}
+                {sub.payment_last4 && (
+                  <div className="flex justify-between">
+                    <dt className="text-mute">אמצעי תשלום</dt>
+                    <dd className="tabular" dir="ltr">
+                      {(sub.payment_brand ?? "card").toUpperCase()} •••• {sub.payment_last4}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <dt className="text-mute">סוף תקופה</dt>
                   <dd className="tabular">{sub.current_period_end.slice(0, 10)}</dd>

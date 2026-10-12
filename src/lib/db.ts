@@ -127,6 +127,14 @@ function migrate(db: DatabaseSync) {
   if (!cols.has("pref_age_min")) db.exec("ALTER TABLE users ADD COLUMN pref_age_min INTEGER");
   if (!cols.has("pref_age_max")) db.exec("ALTER TABLE users ADD COLUMN pref_age_max INTEGER");
   if (!cols.has("pref_distance_km")) db.exec("ALTER TABLE users ADD COLUMN pref_distance_km INTEGER");
+  // When the member last completed a "improve your profile" question batch.
+  if (!cols.has("last_checkin_at")) db.exec("ALTER TABLE users ADD COLUMN last_checkin_at TEXT");
+  if (!cols.has("checkin_batch")) db.exec("ALTER TABLE users ADD COLUMN checkin_batch TEXT"); // JSON keys of the open batch
+  // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
+  const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
+  if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");
+  if (!subCols.has("payment_last4")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_last4 TEXT");
+  if (!subCols.has("payment_exp")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_exp TEXT");
 }
 
 /**
