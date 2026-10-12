@@ -18,6 +18,27 @@ import { Logo } from "@/components/Logo";
 import { HeroVisual } from "@/components/HeroVisual";
 import { PhoneMockup } from "@/components/landing/PhoneMockup";
 import { Reveal } from "@/components/landing/Reveal";
+
+// "אהבה עם שורשים" — the founders' story, verbatim.
+const STORY_INTRO = [
+  'השאלה ששואלים אותנו כל הזמן היא: "מה, אתה תתחתן רק עם מישהי מהעדה?".',
+  "היום כבר יותר קשה לנו לענות על השאלה הזו בכנות ולהגיד פשוט \"כן\", כי מה לעשות — לאט לאט כל אחד הולך לכיוון שלו, אנחנו מתחילים להיאבד בדרך, והסביבות משתנות.",
+  'כשסבים התחתנו, הספיק שאבא הלך לבית של השכנים מהכפר הסמוך ואמר: "הבן שלי מוכן להתחתן, אנחנו משפחה טובה", וכך הצד השני הציע מישהו. כשההורים התחתנו, זה בעיקר הגיע מהשכונה, משידוך של דוד או דודה, ואולי אפילו היית מכיר את אהבת חייך בסיגד.',
+  'היום? אתה מוצא את עצמך חייב לצאת לבלות במועדונים "שלנו" כדי להכיר מישהי, גם אם ממש לא בא לך לצאת, ואתה כבר לא בגיל, או שזה פשוט לא הבילוי החביב עליך. אבל להכיר אישה זה חשוב לך מאוד.',
+  "ומה קורה כשהחברים שגדלת איתם הם לא בני הקהילה, אבל כל כך חשוב לך למצוא אשת חיל, בת העדה? כי רק אתה באמת יודע איזה ערכים יש לנו בעדה, איזה כבוד יש לנו, ואם כבר להקים בית — אז רק עם מישהי שמבינה את זה לעומק.",
+  "אחרי שנים של חיפושים ואין-סוף בילויים שכבר נמאסו, אחרי ניסיונות באין-ספור אפליקציות היכרויות שבהן אחוז בני העדה מצומצם כל כך שאחרי יומיים של סוויפים אתה שוב לבד...",
+];
+const STORY_WHY = [
+  "MELA נולדה מהפער הזה.",
+  "רצינו לקחת את החום של ההיכרות דרך משפחה, אמון, ערכים ושורשים משותפים — ולחבר אותם לטכנולוגיה מכבדת ופרטית.",
+];
+const STORY_NO_EXPLAIN = [
+  'זה מקום שבו לא צריך להסביר למה פעם ראשונה שטסת לחו"ל הייתה רק בגיל 22.',
+  "או למה במוצאי שבת אתה בבית, שותה שלוש כוסות קפה ביחד עם כל המשפחה.",
+  "או למה בחתונה הולך להיות 850 איש במקרה הטוב, ושאתה לא מכיר 70 אחוז מהאורחים.",
+];
+const STORY_CLOSE = ["פה אתה יכול להיות אתה, כי פה כבר מכירים אותך.", "אנחנו כאן כדי לעשות התאמה אמיתית ומדויקת לכל אחד ואחת מכם."];
+
 import { Faq } from "@/components/landing/Faq";
 import { getSessionUserId } from "@/lib/session";
 import { getUser } from "@/lib/users";
@@ -136,9 +157,9 @@ export default async function Landing() {
           <Reveal>
             <p className="eyebrow">הסיפור שלנו</p>
             <h2 className="font-display mt-3 text-[2.2rem] leading-tight font-bold md:text-5xl">
-              פעם הכירו
+              אהבה
               <br />
-              <span className="gold-text">דרך המשפחה.</span>
+              <span className="gold-text">עם שורשים</span>
             </h2>
             <div className="mt-8 rounded-[26px] border border-gold/25 bg-gradient-to-b from-gold/[0.08] to-transparent p-6">
               <div className="font-display text-4xl text-gold-2" dir="ltr">
@@ -150,19 +171,31 @@ export default async function Landing() {
             </div>
           </Reveal>
           <Reveal delay={0.1} className="space-y-5 text-[16.5px] leading-[1.85] text-cream/85">
-            <p>
-              הסבים והסבתות שלנו הכירו בכפרים של גונדר ותיגראי. ההורים שלנו — בחתונות, בבית הכנסת, בסיגד בירושלים, או כי דודה אחת הכירה משפחה ״טובה״ מהשכונה.
-            </p>
-            <p>
-              אנחנו? גדלנו בין שני עולמות. אנחנו מהנדסים, עורכות דין, סטודנטים לרפואה, יזמים ואנשי צבא. גרים בתל אביב, בחיפה, בבאר שבע. עובדים קשה, חולמים בגדול — ובערב חוזרים לאפליקציות שלא מבינות למה הבונה של שבת חשובה לנו, או למה המשפחה היא חלק מהסיפור.
-            </p>
-            <p>
-              <b className="text-cream">MELA נולדה מהפער הזה.</b> רצינו לקחת את החום של ההיכרות דרך המשפחה — האמון, הערכים, השורשים המשותפים — ולחבר אותו לטכנולוגיה מודרנית, מכבדת ופרטית.
-            </p>
-            <p>
-              המקום שבו לא צריך להסביר מה זה אינג׳רה, שבו ״ערכים״ זו לא מילה ריקה, ושבו הדייט הראשון יכול להתחיל משיחה על הסבתא שלכם.
-            </p>
-            <p className="font-display text-xl text-gold-2">ברוכים הבאים הביתה.</p>
+            {STORY_INTRO.map((t) => (
+              <p key={t}>{t}</p>
+            ))}
+            <p className="font-display pt-2 text-[1.9rem] leading-tight font-bold text-cream md:text-[2.3rem]">הקמנו את MELA.</p>
+            {STORY_WHY.map((t, i) => (
+              <p key={t} className={i === 0 ? "font-semibold text-cream" : undefined}>
+                {t}
+              </p>
+            ))}
+            <ul className="space-y-3 border-r-2 border-gold/40 py-1 pr-5">
+              {STORY_NO_EXPLAIN.map((t) => (
+                <li key={t} className="text-cream/90">
+                  {t}
+                </li>
+              ))}
+            </ul>
+            {STORY_CLOSE.map((t) => (
+              <p key={t}>{t}</p>
+            ))}
+            <p className="font-display text-[1.45rem] leading-snug text-gold-2 md:text-[1.7rem]">זה הזמן להפסיק להתפשר על מי שלא מבינה את מי שאתה.</p>
+            <div className="pt-4">
+              <Link href="/signup" className="btn-gold w-full px-10 text-[17px] sm:w-auto">
+                מתחילים – 7 ימים חינם
+              </Link>
+            </div>
           </Reveal>
         </div>
       </section>
