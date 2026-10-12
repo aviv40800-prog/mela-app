@@ -6,6 +6,7 @@ import { requirePageUser } from "@/lib/guard";
 import { likesReceived, listMatches } from "@/lib/matching";
 import { Photo } from "@/components/Photo";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { DATE_PREFIX } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
@@ -82,14 +83,14 @@ export default async function MatchesPage() {
         <h2 className="eyebrow mb-2">שיחות</h2>
         {convos.length === 0 ? (
           <div className="surface rounded-[26px] p-8 text-center text-sm text-mute">
-            {matches.length ? "שלחו הודעה ראשונה להתאמות החדשות שלכם 💬" : "עוד אין התאמות. המשיכו לגלות — האהבה בדרך 💛"}
+            {matches.length ? "ההתאמות החדשות שלכם מחכות להודעה ראשונה." : "עוד אין התאמות. כל לייק מקרב — המשיכו לגלות."}
           </div>
         ) : (
           <ul className="surface overflow-hidden rounded-[24px]">
             {convos.map((m, i) => (
               <li key={m.matchId} className="animate-rise" style={{ animationDelay: `${i * 50}ms` }}>
                 {i > 0 && <div className="hairline mr-[76px]" />}
-                <Link href={`/matches/${m.matchId}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]">
+                <Link href={`/matches/${m.matchId}`} className="press flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]">
                   <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${m.unread ? "ring-2 ring-gold/70 ring-offset-2 ring-offset-ink-3" : ""}`}>
                     <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
                   </div>
@@ -101,7 +102,9 @@ export default async function MatchesPage() {
                     <div className="mt-0.5 flex items-center justify-between gap-2">
                       <span className={`truncate text-sm ${m.unread ? "font-medium text-cream" : "text-mute"}`}>
                         {m.lastMessage!.fromMe && "את/ה: "}
-                        {m.lastMessage!.text.replace(/\n/g, " ")}
+                        {m.lastMessage!.text.startsWith(DATE_PREFIX)
+                          ? `הצעה לדייט · ${m.lastMessage!.text.split("\n")[1] ?? ""}`
+                          : m.lastMessage!.text.replace(/\n/g, " ")}
                       </span>
                       {m.unread > 0 && (
                         <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1.5 text-[11px] font-bold text-ink">{m.unread}</span>

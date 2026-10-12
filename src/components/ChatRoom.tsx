@@ -3,11 +3,13 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BadgeCheck, Check, CheckCheck, SendHorizontal, Sparkles, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, Coffee, MapPin, SendHorizontal, X } from "lucide-react";
+import { DatePlanner, DatePlannerSheet } from "./DatePlanner";
 import { Photo } from "./Photo";
 import { useRealtime } from "./Realtime";
 import { api, haptic } from "@/lib/client";
-import { ICEBREAKERS } from "@/lib/content";
+import { DATE_PREFIX, ICEBREAKERS } from "@/lib/content";
+import type { DatePlan } from "@/lib/dates";
 import type { ChatMessage, PublicProfile } from "@/lib/types";
 
 const TZ = "Asia/Jerusalem";
@@ -25,12 +27,27 @@ function dayLabel(iso: string) {
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
 
-export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number; meId: number; partner: PublicProfile; initial: ChatMessage[] }) {
+export function ChatRoom({
+  matchId,
+  meId,
+  partner,
+  initial,
+  plan,
+  shared = [],
+}: {
+  matchId: number;
+  meId: number;
+  partner: PublicProfile;
+  initial: ChatMessage[];
+  plan: DatePlan;
+  shared?: string[];
+}) {
   const [messages, setMessages] = useState(initial);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [sending, setSending] = useState(false);
-  const [tray, setTray] = useState(initial.length < 3);
+  const [tray, setTray] = useState(initial.length > 0 && initial.length < 3);
+  const [planner, setPlanner] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -114,6 +131,8 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
   }
 
   const lastMine = [...messages].reverse().find((m) => m.sender_id === meId);
+  const proposed = messages.some((m) => m.text_content.startsWith(DATE_PREFIX));
+  const nudge = messages.length >= 8 && !proposed;
 
   return (
     <main className="flex h-dvh flex-col">
@@ -134,19 +153,50 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
             </motion.div>
           </AnimatePresence>
         </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setPlanner(true)}
+          className="flex h-10 items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.07] px-3.5 text-[13px] font-medium text-gold-2 transition hover:border-gold/60 hover:bg-gold/[0.12]"
+          aria-label="רעיונות לדייט"
+        >
+          <CalendarHeart size={16} strokeWidth={1.75} /> דייט
+        </motion.button>
       </header>
 
       <div ref={scroller} className="no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-3">
         {messages.length === 0 && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center py-12 text-center">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center pt-8 pb-7 text-center">
             <div className="relative">
               <div className="absolute inset-0 animate-pulse-ring rounded-full" />
               <div className="h-28 w-28 overflow-hidden rounded-full ring-2 ring-gold/60 ring-offset-4 ring-offset-ink">
                 <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
               </div>
             </div>
-            <p className="font-display mt-6 text-2xl">התאמתם עם {first} ✨</p>
-            <p className="mt-1.5 max-w-[16rem] text-sm text-mute">ההודעה הראשונה היא החלק הכי קשה. אולי פתיח מהבית?</p>
+            <p className="eyebrow mt-7">התאמה חדשה</p>
+            <p className="font-display mt-1.5 text-[1.75rem] leading-tight">התאמתם עם {first}</p>
+            {shared.length > 0 ? (
+              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                {shared.map((t, i) => (
+                  <motion.span
+                    key={t}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.15 + i * 0.07 }}
+                    className="rounded-full border border-gold/25 bg-gold/[0.06] px-3 py-1 text-[12.5px] text-cream/85"
+                  >
+                    {t}
+                  </motion.span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1.5 max-w-[16rem] text-sm text-mute">ההודעה הראשונה היא החלק הכי קשה. אפשר להתחיל מפתיח מהבית — או ישר מהצעה לדייט.</p>
+            )}
+          </motion.div>
+        )}
+        {/* Until someone proposes a date, the planner sits at the top of the conversation and scrolls away as it grows. */}
+        {!proposed && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 260, damping: 30 }} className="pb-2">
+            <DatePlanner matchId={matchId} partnerFirst={first} initial={plan} onPropose={send} compact />
           </motion.div>
         )}
 
@@ -162,6 +212,7 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
             ? `rounded-[22px] ${joinPrev ? "rounded-tl-md" : ""} ${joinNext ? "rounded-bl-md" : "rounded-bl-sm"}`
             : `rounded-[22px] ${joinPrev ? "rounded-tr-md" : ""} ${joinNext ? "rounded-br-md" : "rounded-br-sm"}`;
           const quote = m.text_content.startsWith("💬 על ״") ? m.text_content.split("\n") : null;
+          const proposal = m.text_content.startsWith(DATE_PREFIX) ? m.text_content.split("\n").slice(1) : null;
 
           return (
             <Fragment key={m.id}>
@@ -188,7 +239,19 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
                         : "border border-white/[0.06] bg-ink-4 text-cream shadow-[0_8px_22px_-14px_rgba(0,0,0,0.9)]"
                     }`}
                   >
-                    {quote ? (
+                    {proposal ? (
+                      <span className="block min-w-[13rem]">
+                        <span className={`flex items-center gap-1.5 text-[11px] font-semibold tracking-wide ${mine ? "text-ink/65" : "text-gold-2"}`}>
+                          <CalendarHeart size={13} /> הצעה לדייט
+                        </span>
+                        <span className="font-display mt-1 block text-[1.15rem] leading-snug">{proposal[0]}</span>
+                        {proposal[1] && (
+                          <span className={`mt-1.5 flex items-start gap-1 text-[12.5px] leading-snug ${mine ? "text-ink/70" : "text-mute"}`}>
+                            <MapPin size={12} className="mt-[3px] shrink-0" /> {proposal[1]}
+                          </span>
+                        )}
+                      </span>
+                    ) : quote ? (
                       <>
                         <span className={`mb-1.5 block border-r-2 pr-2 text-[12px] leading-snug ${mine ? "border-ink/30 text-ink/70" : "border-gold/60 text-gold-2/90"}`}>
                           {quote[0].replace("💬 על ", "")}
@@ -230,13 +293,34 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
         </AnimatePresence>
       </div>
 
+      <AnimatePresence>
+        {planner && <DatePlannerSheet matchId={matchId} partnerFirst={first} initial={plan} onPropose={async (t) => { setPlanner(false); await send(t); }} onClose={() => setPlanner(false)} />}
+      </AnimatePresence>
+
+      {/* after a real conversation, nudge toward actually meeting */}
+      <AnimatePresence>
+        {nudge && !tray && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            onClick={() => setPlanner(true)}
+            className="mx-4 mb-2 flex items-center gap-3 rounded-2xl border border-gold/25 bg-ink-3/80 px-4 py-2.5 text-right backdrop-blur-xl"
+          >
+            <CalendarHeart size={17} className="shrink-0 text-gold-2" strokeWidth={1.75} />
+            <span className="flex-1 text-[13px] text-cream/85">נראה שיש כימיה. מוכנים להיפגש? יש לנו 3 רעיונות בשבילכם</span>
+            <span className="text-[12px] font-semibold text-gold-2">לרעיונות</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* icebreaker tray */}
       <AnimatePresence initial={false}>
         {tray && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 38 }} className="overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-1 pb-2">
               <span className="eyebrow flex items-center gap-1.5">
-                <Sparkles size={12} /> פתיחים מהבית
+                <Coffee size={12} /> פתיחים מהבית
               </span>
               <button onClick={() => setTray(false)} className="text-mute-2 transition hover:text-cream" aria-label="סגירת פתיחים">
                 <X size={15} />
@@ -277,7 +361,7 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
           aria-label="פתיחים"
           aria-pressed={tray}
         >
-          <Sparkles size={20} />
+          <Coffee size={20} strokeWidth={1.75} />
         </motion.button>
         <div className="field flex-1 !rounded-[24px] !p-0">
           <textarea

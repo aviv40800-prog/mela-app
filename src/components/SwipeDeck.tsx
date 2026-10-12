@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue, type PanInfo } from "framer-motion";
-import { Heart, RotateCcw, Sparkles, X } from "lucide-react";
+import { Heart, Moon, RotateCcw, X } from "lucide-react";
 import { ProfileCard } from "./ProfileCard";
 import { CommentSheet } from "./CommentSheet";
 import { MatchModal, type MiniProfile } from "./MatchModal";
@@ -128,10 +128,10 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         <div className="relative mb-7">
           <div className="absolute inset-0 animate-pulse-ring rounded-full" />
           <div className="glow grid h-24 w-24 place-items-center rounded-full bg-gradient-to-b from-gold/20 to-gold/5 text-gold">
-            <Sparkles size={34} />
+            <Moon size={32} strokeWidth={1.5} />
           </div>
         </div>
-        <h2 className="font-display text-[1.7rem] font-bold">{source === "picks" ? "ראית את כל הבחירות" : "זהו להיום ✨"}</h2>
+        <h2 className="font-display text-[1.7rem] font-bold">{source === "picks" ? "ראית את כל הבחירות" : "זהו להיום"}</h2>
         <p className="mt-2 max-w-xs text-[15px] text-mute">
           {source === "picks" ? "3 בחירות חדשות יחכו לך מחר בבוקר." : "פרופילים חדשים מצטרפים כל יום. בינתיים — בחירות היום והחידון מחכים לך."}
         </p>

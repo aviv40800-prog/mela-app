@@ -26,6 +26,6 @@ export const POST = handle(async (req: Request, { params }: Ctx) => {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error("הודעה ריקה");
   const message = sendMessage(matchId, user.id, partner.id, parsed.data.text);
-  maybeDemoReply(matchId, partner.id, user.id);
+  maybeDemoReply(matchId, partner.id, user.id, parsed.data.text);
   return json({ message });
 });

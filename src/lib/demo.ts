@@ -3,6 +3,7 @@ import { db } from "./db";
 import { getUser, getPrompts, type User } from "./users";
 import { insertMessage, sendMessage, markRead } from "./chat";
 import { publish } from "./events";
+import { DATE_PREFIX } from "./content";
 
 // Demo-mode behaviour so a fresh install feels alive. Disable with MELA_DEMO_MODE=off (do this in production).
 const enabled = () => process.env.MELA_DEMO_MODE !== "off";
@@ -43,14 +44,17 @@ export function seedDemoLikes(user: User) {
 }
 
 /** Demo members answer chat messages after a short, human-feeling delay. */
-export function maybeDemoReply(matchId: number, demoUserId: number, humanId: number) {
+const DATE_REPLIES = ["רעיון מעולה! חמישי הקרוב מתאים לך?", "וואו, תמיד רציתי לנסות את זה. סגרנו 🙌", "אני בעד. מתי נוח לך?"];
+
+export function maybeDemoReply(matchId: number, demoUserId: number, humanId: number, text = "") {
   const demo = getUser(demoUserId);
   if (!enabled() || !demo?.is_demo) return;
   setTimeout(() => {
     markRead(matchId, demoUserId, humanId);
     publish(humanId, { type: "typing", matchId, userId: demoUserId });
     setTimeout(() => {
-      sendMessage(matchId, demoUserId, humanId, REPLIES[Math.floor(Math.random() * REPLIES.length)]);
+      const pool = text.startsWith(DATE_PREFIX) ? DATE_REPLIES : REPLIES;
+      sendMessage(matchId, demoUserId, humanId, pool[Math.floor(Math.random() * pool.length)]);
     }, 2200);
   }, 1200);
 }

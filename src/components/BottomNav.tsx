@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Flame, Sparkles, MessageCircleHeart, UserRound } from "lucide-react";
+import { Flame, Gem, MessageCircleHeart, UserRound } from "lucide-react";
 import { haptic } from "@/lib/client";
 
 const TABS = [
   { href: "/discover", label: "גילוי", Icon: Flame },
-  { href: "/picks", label: "בחירות היום", Icon: Sparkles },
+  { href: "/picks", label: "בחירות היום", Icon: Gem },
   { href: "/matches", label: "התאמות", Icon: MessageCircleHeart },
   { href: "/profile", label: "פרופיל", Icon: UserRound },
 ];
@@ -28,7 +28,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
               href={href}
               onClick={() => !active && haptic(6)}
               aria-current={active ? "page" : undefined}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-[24px] py-2 text-[10.5px] transition-colors duration-300 ${
+              className={`press relative flex flex-1 flex-col items-center gap-0.5 rounded-[24px] py-2 text-[10.5px] tracking-[0.01em] transition-colors duration-300 ${
                 active ? "font-semibold text-gold-2" : "text-mute hover:text-cream"
               }`}
             >

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Crown, Heart, Sparkles, X } from "lucide-react";
+import { ArrowRight, Crown, Heart, X } from "lucide-react";
+import { CompatRing } from "./ui/CompatRing";
 import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
 import { Photo } from "./Photo";
 import { ProfileCard } from "./ProfileCard";
@@ -105,7 +106,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
               <Photo src={c.photos[0]} name={c.full_name} className="h-full w-full" rounded="rounded-[30px]" />
               <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent" />
               <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-gold-2 backdrop-blur-md">
-                <Sparkles size={11} /> <span className="tabular">{c.compatibility}%</span>
+                <CompatRing value={c.compatibility} size={12} /> <span className="tabular">{c.compatibility}%</span>
               </div>
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <div className="text-[1.4rem] leading-none font-bold">

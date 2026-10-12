@@ -84,7 +84,7 @@ export const ALL_QUESTIONS = [...QUIZ_QUESTIONS, ...BONUS_QUESTIONS];
 
 export const QUESTION_CATEGORIES: Record<string, string> = {
   culture: "☕ מהבית",
-  general: "✨ מהחיים",
+  general: "🌍 מהחיים",
   values: "🤍 ערכים",
   relationship: "💛 זוגיות",
   lifestyle: "🌿 סגנון חיים",
@@ -141,3 +141,6 @@ export const LOCATIONS = [
   "חדרה",
   "עפולה",
 ];
+
+/** Chat messages starting with this line are date proposals; ChatRoom renders them as a card. */
+export const DATE_PREFIX = "📍 הצעה לדייט";

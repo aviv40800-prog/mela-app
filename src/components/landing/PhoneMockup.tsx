@@ -1,4 +1,5 @@
-import { BadgeCheck, Heart, MapPin, Sparkles, X } from "lucide-react";
+import { BadgeCheck, Heart, MapPin, X } from "lucide-react";
+import { CompatRing } from "../ui/CompatRing";
 
 /** Illustrative phone frame with a sample (fictional) profile card. */
 export function PhoneMockup() {
@@ -20,7 +21,7 @@ export function PhoneMockup() {
           <div className="font-display gold-text absolute inset-x-0 top-28 text-center text-[9rem] leading-none font-bold opacity-80">ס</div>
           <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black via-black/70 to-transparent" />
           <div className="absolute top-12 right-4 flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-gold-2 backdrop-blur">
-            <Sparkles size={10} /> 92% התאמה
+            <CompatRing value={92} size={11} /> 92% התאמה
           </div>
           <div className="absolute inset-x-0 bottom-24 px-5">
             <div className="flex items-baseline gap-2 text-[1.7rem] leading-none font-bold">

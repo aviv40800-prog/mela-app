@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, X } from "lucide-react";
+import { Check, PenLine, X } from "lucide-react";
 import { api } from "@/lib/client";
 import { QuizStepper } from "./QuizStepper";
 
@@ -37,7 +37,7 @@ export function ImproveProfile() {
         {available && <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.2),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />}
         <div className="flex items-start gap-3.5">
           <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${available ? "bg-gradient-to-b from-gold-3 to-gold text-ink" : "border border-gold/20 bg-gold/[0.07] text-gold-2"}`}>
-            <Sparkles size={19} />
+            <PenLine size={18} />
           </span>
           <div className="flex-1">
             <div className="text-[15px] font-semibold">{available ? `${c.questions.length} שאלות חדשות מחכות לך` : "שיפור הפרופיל"}</div>
@@ -95,7 +95,7 @@ export function ImproveProfile() {
                   onAnswer={(k, v) => setAnswers((a) => ({ ...a, [k]: v }))}
                   doneView={
                     <div className="py-8 text-center">
-                      <div className="text-4xl">✨</div>
+                      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-gold/40 bg-gold/10 text-gold-2"><Check size={26} /></div>
                       <p className="mt-3 text-lg font-semibold">ההתאמות שלך עודכנו</p>
                       <p className="mt-1 text-sm text-mute">שאלות חדשות יגיעו בעוד כמה ימים.</p>
                       <button

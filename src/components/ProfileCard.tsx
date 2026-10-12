@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BadgeCheck, Briefcase, ChevronDown, Heart, MapPin, MessageCircle, Sparkles } from "lucide-react";
+import { BadgeCheck, Briefcase, ChevronDown, Heart, MapPin, MessageCircle } from "lucide-react";
+import { CompatRing } from "./ui/CompatRing";
 import { Photo } from "./Photo";
 import { promptQuestion } from "@/lib/content";
 import type { Candidate, Prompt } from "@/lib/types";
@@ -26,7 +27,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
 
         <div className="absolute top-4 right-4 left-4 flex flex-wrap items-start gap-2">
           <span className="flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-3 py-1.5 text-[12px] font-semibold text-gold-2 backdrop-blur-md">
-            <Sparkles size={12} /> <span className="tabular">{c.compatibility}%</span> התאמה
+            <CompatRing value={c.compatibility} size={13} /> <span className="tabular">{c.compatibility}%</span> התאמה
           </span>
           {c.is_demo && (
             <span className="rounded-full border border-white/15 bg-black/40 px-2.5 py-1.5 text-[11px] text-cream/75 backdrop-blur-md">פרופיל לדוגמה</span>

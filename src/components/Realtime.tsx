@@ -38,7 +38,7 @@ export function RealtimeShell({ meId, initialUnread, profileDot = false, childre
         haptic(15);
       }
       if (event.type === "match") {
-        setToast("יש התאמה חדשה! ✨");
+        setToast("יש התאמה חדשה");
         router.refresh();
       }
     };

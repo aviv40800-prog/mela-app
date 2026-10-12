@@ -82,7 +82,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
       // Only same-site paths, and only once onboarding is done.
       const dest = wanted && wanted.startsWith("/") && !wanted.startsWith("//") && res.next === "/discover" ? wanted : res.next;
       if (mode === "login" && res.isNew) {
-        setNotice("לא מצאנו חשבון קיים עם המספר הזה — פתחנו לך חשבון חדש. נשלים פרופיל בכמה צעדים ✨");
+        setNotice("לא מצאנו חשבון קיים עם המספר הזה — פתחנו לך חשבון חדש. נשלים פרופיל בכמה צעדים.");
         setTimeout(() => router.replace(dest), 2600);
       } else {
         if (mode === "signup" && !res.isNew) setNotice("כבר יש לך חשבון — מחברים אותך 👋");

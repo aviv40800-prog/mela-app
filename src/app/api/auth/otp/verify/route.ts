@@ -5,6 +5,7 @@ import { verifyOtp } from "@/lib/otp";
 import { createVerifiedUser, getUserByPhone } from "@/lib/users";
 import { createSession } from "@/lib/session";
 import { nextOnboardingStep } from "@/lib/onboarding";
+import { isAdmin } from "@/lib/admin";
 
 const Body = z.object({ phone: z.string(), code: z.string().regex(/^\d{6}$/) });
 
@@ -22,5 +23,6 @@ export const POST = handle(async (req: Request) => {
   if (existing?.is_banned) return error("החשבון הושעה. לפרטים: support@mela.app", 403);
   const user = existing ?? createVerifiedUser(phone);
   await createSession(user.id);
-  return json({ ok: true, isNew: !existing, next: nextOnboardingStep(user) });
+  // Admins land straight on the dashboard — they don't need a dating profile to manage the platform.
+  return json({ ok: true, isNew: !existing, next: isAdmin(user) ? "/admin" : nextOnboardingStep(user) });
 });

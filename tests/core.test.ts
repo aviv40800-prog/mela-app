@@ -327,4 +327,37 @@ describe("improve-your-profile check-ins", () => {
     const { FREE_DAILY_LIKES } = await import("@/lib/quota");
     expect(FREE_DAILY_LIKES).toBe(5);
   });
+
+  it("0524080073 is always a super admin", async () => {
+    const { isAdmin, isSuperAdmin } = await import("@/lib/admin");
+    delete process.env.MELA_ADMIN_PHONES;
+    const boss = createVerifiedUser(normalizeIsraeliPhone("0524080073")!);
+    expect(isAdmin(boss)).toBe(true);
+    expect(isSuperAdmin(boss)).toBe(true);
+    const other = member("רגיל", "male");
+    expect(isAdmin(other)).toBe(false);
+  });
+
+  it("suggests three distinct, local date ideas from shared vibes", async () => {
+    const { datePlan } = await import("@/lib/dates");
+    const a = member("א", "male");
+    const b = member("ב", "female");
+    db.prepare("UPDATE users SET location = 'ירושלים' WHERE id = ?").run(b.id);
+    const ins = db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, ?)");
+    for (const [k, c] of [["coffee", "a"], ["ethiopian_food", "a"], ["vacation", "a"]] as const) {
+      ins.run(a.id, k, c);
+      ins.run(b.id, k, c);
+    }
+    const plan = datePlan(getUser(a.id)!, getUser(b.id)!);
+    expect(plan.ideas).toHaveLength(3);
+    expect(new Set(plan.ideas.map((i) => i.kind)).size).toBe(3);
+    expect(plan.vibes[0]).toBe("heritage");
+    expect(plan.distanceKm).toBeGreaterThan(40);
+    expect(plan.ideas.some((i) => i.reason.includes("שניכם בחרתם"))).toBe(true);
+    // Same pair, same round → stable; "more ideas" shows three new ones.
+    expect(datePlan(getUser(a.id)!, getUser(b.id)!).ideas.map((i) => i.id)).toEqual(plan.ideas.map((i) => i.id));
+    const more = datePlan(getUser(a.id)!, getUser(b.id)!, 1).ideas.map((i) => i.id);
+    expect(more).toHaveLength(3);
+    expect(more.some((id) => plan.ideas.some((i) => i.id === id))).toBe(false);
+  });
 });
