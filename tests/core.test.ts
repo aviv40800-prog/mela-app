@@ -156,3 +156,13 @@ describe("db rows", () => {
     expect(Object.getPrototypeOf(db.prepare("SELECT 1 AS x").all()[0])).toBe(Object.prototype);
   });
 });
+
+describe("profile email", () => {
+  it("rejects an email that another member already uses", () => {
+    const a = member("אבי", "male");
+    const b = member("בני", "male");
+    const base = { full_name: "בני", age: 30, gender: "male" as const, seeking: "female" as const, location: "חיפה", occupation: "x", bio: "ביו ארוכה מספיק כאן", photos: ["/api/photos/a.jpg"], prompts: [] };
+    updateProfile(a.id, { ...base, email: "same@mela.app" });
+    expect(() => updateProfile(b.id, { ...base, email: "same@mela.app" })).toThrow(/UNIQUE constraint failed: users.email/);
+  });
+});

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { Flame, Sparkles, MessageCircleHeart, UserRound } from "lucide-react";
+import { haptic } from "@/lib/client";
 
 const TABS = [
   { href: "/discover", label: "גילוי", Icon: Flame },
@@ -14,31 +16,53 @@ const TABS = [
 export function BottomNav({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
   if (/^\/matches\/\d+/.test(path)) return null; // full-screen chat
+
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4"
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
-    >
-      <div className="glass flex items-center justify-around rounded-[28px] px-2 py-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9)]">
+    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }} aria-label="ניווט ראשי">
+      <div className="relative flex items-center justify-around rounded-[30px] border border-white/[0.08] bg-ink-2/75 px-1.5 py-1.5 shadow-[0_24px_60px_-20px_rgba(0,0,0,1),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl backdrop-saturate-150">
         {TABS.map(({ href, label, Icon }) => {
           const active = path === href || path.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
-              className={`relative flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[11px] transition-colors ${
-                active ? "text-gold-2" : "text-mute hover:text-cream"
+              onClick={() => !active && haptic(6)}
+              aria-current={active ? "page" : undefined}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 rounded-[24px] py-2 text-[10.5px] transition-colors duration-300 ${
+                active ? "font-semibold text-gold-2" : "text-mute hover:text-cream"
               }`}
             >
-              <span className={`grid h-8 w-12 place-items-center rounded-full transition-all ${active ? "bg-gold/12 glow" : ""}`}>
-                <Icon size={20} strokeWidth={active ? 2.2 : 1.7} />
-              </span>
-              {label}
-              {href === "/matches" && unread > 0 && (
-                <span className="absolute top-1 left-1/2 -translate-x-[-14px] min-w-4 rounded-full bg-gold px-1 text-center text-[10px] leading-4 font-bold text-ink">
-                  {unread > 9 ? "9+" : unread}
-                </span>
+              {active && (
+                <motion.span
+                  layoutId="nav-active"
+                  className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-gold/[0.16] to-gold/[0.04] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.25)]"
+                  transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                />
               )}
+              <motion.span
+                key={active ? "on" : "off"}
+                initial={active ? { scale: 0.6, y: 4 } : false}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 600, damping: 14 }}
+                className="relative grid h-7 place-items-center"
+              >
+                <Icon size={22} strokeWidth={active ? 2.1 : 1.7} fill={active ? "currentColor" : "none"} fillOpacity={active ? 0.22 : 0} />
+              </motion.span>
+              <span className="relative">{label}</span>
+
+              <AnimatePresence>
+                {href === "/matches" && unread > 0 && (
+                  <motion.span
+                    key={unread}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.3, 1] }}
+                    exit={{ scale: 0 }}
+                    className="tabular absolute top-1 left-[calc(50%-22px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold px-1 text-[10px] font-bold text-ink shadow-[0_0_12px_rgba(212,175,55,0.7)] ring-2 ring-ink-2"
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </Link>
           );
         })}

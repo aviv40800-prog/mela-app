@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/heebo";
 import "@fontsource-variable/frank-ruhl-libre";
 import "./globals.css";
+import { MotionProvider } from "@/components/MotionProvider";
 
 export const metadata: Metadata = {
   title: "MELA — אהבה עם שורשים",
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl">
       <body className="font-sans">
-        <div className="mx-auto min-h-dvh w-full max-w-md">{children}</div>
+        <MotionProvider>
+          <div className="mx-auto min-h-dvh w-full max-w-md">{children}</div>
+        </MotionProvider>
       </body>
     </html>
   );

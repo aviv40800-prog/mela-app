@@ -1,10 +1,12 @@
 import { PicksView } from "@/components/PicksView";
 import { ThisOrThat } from "@/components/ThisOrThat";
+import { requirePageUser } from "@/lib/guard";
 
-export default function PicksPage() {
+export default async function PicksPage() {
+  const me = await requirePageUser("member");
   return (
     <main className="px-4 pt-[max(env(safe-area-inset-top),24px)]">
-      <PicksView />
+      <PicksView me={{ name: me.full_name ?? "", photo: me.photos[0] }} />
       <ThisOrThat />
     </main>
   );

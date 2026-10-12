@@ -1,34 +1,52 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CheckCheck, Check, SendHorizontal, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, BadgeCheck, Check, CheckCheck, SendHorizontal, Sparkles, X } from "lucide-react";
 import { Photo } from "./Photo";
 import { useRealtime } from "./Realtime";
-import { api } from "@/lib/client";
+import { api, haptic } from "@/lib/client";
 import { ICEBREAKERS } from "@/lib/content";
 import type { ChatMessage, PublicProfile } from "@/lib/types";
 
-const fmt = (iso: string) =>
-  new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" });
+const TZ = "Asia/Jerusalem";
+const time = (iso: string) => new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
+const dayKey = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ });
+
+function dayLabel(iso: string) {
+  const k = dayKey(iso);
+  const today = dayKey(new Date().toISOString());
+  const yesterday = dayKey(new Date(Date.now() - 86_400_000).toISOString());
+  if (k === today) return "היום";
+  if (k === yesterday) return "אתמול";
+  return new Date(iso).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long", timeZone: TZ });
+}
+
+const GROUP_GAP_MS = 5 * 60 * 1000;
 
 export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number; meId: number; partner: PublicProfile; initial: ChatMessage[] }) {
   const [messages, setMessages] = useState(initial);
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [sending, setSending] = useState(false);
-  const bottom = useRef<HTMLDivElement>(null);
+  const [tray, setTray] = useState(initial.length < 3);
+  const scroller = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastTypingSent = useRef(0);
   const first = partner.full_name.split(" ")[0];
-  const icebreakers = useRef([...ICEBREAKERS].sort(() => Math.random() - 0.5).slice(0, 3)).current;
+  const [icebreakers] = useState(() => [...ICEBREAKERS].sort(() => Math.random() - 0.5).slice(0, 4));
 
   const markRead = () => void api(`/api/matches/${matchId}/read`, { method: "POST" }).catch(() => {});
-
   useEffect(markRead, [matchId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const initialScroll = useRef(true);
   useLayoutEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: initialScroll.current ? "auto" : "smooth" });
+    initialScroll.current = false;
   }, [messages.length, typing]);
 
   useRealtime((e) => {
@@ -37,6 +55,7 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
       setMessages((m) => (m.some((x) => x.id === e.message.id) ? m : [...m, e.message]));
       if (e.message.sender_id !== meId) {
         setTyping(false);
+        haptic(8);
         markRead();
       }
     }
@@ -48,7 +67,7 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
     }
   });
 
-  // Fallback catch-up in case the SSE connection dropped (e.g. phone was locked).
+  // Catch up after the SSE connection dropped (e.g. phone was locked).
   useEffect(() => {
     const onVisible = async () => {
       if (document.visibilityState !== "visible") return;
@@ -60,11 +79,21 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [matchId, messages]);
 
+  // Auto-grow the composer up to ~5 lines.
+  useLayoutEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [text]);
+
   async function send(body: string) {
     const t = body.trim();
     if (!t || sending) return;
     setSending(true);
     setText("");
+    setTray(false);
+    haptic(10);
     try {
       const { message } = await api<{ message: ChatMessage }>(`/api/matches/${matchId}/messages`, { method: "POST", json: { text: t } });
       setMessages((m) => (m.some((x) => x.id === message.id) ? m : [...m, message]));
@@ -72,6 +101,7 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
       setText(t);
     } finally {
       setSending(false);
+      input.current?.focus();
     }
   }
 
@@ -87,106 +117,201 @@ export function ChatRoom({ matchId, meId, partner, initial }: { matchId: number;
 
   return (
     <main className="flex h-dvh flex-col">
-      <header className="glass z-10 flex items-center gap-3 rounded-none border-x-0 border-t-0 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3">
-        <Link href="/matches" className="text-mute" aria-label="חזרה">
-          <ArrowRight />
+      <header className="relative z-10 flex items-center gap-3 border-b border-line bg-ink/70 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 backdrop-blur-2xl">
+        <Link href="/matches" className="grid h-10 w-10 place-items-center rounded-full text-mute transition hover:bg-white/5 hover:text-cream" aria-label="חזרה">
+          <ArrowRight size={21} />
         </Link>
-        <div className="h-10 w-10 overflow-hidden rounded-full">
+        <div className="h-11 w-11 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-ink">
           <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-1 font-semibold">
-            {first} {partner.is_verified && <BadgeCheck size={16} className="text-gold" />}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1 text-[16px] font-semibold">
+            {first} {partner.is_verified && <BadgeCheck size={16} className="fill-gold/15 text-gold-2" />}
           </div>
-          <div className="text-xs text-mute">{typing ? <span className="text-gold-2">מקליד/ה...</span> : `${partner.occupation ?? ""} · ${partner.location ?? ""}`}</div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={typing ? "t" : "s"} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="truncate text-xs text-mute">
+              {typing ? <span className="text-gold-2">מקליד/ה…</span> : [partner.occupation, partner.location].filter(Boolean).join(" · ")}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </header>
 
-      <div className="no-scrollbar flex-1 space-y-2 overflow-y-auto px-4 py-5">
+      <div ref={scroller} className="no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-3">
         {messages.length === 0 && (
-          <div className="animate-rise py-10 text-center">
-            <div className="glow mx-auto h-24 w-24 overflow-hidden rounded-full">
-              <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
-            </div>
-            <p className="font-display mt-4 text-xl">התאמתם עם {first} ✨</p>
-            <p className="mt-1 text-sm text-mute">שבירת קרח? בחר/י פתיח למטה.</p>
-          </div>
-        )}
-        {messages.map((m, i) => {
-          const mine = m.sender_id === meId;
-          const showTime = i === messages.length - 1 || messages[i + 1].sender_id !== m.sender_id;
-          return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[78%]">
-                <div
-                  className={`animate-rise rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-line ${
-                    mine ? "rounded-bl-lg bg-gradient-to-b from-gold-2 to-gold text-ink" : "glass rounded-br-lg"
-                  }`}
-                >
-                  {m.text_content}
-                </div>
-                {showTime && (
-                  <div className={`mt-1 flex items-center gap-1 px-2 text-[10px] text-mute ${mine ? "justify-end" : ""}`}>
-                    {fmt(m.sent_at)}
-                    {mine && m.id === lastMine?.id && (m.is_read ? <CheckCheck size={12} className="text-gold" /> : <Check size={12} />)}
-                  </div>
-                )}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center py-12 text-center">
+            <div className="relative">
+              <div className="absolute inset-0 animate-pulse-ring rounded-full" />
+              <div className="h-28 w-28 overflow-hidden rounded-full ring-2 ring-gold/60 ring-offset-4 ring-offset-ink">
+                <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
               </div>
             </div>
+            <p className="font-display mt-6 text-2xl">התאמתם עם {first} ✨</p>
+            <p className="mt-1.5 max-w-[16rem] text-sm text-mute">ההודעה הראשונה היא החלק הכי קשה. אולי פתיח מהבית?</p>
+          </motion.div>
+        )}
+
+        {messages.map((m, i) => {
+          const prev = messages[i - 1];
+          const next = messages[i + 1];
+          const mine = m.sender_id === meId;
+          const newDay = !prev || dayKey(prev.sent_at) !== dayKey(m.sent_at);
+          const joinPrev = !newDay && prev?.sender_id === m.sender_id && +new Date(m.sent_at) - +new Date(prev.sent_at) < GROUP_GAP_MS;
+          const joinNext = !!next && next.sender_id === m.sender_id && dayKey(next.sent_at) === dayKey(m.sent_at) && +new Date(next.sent_at) - +new Date(m.sent_at) < GROUP_GAP_MS;
+          // Mine sit on the left (RTL), theirs on the right; the "tail" corner tightens inside a group.
+          const corners = mine
+            ? `rounded-[22px] ${joinPrev ? "rounded-tl-md" : ""} ${joinNext ? "rounded-bl-md" : "rounded-bl-sm"}`
+            : `rounded-[22px] ${joinPrev ? "rounded-tr-md" : ""} ${joinNext ? "rounded-br-md" : "rounded-br-sm"}`;
+          const quote = m.text_content.startsWith("💬 על ״") ? m.text_content.split("\n") : null;
+
+          return (
+            <Fragment key={m.id}>
+              {newDay && (
+                <div className="my-4 flex items-center gap-3">
+                  <div className="hairline flex-1" />
+                  <span className="text-[11px] font-medium text-mute-2">{dayLabel(m.sent_at)}</span>
+                  <div className="hairline flex-1" />
+                </div>
+              )}
+              <motion.div
+                layout="position"
+                initial={{ opacity: 0, y: 12, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                style={{ transformOrigin: mine ? "left bottom" : "right bottom" }}
+                className={`flex ${mine ? "justify-end" : "justify-start"} ${joinPrev ? "mt-[3px]" : "mt-3"}`}
+              >
+                <div className="max-w-[80%]">
+                  <div
+                    className={`px-4 py-2.5 text-[15.5px] leading-[1.45] whitespace-pre-line ${corners} ${
+                      mine
+                        ? "bg-gradient-to-b from-[#ecce73] to-[#d4af37] text-[#1a1406] shadow-[0_8px_22px_-12px_rgba(212,175,55,0.8),inset_0_1px_0_rgba(255,255,255,0.35)]"
+                        : "border border-white/[0.06] bg-ink-4 text-cream shadow-[0_8px_22px_-14px_rgba(0,0,0,0.9)]"
+                    }`}
+                  >
+                    {quote ? (
+                      <>
+                        <span className={`mb-1.5 block border-r-2 pr-2 text-[12px] leading-snug ${mine ? "border-ink/30 text-ink/70" : "border-gold/60 text-gold-2/90"}`}>
+                          {quote[0].replace("💬 על ", "")}
+                        </span>
+                        {quote.slice(1).join("\n")}
+                      </>
+                    ) : (
+                      m.text_content
+                    )}
+                  </div>
+                  {!joinNext && (
+                    <div className={`tabular mt-1 flex items-center gap-1 px-1.5 text-[10.5px] text-mute-2 ${mine ? "justify-end" : ""}`}>
+                      {time(m.sent_at)}
+                      {mine && m.id === lastMine?.id && (
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.span key={m.is_read ? "r" : "s"} initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                            {m.is_read ? <CheckCheck size={13} className="text-gold-2" /> : <Check size={13} />}
+                          </motion.span>
+                        </AnimatePresence>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </Fragment>
           );
         })}
-        {typing && (
-          <div className="flex justify-start">
-            <div className="glass flex gap-1 rounded-3xl rounded-br-lg px-4 py-3">
-              {[0, 1, 2].map((d) => (
-                <span key={d} className="h-2 w-2 animate-bounce rounded-full bg-gold/70" style={{ animationDelay: `${d * 120}ms` }} />
-              ))}
-            </div>
-          </div>
-        )}
-        <div ref={bottom} />
+
+        <AnimatePresence>
+          {typing && (
+            <motion.div initial={{ opacity: 0, y: 10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} style={{ transformOrigin: "right bottom" }} className="mt-3 flex justify-start">
+              <div className="flex gap-1.5 rounded-[22px] rounded-br-sm border border-white/[0.06] bg-ink-4 px-4 py-3.5">
+                {[0, 1, 2].map((d) => (
+                  <motion.span key={d} className="h-2 w-2 rounded-full bg-gold-2/80" animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.15 }} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {messages.length < 4 && (
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-2">
-          <span className="flex shrink-0 items-center gap-1 text-xs text-gold">
-            <Sparkles size={12} /> פתיחים:
-          </span>
-          {icebreakers.map((ib) => (
-            <button key={ib} onClick={() => send(ib)} className="glass shrink-0 rounded-full px-3.5 py-2 text-xs whitespace-nowrap hover:border-gold/40">
-              {ib}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* icebreaker tray */}
+      <AnimatePresence initial={false}>
+        {tray && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 38 }} className="overflow-hidden">
+            <div className="flex items-center justify-between px-5 pt-1 pb-2">
+              <span className="eyebrow flex items-center gap-1.5">
+                <Sparkles size={12} /> פתיחים מהבית
+              </span>
+              <button onClick={() => setTray(false)} className="text-mute-2 transition hover:text-cream" aria-label="סגירת פתיחים">
+                <X size={15} />
+              </button>
+            </div>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3">
+              {icebreakers.map((ib, i) => (
+                <motion.button
+                  key={ib}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => send(ib)}
+                  className="max-w-[16rem] shrink-0 rounded-2xl border border-gold/20 bg-gradient-to-b from-gold/[0.08] to-transparent px-3.5 py-2.5 text-right text-[13px] leading-snug text-cream/90 transition hover:border-gold/45"
+                >
+                  {ib}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* composer */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void send(text);
         }}
-        className="flex items-end gap-2 border-t border-line px-3 pt-3 pb-[max(env(safe-area-inset-bottom),12px)]"
+        className="flex items-end gap-2 border-t border-line bg-ink/80 px-3 pt-3 backdrop-blur-2xl safe-bottom"
       >
-        <textarea
-          rows={1}
-          value={text}
-          onChange={(e) => onType(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void send(text);
-            }
-          }}
-          placeholder={`הודעה ל${first}...`}
-          className="field max-h-32 min-h-12 flex-1 resize-none rounded-3xl py-3"
-        />
-        <button
-          disabled={!text.trim() || sending}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold text-ink transition active:scale-90 disabled:opacity-40"
-          aria-label="שליחה"
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.85 }}
+          onClick={() => setTray((t) => !t)}
+          className={`mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${tray ? "bg-gold/15 text-gold-2" : "text-mute hover:text-gold-2"}`}
+          aria-label="פתיחים"
+          aria-pressed={tray}
         >
-          <SendHorizontal size={20} className="rotate-180" />
-        </button>
+          <Sparkles size={20} />
+        </motion.button>
+        <div className="field flex-1 !rounded-[24px] !p-0">
+          <textarea
+            ref={input}
+            rows={1}
+            value={text}
+            onChange={(e) => onType(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                void send(text);
+              }
+            }}
+            placeholder={`הודעה ל${first}…`}
+            className="block max-h-[140px] w-full resize-none bg-transparent px-4 py-[13px] text-[16px] leading-[1.35] outline-none placeholder:text-mute-2"
+          />
+        </div>
+        <AnimatePresence initial={false}>
+          {text.trim() && (
+            <motion.button
+              key="send"
+              initial={{ scale: 0, rotate: 90, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              whileTap={{ scale: 0.85 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              disabled={sending}
+              className="mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_22px_-8px_rgba(212,175,55,0.9)]"
+              aria-label="שליחה"
+            >
+              <SendHorizontal size={19} className="rotate-180" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </form>
     </main>
   );

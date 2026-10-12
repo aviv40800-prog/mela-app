@@ -18,7 +18,7 @@ export const POST = handle(async (req: Request) => {
   if (file.size > MAX_BYTES) return error("התמונה גדולה מדי (עד 8MB)");
 
   const name = `${crypto.randomUUID()}.${ext}`;
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  await fs.writeFile(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
+  await fs.mkdir(/* turbopackIgnore: true */ UPLOAD_DIR, { recursive: true });
+  await fs.writeFile(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
   return json({ url: `/api/photos/${name}` });
 });

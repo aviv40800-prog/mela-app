@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Lock } from "lucide-react";
-import { api } from "@/lib/client";
+import { api, haptic } from "@/lib/client";
 import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
 
 const PERKS = ["לייקים ללא הגבלה", "3 בחירות אישיות בכל יום", "תגובה ישירה על שאלות בפרופיל", "צ'אט בזמן אמת + פתיחי שיחה", "התראת וואטסאפ על כל התאמה"];
@@ -53,21 +54,30 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
           const p = PLANS[id];
           const active = plan === id;
           return (
-            <button
+            <motion.button
               key={id}
               role="radio"
               aria-checked={active}
-              onClick={() => setPlan(id)}
-              className={`relative w-full rounded-3xl p-5 text-right transition-all duration-300 ${
-                active ? "glow bg-gradient-to-b from-gold/[0.14] to-gold/[0.03]" : "glass opacity-80"
-              }`}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                haptic(6);
+                setPlan(id);
+              }}
+              className={`surface relative w-full rounded-[26px] p-5 text-right transition-opacity duration-300 ${active ? "" : "opacity-75"}`}
             >
+              {active && (
+                <motion.span
+                  layoutId="plan-active"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  className="glow pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-b from-gold/[0.14] to-gold/[0.02]"
+                />
+              )}
               {"badge" in p && (
                 <span className="absolute -top-3 right-5 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[11px] font-bold text-ink shadow-lg">
                   <Crown size={12} /> {p.badge}
                 </span>
               )}
-              <div className="flex items-center gap-4">
+              <div className="relative flex items-center gap-4">
                 <span
                   className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-ink" : "border-white/25"}`}
                 >
@@ -84,7 +94,7 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
                   <div className="text-[11px] text-mute">{id === "quarterly_119" ? `≈ ₪${p.perMonth.toFixed(0)} לחודש` : p.period}</div>
                 </div>
               </div>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -101,16 +111,18 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
       </ul>
 
       {!returning && (
-        <div className="glass mt-8 rounded-2xl p-4 text-sm">
+        <div className="surface mt-8 rounded-2xl p-4 text-sm">
           <div className="flex justify-between">
             <span className="text-mute">לתשלום היום</span>
             <span className="font-bold text-gold-2">₪0.00</span>
           </div>
           <div className="mt-2 flex justify-between">
             <span className="text-mute">החל מ־{chargeDate()}</span>
-            <span dir="ltr">
-              {selected.priceLabel} / {selected.months === 1 ? "חודש" : "3 חודשים"}
-            </span>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={plan} dir="ltr" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
+                {selected.priceLabel} / {selected.months === 1 ? "חודש" : "3 חודשים"}
+              </motion.span>
+            </AnimatePresence>
           </div>
         </div>
       )}

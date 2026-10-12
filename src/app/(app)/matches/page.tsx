@@ -25,18 +25,20 @@ export default async function MatchesPage() {
   return (
     <main className="px-4 pt-[max(env(safe-area-inset-top),24px)]">
       <LiveRefresh />
-      <h1 className="font-display text-3xl font-bold">התאמות</h1>
+      <p className="eyebrow">האנשים שלך</p>
+      <h1 className="font-display mt-1 text-[2rem] leading-tight font-bold">התאמות</h1>
 
       {likes.length > 0 && (
         <section className="mt-6">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold-2">
             <Heart size={14} className="fill-current" /> אהבו אותך ({likes.length})
           </h2>
-          <div className="glass rounded-3xl p-4">
-            <p className="text-sm text-mute">הם כבר מחכים לך בגילוי — לייק בחזרה ויש התאמה.</p>
-            <div className="mt-3 flex -space-x-3 space-x-reverse">
+          <div className="animate-rise relative overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
+            <p className="text-[14.5px] text-cream/85">הם כבר מחכים לך בגילוי — לייק בחזרה ויש התאמה.</p>
+            <div className="mt-4 flex -space-x-3 space-x-reverse">
               {likes.slice(0, 5).map((l) => (
-                <div key={l.id} className="h-12 w-12 overflow-hidden rounded-full border-2 border-ink">
+                <div key={l.id} className="h-12 w-12 overflow-hidden rounded-full ring-2 ring-ink-3">
                   <Photo src={l.photos[0]} name={l.full_name} className="h-full w-full blur-[3px]" rounded="rounded-full" />
                 </div>
               ))}
@@ -50,12 +52,14 @@ export default async function MatchesPage() {
 
       {fresh.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold text-mute">התאמות חדשות</h2>
-          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4">
-            {fresh.map((m) => (
-              <Link key={m.matchId} href={`/matches/${m.matchId}`} className="w-20 shrink-0 text-center">
-                <div className="glow h-20 w-20 overflow-hidden rounded-full p-[2px]">
-                  <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
+          <h2 className="eyebrow mb-3">התאמות חדשות</h2>
+          <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
+            {fresh.map((m, i) => (
+              <Link key={m.matchId} href={`/matches/${m.matchId}`} className="animate-rise w-[76px] shrink-0 text-center" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="rounded-full bg-gradient-to-b from-gold-3 to-gold-dim p-[2px] shadow-[0_0_22px_-6px_rgba(212,175,55,0.7)] transition-transform duration-300 hover:scale-105">
+                  <div className="h-[72px] w-[72px] overflow-hidden rounded-full ring-2 ring-ink">
+                    <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
+                  </div>
                 </div>
                 <div className="mt-2 truncate text-xs">{m.other.full_name.split(" ")[0]}</div>
               </Link>
@@ -65,23 +69,24 @@ export default async function MatchesPage() {
       )}
 
       <section className="mt-8">
-        <h2 className="mb-2 text-sm font-semibold text-mute">שיחות</h2>
+        <h2 className="eyebrow mb-2">שיחות</h2>
         {convos.length === 0 ? (
-          <div className="glass rounded-3xl p-8 text-center text-sm text-mute">
+          <div className="surface rounded-[26px] p-8 text-center text-sm text-mute">
             {matches.length ? "שלחו הודעה ראשונה להתאמות החדשות שלכם 💬" : "עוד אין התאמות. המשיכו לגלות — האהבה בדרך 💛"}
           </div>
         ) : (
-          <ul className="divide-y divide-line">
-            {convos.map((m) => (
-              <li key={m.matchId}>
-                <Link href={`/matches/${m.matchId}`} className="flex items-center gap-3 py-3.5">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
+          <ul className="surface overflow-hidden rounded-[24px]">
+            {convos.map((m, i) => (
+              <li key={m.matchId} className="animate-rise" style={{ animationDelay: `${i * 50}ms` }}>
+                {i > 0 && <div className="hairline mr-[76px]" />}
+                <Link href={`/matches/${m.matchId}`} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]">
+                  <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${m.unread ? "ring-2 ring-gold/70 ring-offset-2 ring-offset-ink-3" : ""}`}>
                     <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span className={`font-semibold ${m.unread ? "text-cream" : "text-cream/90"}`}>{m.other.full_name.split(" ")[0]}</span>
-                      <span className="text-[11px] text-mute">{timeLabel(m.lastMessage!.sentAt)}</span>
+                      <span className={`tabular text-[11px] ${m.unread ? "font-semibold text-gold-2" : "text-mute-2"}`}>{timeLabel(m.lastMessage!.sentAt)}</span>
                     </div>
                     <div className="mt-0.5 flex items-center justify-between gap-2">
                       <span className={`truncate text-sm ${m.unread ? "font-medium text-cream" : "text-mute"}`}>

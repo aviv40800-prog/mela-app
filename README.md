@@ -4,9 +4,13 @@ A mobile-first, Hebrew (RTL) dating web app for young Ethiopian-Israeli professi
 It has a dark luxury theme (charcoal and warm gold, glassmorphism, Frank Ruhl Libre + Heebo), swipe cards, cultural prompts,
 daily picks, a "This or That" quiz, real-time chat, and a 7-day free trial checkout.
 
-| Landing | Checkout | Discover | Match | Chat | Daily quiz |
-|---|---|---|---|---|---|
-| ![](docs/screenshots/01-landing.png) | ![](docs/screenshots/05-plan.png) | ![](docs/screenshots/07-discover-prompts.png) | ![](docs/screenshots/09-match.png) | ![](docs/screenshots/11-chat-reply.png) | ![](docs/screenshots/13-quiz.png) |
+| Onboarding wizard | Details | Checkout | Swipe (drag) | Profile card |
+|---|---|---|---|---|
+| ![](docs/screenshots/04c-photos-done.jpg) | ![](docs/screenshots/05b-basics.jpg) | ![](docs/screenshots/06-plan.jpg) | ![](docs/screenshots/08a-drag-pass.jpg) | ![](docs/screenshots/09-card-prompts.jpg) |
+
+| Match | Chat | Daily quiz | Profile | Landing |
+|---|---|---|---|---|
+| ![](docs/screenshots/11-match.jpg) | ![](docs/screenshots/14-chat-reply.jpg) | ![](docs/screenshots/16-quiz.jpg) | ![](docs/screenshots/18-profile.jpg) | ![](docs/screenshots/01-landing.jpg) |
 
 ## Quick start
 
@@ -30,7 +34,7 @@ npm run db:reset       # delete the local DB (it re-seeds on next start)
 
 ## Stack
 
-- **Next.js 16** (App Router, route handlers), **React 19**, **Tailwind CSS 4**, TypeScript, Zod validation
+- **Next.js 16** (App Router, route handlers), **React 19**, **Tailwind CSS 4**, **framer-motion** (gestures, springs, shared-layout animations), TypeScript, Zod validation
 - **SQLite** via `node:sqlite` (WAL mode). The schema is in `src/lib/db.ts`
 - **Auth**: phone + 6-digit OTP (hashed, 5-minute TTL, 5 attempts, 30-second resend throttle), then an HTTP-only signed JWT cookie (`jose`)
 - **Real-time**: Server-Sent Events (`/api/stream`) on an in-process event bus. It carries messages, read receipts, typing and new matches

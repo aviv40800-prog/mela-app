@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Heart, Loader2, Sparkles, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Heart, Sparkles, X } from "lucide-react";
 import { Photo } from "./Photo";
 import { ProfileCard } from "./ProfileCard";
 import { CommentSheet } from "./CommentSheet";
-import { MatchModal } from "./MatchModal";
+import { MatchModal, type MiniProfile } from "./MatchModal";
+import { Skeleton } from "./ui/Skeleton";
 import { api, haptic } from "@/lib/client";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
 function untilMidnight() {
-  const now = new Date();
-  const il = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+  const il = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
   const mins = 24 * 60 - (il.getHours() * 60 + il.getMinutes());
   return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, "0")}`;
 }
 
-export function PicksView() {
+export function PicksView({ me }: { me: MiniProfile }) {
   const [picks, setPicks] = useState<Candidate[] | null>(null);
   const [done, setDone] = useState<Record<number, "like" | "pass">>({});
   const [open, setOpen] = useState<Candidate | null>(null);
@@ -25,14 +26,16 @@ export function PicksView() {
   const [clock, setClock] = useState("");
 
   useEffect(() => {
-    api<{ picks: Candidate[] }>("/api/daily-picks").then((d) => setPicks(d.picks)).catch(() => setPicks([]));
+    api<{ picks: Candidate[] }>("/api/daily-picks")
+      .then((d) => setPicks(d.picks))
+      .catch(() => setPicks([]));
     setClock(untilMidnight());
     const t = setInterval(() => setClock(untilMidnight()), 30_000);
     return () => clearInterval(t);
   }, []);
 
   async function decide(c: Candidate, action: "like" | "pass", comment?: { text: string; promptKey?: string }) {
-    haptic();
+    haptic(action === "like" ? [12, 30, 18] : 8);
     setDone((d) => ({ ...d, [c.id]: action }));
     setOpen(null);
     setSheet(null);
@@ -47,83 +50,109 @@ export function PicksView() {
     <section>
       <div className="flex items-end justify-between px-1">
         <div>
-          <h1 className="font-display text-3xl font-bold">בחירות היום</h1>
-          <p className="mt-1 text-sm text-mute">3 אנשים שנבחרו במיוחד בשבילך</p>
+          <p className="eyebrow">נבחרו במיוחד בשבילך</p>
+          <h1 className="font-display mt-1 text-[2rem] leading-tight font-bold">בחירות היום</h1>
         </div>
-        <div className="glass rounded-full px-3 py-1.5 text-xs text-gold-2" dir="ltr">
-          ⏳ {clock}
+        <div className="glass flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] text-gold-2">
+          <span className="text-mute">מתחדש בעוד</span>
+          <span className="tabular font-semibold" dir="ltr">
+            {clock}
+          </span>
         </div>
       </div>
 
       {picks === null ? (
-        <div className="grid h-60 place-items-center">
-          <Loader2 className="animate-spin text-gold" />
+        <div className="-mx-4 mt-5 flex gap-3 overflow-hidden px-4">
+          {[0, 1].map((i) => (
+            <Skeleton key={i} className="aspect-[3/4] w-[72%] shrink-0 !rounded-[30px]" />
+          ))}
         </div>
       ) : picks.length === 0 ? (
         <div className="glass mt-5 rounded-3xl p-8 text-center text-sm text-mute">אין בחירות חדשות כרגע. נסו שוב מחר 💛</div>
       ) : (
-        <div className="no-scrollbar -mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+        <div className="no-scrollbar -mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3">
           {picks.map((c, i) => (
-            <button
+            <motion.button
               key={c.id}
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.08, type: "spring", stiffness: 300, damping: 28 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => !done[c.id] && setOpen(c)}
-              className="animate-rise relative aspect-[3/4] w-[72%] shrink-0 snap-center overflow-hidden rounded-[28px] text-right"
-              style={{ animationDelay: `${i * 90}ms` }}
+              className="relative aspect-[3/4] w-[72%] shrink-0 snap-center overflow-hidden rounded-[30px] text-right shadow-[var(--shadow-float)] ring-1 ring-white/5"
             >
-              <Photo src={c.photos[0]} name={c.full_name} className="h-full w-full" rounded="rounded-[28px]" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-              <div className="glass absolute top-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-gold-2">
-                <Sparkles size={11} /> {c.compatibility}%
+              <Photo src={c.photos[0]} name={c.full_name} className="h-full w-full" rounded="rounded-[30px]" />
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent" />
+              <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-2.5 py-1 text-[11px] font-semibold text-gold-2 backdrop-blur-md">
+                <Sparkles size={11} /> <span className="tabular">{c.compatibility}%</span>
               </div>
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <div className="text-xl font-bold">
-                  {c.full_name.split(" ")[0]}, <span className="font-light">{c.age}</span>
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="text-[1.4rem] leading-none font-bold">
+                  {c.full_name.split(" ")[0]} <span className="font-light text-cream/85">{c.age}</span>
                 </div>
-                <div className="text-xs text-cream/75">
+                <div className="mt-1.5 text-[12.5px] text-cream/75">
                   {c.occupation} · {c.location}
                 </div>
               </div>
-              {done[c.id] && (
-                <div className="absolute inset-0 grid place-items-center bg-ink/70 backdrop-blur-sm">
-                  <span className={`animate-pop grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gold text-ink" : "glass"}`}>
-                    {done[c.id] === "like" ? <Heart className="fill-current" /> : <X />}
-                  </span>
-                </div>
-              )}
-            </button>
+              <AnimatePresence>
+                {done[c.id] && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 grid place-items-center bg-ink/70 backdrop-blur-sm">
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.25, 1] }}
+                      className={`grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gradient-to-b from-gold-2 to-gold text-ink shadow-[0_0_40px_rgba(212,175,55,0.6)]" : "glass"}`}
+                    >
+                      {done[c.id] === "like" ? <Heart className="fill-current" /> : <X />}
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           ))}
         </div>
       )}
 
-      {open && (
-        <div className="fixed inset-0 z-40 mx-auto max-w-md overflow-y-auto bg-ink px-3 pt-[max(env(safe-area-inset-top),12px)] pb-40">
-          <button onClick={() => setOpen(null)} className="mb-3 flex h-12 items-center gap-1 px-2 text-sm text-mute">
-            <ArrowRight size={18} /> חזרה
-          </button>
-          <ProfileCard c={open} onPromptLike={setSheet} />
-          <div className="fixed inset-x-0 bottom-8 z-50 mx-auto flex max-w-md justify-center gap-6">
-            <button onClick={() => decide(open, "pass")} className="glass grid h-16 w-16 place-items-center rounded-full shadow-xl" aria-label="דילוג">
-              <X size={28} />
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key={open.id}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="fixed inset-0 z-40 mx-auto max-w-md overflow-y-auto bg-ink px-3 pt-[max(env(safe-area-inset-top),12px)] pb-40"
+          >
+            <button onClick={() => setOpen(null)} className="mb-3 flex h-12 items-center gap-1 px-2 text-sm text-mute transition hover:text-cream">
+              <ArrowRight size={18} /> חזרה לבחירות
             </button>
-            <button
-              onClick={() => decide(open, "like")}
-              className="grid h-[72px] w-[72px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold text-ink shadow-[0_12px_40px_-8px_rgba(212,175,55,0.7)]"
-              aria-label="לייק"
-            >
-              <Heart size={30} className="fill-current" />
-            </button>
-          </div>
-          {sheet && (
-            <CommentSheet
-              name={open.full_name}
-              prompt={sheet}
-              onClose={() => setSheet(null)}
-              onSend={(text) => decide(open, "like", { text, promptKey: sheet.question_key })}
-            />
-          )}
-        </div>
-      )}
-      {match && <MatchModal {...match} onClose={() => setMatch(null)} />}
+            <ProfileCard c={open} onPromptLike={setSheet} />
+            <div className="fixed inset-x-0 bottom-8 z-50 mx-auto flex max-w-md justify-center gap-7">
+              <motion.button
+                whileTap={{ scale: 0.82 }}
+                onClick={() => decide(open, "pass")}
+                className="grid h-[62px] w-[62px] place-items-center rounded-full border border-white/15 bg-ink-3/80 shadow-xl backdrop-blur-xl"
+                aria-label="דילוג"
+              >
+                <X size={28} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.82 }}
+                onClick={() => decide(open, "like")}
+                className="grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[0_14px_44px_-6px_rgba(212,175,55,0.85)]"
+                aria-label="לייק"
+              >
+                <Heart size={32} className="fill-current" />
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {open && sheet && (
+          <CommentSheet name={open.full_name} prompt={sheet} onClose={() => setSheet(null)} onSend={(text) => decide(open, "like", { text, promptKey: sheet.question_key })} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>{match && <MatchModal me={me} {...match} onClose={() => setMatch(null)} />}</AnimatePresence>
     </section>
   );
 }

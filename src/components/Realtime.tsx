@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { haptic } from "@/lib/client";
 import type { RealtimeEvent } from "@/lib/types";
 import { BottomNav } from "./BottomNav";
 
@@ -33,6 +35,7 @@ export function RealtimeShell({ meId, initialUnread, children }: { meId: number;
       if (event.type === "message" && event.message.sender_id !== meId && pathRef.current !== `/matches/${event.matchId}`) {
         setUnread((n) => n + 1);
         setToast("הודעה חדשה 💬");
+        haptic(15);
       }
       if (event.type === "match") {
         setToast("יש התאמה חדשה! ✨");
@@ -62,11 +65,22 @@ export function RealtimeShell({ meId, initialUnread, children }: { meId: number;
   return (
     <Ctx.Provider value={value}>
       {children}
-      {toast && (
-        <div className="fixed inset-x-0 top-4 z-50 mx-auto w-fit animate-pop">
-          <div className="glass glow rounded-full px-5 py-2.5 text-sm font-medium text-gold-2">{toast}</div>
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key={toast}
+            initial={{ y: -60, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -60, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+            className="fixed inset-x-0 z-50 mx-auto w-fit"
+            style={{ top: "max(env(safe-area-inset-top), 14px)" }}
+            role="status"
+          >
+            <div className="glow rounded-full border border-gold/30 bg-ink-2/85 px-5 py-2.5 text-sm font-medium text-gold-2 backdrop-blur-xl">{toast}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <BottomNav unread={unread} />
     </Ctx.Provider>
   );

@@ -23,6 +23,10 @@ export async function api<T = unknown>(url: string, init?: RequestInit & { json?
   return data as T;
 }
 
-export function haptic(ms = 12) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(ms);
+import { getPrefs } from "./prefs";
+
+/** Short vibration on supporting devices (Android). Respects the in-app haptics preference. */
+export function haptic(pattern: number | number[] = 12) {
+  if (typeof navigator === "undefined" || !("vibrate" in navigator) || !getPrefs().haptics) return;
+  navigator.vibrate?.(pattern);
 }
