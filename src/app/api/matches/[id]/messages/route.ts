@@ -8,7 +8,7 @@ import { toPublic } from "@/lib/users";
 type Ctx = { params: Promise<{ id: string }> };
 
 export const GET = handle(async (req: Request, { params }: Ctx) => {
-  const user = await requireUser({ requireSubscription: true });
+  const user = await requireUser({ requireProfile: true });
   const matchId = Number((await params).id);
   const partner = matchPartner(matchId, user.id);
   if (!partner) return error("השיחה לא נמצאה", 404);
@@ -19,7 +19,7 @@ export const GET = handle(async (req: Request, { params }: Ctx) => {
 const Body = z.object({ text: z.string().trim().min(1).max(2000) });
 
 export const POST = handle(async (req: Request, { params }: Ctx) => {
-  const user = await requireUser({ requireSubscription: true });
+  const user = await requireUser({ requireProfile: true });
   const matchId = Number((await params).id);
   const partner = matchPartner(matchId, user.id);
   if (!partner) return error("השיחה לא נמצאה", 404);

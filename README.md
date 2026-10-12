@@ -39,6 +39,13 @@ npm run db:reset       # delete the local DB (it re-seeds on next start)
 - **Auth**: phone + 6-digit OTP (hashed, 5-minute TTL, 5 attempts, 30-second resend throttle), then an HTTP-only signed JWT cookie (`jose`)
 - **Real-time**: Server-Sent Events (`/api/stream`) on an in-process event bus. It carries messages, read receipts, typing and new matches
 
+## Free vs Premium
+
+Signing up is free with no card. **Free**: `MELA_FREE_DAILY_LIKES` likes per day (default 10, reset at midnight Israel time,
+enforced server-side), 1 of the 3 daily picks, and full chat with matches. **Premium** (₪49/month or ₪119/3 months, with a
+7-day trial): unlimited likes, all daily picks, and "who liked you" with one-tap like-back. Passes are never limited.
+Free members see a counter of likes left and an upgrade sheet when they run out.
+
 ## Accounts, admin and demo data
 
 - **Signup** `/signup` and **login** `/login` both use phone + SMS code; sessions last 30 days. The server never reveals

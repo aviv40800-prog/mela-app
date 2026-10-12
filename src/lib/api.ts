@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { getSessionUserId } from "./session";
 import { getUser, touchLastSeen, type User } from "./users";
 import { isAdmin } from "./admin";
-import { getSubscription, hasAccess } from "./billing";
+import { isProfileComplete } from "./users";
 
 export const json = (data: unknown, status = 200) => NextResponse.json(data, { status });
-export const error = (message: string, status = 400) => NextResponse.json({ error: message }, { status });
+export const error = (message: string, status = 400, extra?: Record<string, unknown>) => NextResponse.json({ error: message, ...extra }, { status });
 
 export class HttpError extends Error {
   constructor(
@@ -17,14 +17,14 @@ export class HttpError extends Error {
   }
 }
 
-/** Current user or 401. With `requireSubscription`, also enforces an active trial/subscription (402). */
-export async function requireUser(opts: { requireSubscription?: boolean } = {}): Promise<User> {
+/** Current user or 401. With `requireProfile`, the member must have finished onboarding (409). */
+export async function requireUser(opts: { requireProfile?: boolean } = {}): Promise<User> {
   const id = await getSessionUserId();
   const user = id ? getUser(id) : null;
   if (!user) throw new HttpError(401, "לא מחובר/ת");
   if (user.is_banned) throw new HttpError(403, "החשבון הושעה");
   touchLastSeen(user.id);
-  if (opts.requireSubscription && !hasAccess(getSubscription(user.id))) throw new HttpError(402, "נדרש מנוי פעיל");
+  if (opts.requireProfile && !isProfileComplete(user)) throw new HttpError(409, "יש להשלים את הפרופיל");
   return user;
 }
 

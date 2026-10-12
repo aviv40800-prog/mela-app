@@ -4,6 +4,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code?: string,
   ) {
     super(message);
   }
@@ -17,8 +18,9 @@ export async function api<T = unknown>(url: string, init?: RequestInit & { json?
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 402 && typeof window !== "undefined") window.location.href = "/onboarding/plan";
-    throw new ApiError(res.status, (data as { error?: string }).error ?? "משהו השתבש");
+    if (res.status === 409 && typeof window !== "undefined") window.location.href = "/onboarding/profile";
+    const d = data as { error?: string; code?: string };
+    throw new ApiError(res.status, d.error ?? "משהו השתבש", d.code);
   }
   return data as T;
 }

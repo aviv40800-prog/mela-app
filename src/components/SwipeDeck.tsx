@@ -8,10 +8,11 @@ import { ProfileCard } from "./ProfileCard";
 import { CommentSheet } from "./CommentSheet";
 import { MatchModal, type MiniProfile } from "./MatchModal";
 import { CardSkeleton } from "./ui/Skeleton";
-import { api, haptic } from "@/lib/client";
+import { ApiError, api, haptic } from "@/lib/client";
+import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
-type SwipeResponse = { status: string; matchId: number; isNewMatch: boolean; other?: PublicProfile };
+type SwipeResponse = { status: string; matchId: number; isNewMatch: boolean; other?: PublicProfile; quota: Quota };
 type Action = "like" | "pass";
 
 const DISTANCE = 110; // px past which a release counts as a decision
@@ -23,6 +24,8 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const [match, setMatch] = useState<{ other: PublicProfile; matchId: number } | null>(null);
   const [burst, setBurst] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<Quota | null>(null);
+  const [paywall, setPaywall] = useState(false);
   const busy = useRef(false);
   const x = useMotionValue(0);
 
@@ -31,8 +34,9 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
     setError(null);
     try {
       const url = source === "discover" ? "/api/discover" : "/api/daily-picks";
-      const data = await api<{ candidates?: Candidate[]; picks?: Candidate[] }>(url);
+      const data = await api<{ candidates?: Candidate[]; picks?: Candidate[]; quota?: Quota }>(url);
       setDeck(data.candidates ?? data.picks ?? []);
+      if (data.quota) setQuota(data.quota);
     } catch (e) {
       setError((e as Error).message);
       setDeck([]);
@@ -48,19 +52,39 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const decide = useCallback(
     async (action: Action, opts: { velocity?: number; comment?: { text: string; promptKey?: string } } = {}) => {
       if (!top || busy.current) return;
+      // Free tier out of likes: don't throw the card — spring it back and offer Premium. Passes stay free.
+      if (action === "like" && quota && quota.left === 0) {
+        haptic([30, 40, 30]);
+        setSheet(null);
+        setPaywall(true);
+        animate(x, 0, { type: "spring", stiffness: 520, damping: 30, velocity: opts.velocity ?? 0 });
+        return;
+      }
       busy.current = true;
       setSheet(null);
       haptic(action === "like" ? [12, 30, 18] : 8);
       if (action === "like") setBurst((b) => b + 1);
+      const target = top;
+      if (action === "like" && quota && quota.left !== null) setQuota({ ...quota, left: Math.max(0, quota.left - 1), used: quota.used + 1 });
 
-      api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: top.id, action, comment: opts.comment } })
+      const request = api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: target.id, action, comment: opts.comment } })
         .then((res) => {
+          setQuota(res.quota);
           if (res.isNewMatch && res.other) {
             haptic([20, 60, 20, 60, 40]);
             setMatch({ other: res.other, matchId: res.matchId });
           }
+          return true;
         })
-        .catch((e) => setError((e as Error).message));
+        .catch((e) => {
+          if (e instanceof ApiError && e.code === "like_limit") {
+            setQuota((q) => (q ? { ...q, left: 0 } : q));
+            setPaywall(true);
+            return false; // the like didn't happen — put the card back
+          }
+          setError((e as Error).message);
+          return true;
+        });
 
       // Fly the card off-screen, carrying the release velocity so it feels thrown, not animated.
       const dirn = action === "like" ? 1 : -1;
@@ -71,11 +95,12 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         velocity: opts.velocity ?? dirn * 900,
         restDelta: 40,
       });
-      setDeck((d) => d?.slice(1) ?? null);
+      const kept = await request;
+      setDeck((d) => (kept ? (d?.slice(1) ?? null) : d));
       x.set(0);
       busy.current = false;
     },
-    [top, x],
+    [top, x, quota],
   );
 
   useEffect(() => {
@@ -131,7 +156,8 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         <TopCard key={top.id} c={top} x={x} onDragEnd={onDragEnd} onPromptLike={setSheet} />
       </div>
 
-      <ActionBar x={x} burst={burst} onPass={() => decide("pass")} onLike={() => decide("like")} />
+      <ActionBar x={x} burst={burst} quota={quota} onPass={() => decide("pass")} onLike={() => decide("like")} />
+      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onClose={() => setPaywall(false)} />}</AnimatePresence>
 
       <AnimatePresence>
         {sheet && (
@@ -224,12 +250,24 @@ function BackCard({ c, x }: { c: Candidate; x: MotionValue<number> }) {
   );
 }
 
-function ActionBar({ x, burst, onPass, onLike }: { x: MotionValue<number>; burst: number; onPass: () => void; onLike: () => void }) {
+function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>; burst: number; quota: Quota | null; onPass: () => void; onLike: () => void }) {
   const likeScale = useTransform(x, [0, 160], [1, 1.16]);
   const passScale = useTransform(x, [-160, 0], [1.16, 1]);
   const likeHalo = useTransform(x, [0, 160], [0.55, 1]);
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[100px] z-30 mx-auto flex max-w-md items-center justify-center gap-7">
+      {quota && !quota.premium && (
+        <motion.span
+          key={quota.left ?? 0}
+          initial={{ y: 6, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={`tabular absolute -top-9 rounded-full border px-3 py-1 text-[11.5px] backdrop-blur-md ${
+            quota.left === 0 ? "border-gold/40 bg-gold/15 text-gold-2" : "border-white/10 bg-black/50 text-cream/80"
+          }`}
+        >
+          {quota.left === 0 ? "נגמרו הלייקים להיום" : `נותרו ${quota.left} לייקים היום`}
+        </motion.span>
+      )}
       <motion.button
         style={{ scale: passScale }}
         whileTap={{ scale: 0.82 }}

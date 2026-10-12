@@ -87,6 +87,14 @@ CREATE TABLE IF NOT EXISTS daily_picks (
   PRIMARY KEY (user_id, pick_user_id, pick_date)
 );
 
+-- Free-tier usage counters, one row per member per Israel calendar day.
+CREATE TABLE IF NOT EXISTS daily_usage (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day     TEXT NOT NULL,
+  likes   INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);
+
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   event       TEXT NOT NULL,

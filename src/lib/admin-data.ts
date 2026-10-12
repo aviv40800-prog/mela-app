@@ -24,7 +24,20 @@ export function overview() {
     .filter((s) => s.status === "trialing")
     .reduce((a, s) => a + s.n * (s.plan_type === "monthly_49" ? 49 : 119 / 3), 0);
 
+  const premiumNow = count(
+    `SELECT COUNT(*) AS n FROM subscriptions s JOIN users u ON u.id = s.user_id
+     WHERE u.is_demo = 0 AND (s.status IN ('trialing', 'active') OR (s.status = 'canceled' AND s.current_period_end > datetime('now')))`,
+  );
+  const completeReal = count(`SELECT COUNT(*) AS n FROM users WHERE ${real} AND full_name IS NOT NULL AND photos <> '[]'`);
   return {
+    premiumNow,
+    freeUsers: Math.max(0, completeReal - premiumNow),
+    conversion: completeReal ? Math.round((premiumNow / completeReal) * 100) : 0,
+    likeLimitHitsToday: count(
+      "SELECT COUNT(*) AS n FROM daily_usage WHERE day = ? AND likes >= ?",
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date()),
+      Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 10),
+    ),
     users: count(`SELECT COUNT(*) AS n FROM users WHERE ${real}`),
     demoUsers: count("SELECT COUNT(*) AS n FROM users WHERE is_demo = 1"),
     newToday: count(`SELECT COUNT(*) AS n FROM users WHERE ${real} AND created_at >= datetime('now', 'start of day')`),
@@ -85,6 +98,10 @@ export type AdminUserRow = {
 export const USER_FILTERS = {
   all: { label: "כולם", where: "1 = 1" },
   real: { label: "אמיתיים", where: "u.is_demo = 0" },
+  free: {
+    label: "חינמיים",
+    where: "u.is_demo = 0 AND u.full_name IS NOT NULL AND (s.status IS NULL OR (s.status = 'canceled' AND s.current_period_end <= datetime('now')))",
+  },
   trialing: { label: "בניסיון", where: "s.status = 'trialing'" },
   active: { label: "משלמים", where: "s.status = 'active' AND u.is_demo = 0" },
   incomplete: { label: "פרופיל חלקי", where: "(u.full_name IS NULL OR u.photos = '[]')" },

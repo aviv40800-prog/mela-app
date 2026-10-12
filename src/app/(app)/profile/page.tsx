@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { BadgeCheck, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, UserRound } from "lucide-react";
+import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, UserRound } from "lucide-react";
 import { requirePageUser } from "@/lib/guard";
 import { isAdmin } from "@/lib/admin";
-import { getSubscription } from "@/lib/billing";
+import { getSubscription, hasAccess } from "@/lib/billing";
+import { getQuota } from "@/lib/quota";
 import { toPublic } from "@/lib/users";
 import { PLANS, promptQuestion } from "@/lib/content";
 import { Photo } from "@/components/Photo";
@@ -22,10 +23,12 @@ const fmtDate = (s: string, opts: Intl.DateTimeFormatOptions = { day: "numeric",
 
 export default async function ProfilePage() {
   const user = await requirePageUser("member");
-  const sub = getSubscription(user.id)!;
+  const sub = getSubscription(user.id);
+  const premium = hasAccess(sub);
+  const quota = getQuota(user.id);
   const pub = toPublic(user);
-  const plan = PLANS[sub.plan_type];
-  const status = STATUS[sub.status];
+  const plan = sub ? PLANS[sub.plan_type] : null;
+  const status = sub ? STATUS[sub.status] : null;
 
   // Profile strength — weights reflect what drives matches.
   const parts = [
@@ -71,6 +74,8 @@ export default async function ProfilePage() {
       {/* membership card */}
       <section className="mt-9">
         <SectionTitle>המנוי שלי</SectionTitle>
+        {premium && sub && plan && status ? (
+          <>
         <div className="relative overflow-hidden rounded-[26px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(212,175,55,0.45),var(--shadow-float)]">
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(229,193,88,0.28),transparent_55%),radial-gradient(90%_80%_at_0%_100%,rgba(138,113,36,0.35),transparent_60%),linear-gradient(135deg,#1d1a12,#0f0e0b)]" />
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-gold-3/70 to-transparent" />
@@ -107,7 +112,41 @@ export default async function ProfilePage() {
             </p>
           </div>
         </div>
-        <MembershipActions canceled={sub.status === "canceled"} />
+            <MembershipActions canceled={sub.status === "canceled"} />
+          </>
+        ) : (
+          <div className="surface relative overflow-hidden rounded-[26px] p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-display text-xl font-bold tracking-[0.3em] text-cream/90" dir="ltr">
+                  MELA
+                </div>
+                <div className="mt-0.5 text-[10px] tracking-[0.25em] text-mute" dir="ltr">
+                  FREE MEMBER
+                </div>
+              </div>
+              <span className="rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-semibold text-mute">חינם</span>
+            </div>
+            <div className="mt-6">
+              <div className="flex items-baseline justify-between text-sm">
+                <span className="text-mute">לייקים היום</span>
+                <span className="tabular font-semibold">
+                  {quota.used} / {quota.limit}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+                <div
+                  className="mr-0 ml-auto h-full rounded-full bg-gradient-to-l from-gold-3 to-gold"
+                  style={{ width: `${Math.min(100, (quota.used / (quota.limit ?? 1)) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-3 text-[12.5px] text-mute">מתאפס כל לילה בחצות. עם Premium — ללא הגבלה, כל 3 הבחירות היומיות, ולראות מי אהב/ה אותך.</p>
+            </div>
+            <Link href="/onboarding/plan" className="btn-gold mt-5 w-full py-3 text-sm">
+              <Crown size={15} /> {sub ? "חידוש Premium" : "שדרוג ל־Premium · 7 ימים חינם"}
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* profile sections */}

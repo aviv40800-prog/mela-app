@@ -181,7 +181,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                   <>
                     חדשים ב־MELA?{" "}
                     <Link href="/signup" className="font-semibold text-gold-2 underline-offset-4 hover:underline">
-                      הרשמה — 7 ימים חינם
+                      הרשמה חינם
                     </Link>
                   </>
                 )}

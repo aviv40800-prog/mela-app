@@ -7,7 +7,7 @@ import { Check, Crown, Loader2, Lock } from "lucide-react";
 import { api, haptic } from "@/lib/client";
 import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
 
-const PERKS = ["לייקים ללא הגבלה", "3 בחירות אישיות בכל יום", "תגובה ישירה על שאלות בפרופיל", "צ'אט בזמן אמת + פתיחי שיחה", "התראת וואטסאפ על כל התאמה"];
+const PERKS = ["לייקים ללא הגבלה", "כל 3 הבחירות האישיות בכל יום", "לראות מי אהב/ה אותך", "צ'אט בזמן אמת + פתיחים מהבית", "התראת וואטסאפ על כל התאמה"];
 
 function chargeDate() {
   const d = new Date();
@@ -15,7 +15,7 @@ function chargeDate() {
   return d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
 }
 
-export function PlanPicker({ firstName, returning }: { firstName: string; returning: boolean }) {
+export function PlanPicker({ firstName, returning, welcome, freeLikes }: { firstName: string; returning: boolean; welcome: boolean; freeLikes: number }) {
   const router = useRouter();
   const [plan, setPlan] = useState<PlanType>("quarterly_119");
   const [busy, setBusy] = useState(false);
@@ -36,7 +36,7 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
   }
 
   return (
-    <div className="animate-rise mt-8 flex flex-1 flex-col pb-40">
+    <div className="animate-rise mt-8 flex flex-1 flex-col pb-56">
       <div className="text-center">
         {!returning && (
           <div className="glow mx-auto mb-4 w-fit rounded-full bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold-2">
@@ -44,9 +44,19 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
           </div>
         )}
         <h1 className="font-display text-[2rem] leading-tight font-bold">
-          {firstName ? `${firstName}, ` : ""}מוכנ/ה <span className="gold-text">למצוא אהבה?</span>
+          {welcome ? (
+            <>
+              {firstName ? `${firstName}, ` : ""}הפרופיל <span className="gold-text">מוכן!</span>
+            </>
+          ) : (
+            <>
+              שדרוג ל־<span className="gold-text">MELA Premium</span>
+            </>
+          )}
         </h1>
-        <p className="mt-2 text-sm text-mute">בחר/י מסלול. אפשר לבטל בכל רגע לפני סוף הניסיון ולא תחויב/י.</p>
+        <p className="mt-2 text-sm text-mute">
+          {welcome ? "אפשר להתחיל בחינם, או לפתוח את כל האפשרויות עם Premium." : "יותר לייקים, יותר בחירות, יותר סיכוי למצוא את האחד/ת."}
+        </p>
       </div>
 
       <div className="mt-8 space-y-3" role="radiogroup">
@@ -99,7 +109,18 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
         })}
       </div>
 
-      <ul className="mt-8 space-y-2.5">
+      <div className="mt-6 grid grid-cols-2 gap-2 text-center text-[12px]">
+        <div className="rounded-2xl border border-line bg-white/[0.02] p-3">
+          <div className="font-semibold text-cream">חינם</div>
+          <div className="mt-1 text-mute">{freeLikes} לייקים ביום · בחירה 1 ביום · צ׳אט</div>
+        </div>
+        <div className="rounded-2xl border border-gold/35 bg-gold/[0.06] p-3">
+          <div className="font-semibold text-gold-2">Premium</div>
+          <div className="mt-1 text-cream/80">ללא הגבלה · 3 בחירות · מי אהב/ה אותך</div>
+        </div>
+      </div>
+
+      <ul className="mt-6 space-y-2.5">
         {PERKS.map((perk) => (
           <li key={perk} className="flex items-center gap-3 text-sm">
             <span className="grid h-5 w-5 place-items-center rounded-full bg-gold/15 text-gold">
@@ -132,7 +153,13 @@ export function PlanPicker({ firstName, returning }: { firstName: string; return
         <button className="btn-gold w-full text-lg" onClick={start} disabled={busy}>
           {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "חידוש מנוי" : `התחלת ${TRIAL_DAYS} ימי ניסיון חינם`}
         </button>
-        <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-mute">
+        <button
+          onClick={() => router.replace("/discover")}
+          className={welcome ? "btn-ghost mt-2.5 w-full py-3 text-[14px]" : "mt-2 w-full py-2.5 text-center text-sm text-mute transition hover:text-cream"}
+        >
+          {welcome ? `להמשיך בחינם — ${freeLikes} לייקים ביום, בלי כרטיס אשראי` : "אולי אחר כך"}
+        </button>
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-mute-2">
           <Lock size={11} /> תשלום מאובטח · ביטול בלחיצה מהפרופיל
         </p>
       </div>

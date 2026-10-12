@@ -23,6 +23,7 @@ import { getSessionUserId } from "@/lib/session";
 import { getUser } from "@/lib/users";
 import { nextOnboardingStep } from "@/lib/onboarding";
 import { PLANS, TRIAL_DAYS } from "@/lib/content";
+import { FREE_DAILY_LIKES } from "@/lib/quota";
 
 const STEPS = [
   { Icon: UserRoundCheck, t: "נרשמים ומאמתים", d: "מספר טלפון, קוד SMS — ואתם בפנים. כל חבר/ה ב־MELA מאומת/ת." },
@@ -42,13 +43,14 @@ const FEATURES = [
 
 const PROMISES = [
   { Icon: EyeOff, t: "המספר שלך פרטי", d: "מספר הטלפון משמש רק לאימות. הוא לעולם לא מוצג לחברים אחרים." },
-  { Icon: Users, t: "רק אנשים רציניים", d: "מנוי בתשלום (אחרי 7 ימי ניסיון) מסנן את מי שבא רק ״להציץ״." },
+  { Icon: Users, t: "רק אנשים אמיתיים", d: "כל פרופיל מאומת בטלפון ועובר הרשמה מלאה עם תמונות ושאלות — בלי פרופילים ריקים." },
   { Icon: ShieldCheck, t: "שליטה מלאה", d: "ביטול מנוי בלחיצה מתוך הפרופיל, בלי טלפונים ובלי אותיות קטנות." },
 ];
 
 const FAQ = [
   { q: "למי מיועדת MELA?", a: "לצעירות וצעירים מהקהילה האתיופית־ישראלית — ולמי שהתרבות הזו קרובה ללבו — שמחפשים קשר רציני ומשמעותי, לא עוד אפליקציה של החלקות." },
-  { q: "כמה זה עולה?", a: `${TRIAL_DAYS} הימים הראשונים בחינם, ₪0 היום. אחר כך ₪49 לחודש, או ₪119 לשלושה חודשים (כ־₪40 לחודש). אפשר לבטל בכל רגע לפני סוף הניסיון ולא תחויבו.` },
+  { q: "זה באמת חינם?", a: `כן. ההרשמה והשימוש הבסיסי חינמיים לגמרי, בלי כרטיס אשראי: ${FREE_DAILY_LIKES} לייקים ביום, בחירה יומית אחת וצ׳אט מלא עם ההתאמות שלכם.` },
+  { q: "מה מקבלים ב־Premium ובכמה?", a: `לייקים ללא הגבלה, כל 3 הבחירות היומיות, ולראות מי כבר אהב/ה אתכם. ₪49 לחודש או ₪119 לשלושה חודשים (כ־₪40 לחודש), עם ${TRIAL_DAYS} ימי ניסיון חינם וביטול בכל עת.` },
   { q: "למה צריך מספר טלפון?", a: "כדי לוודא שכל פרופיל שייך לאדם אמיתי. המספר משמש רק לאימות ולהתראות — הוא לא מוצג לאף אחד." },
   { q: "איך עובדות ההתאמות?", a: "כשלשניכם יש לייק הדדי — נפתח צ׳אט ונשלחת התראה בוואטסאפ. ההמלצות היומיות מחושבות לפי תשובות ״זה או זה?״, עיר מגורים וגיל." },
   { q: "אפשר להשתמש מהמחשב?", a: "כן. MELA עובדת בכל דפדפן, ובטלפון אפשר להוסיף אותה למסך הבית ולהשתמש בה כמו באפליקציה." },
@@ -79,7 +81,7 @@ export default async function Landing() {
               כניסה
             </Link>
             <Link href="/signup" className="btn-gold hidden px-5 py-2.5 text-sm md:inline-flex">
-              הרשמה חינם
+              הצטרפות חינם
             </Link>
           </div>
         </div>
@@ -99,14 +101,14 @@ export default async function Landing() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
             <Link href="/signup" className="btn-gold px-8 text-[17px]">
-              מתחילים — {TRIAL_DAYS} ימים חינם
+              הצטרפות חינם
             </Link>
             <Link href="/login" className="btn-ghost px-8">
               כבר רשום/ה? כניסה
             </Link>
           </div>
           <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-mute md:justify-start">
-            {["₪0 היום", "ביטול בכל עת", "כל פרופיל מאומת"].map((t) => (
+            {["חינם לגמרי", "בלי כרטיס אשראי", "כל פרופיל מאומת"].map((t) => (
               <li key={t} className="flex items-center gap-1.5">
                 <Check size={14} className="text-gold" /> {t}
               </li>
@@ -237,13 +239,35 @@ export default async function Landing() {
       </section>
 
       {/* ---------- pricing ---------- */}
-      <section id="pricing" className="mx-auto max-w-4xl scroll-mt-20 px-5 py-20 md:px-8 md:py-28">
+      <section id="pricing" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 md:px-8 md:py-28">
         <Reveal className="text-center">
           <p className="eyebrow">מחירים פשוטים</p>
-          <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">{TRIAL_DAYS} ימים חינם. בלי התחייבות.</h2>
-          <p className="mx-auto mt-4 max-w-lg text-mute">₪0 היום. אפשר לבטל בכל רגע לפני סוף הניסיון — ולא תחויבו בכלום.</p>
+          <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">מתחילים בחינם. משדרגים כשמתאים.</h2>
+          <p className="mx-auto mt-4 max-w-lg text-mute">בלי כרטיס אשראי. כש־Premium מתאים לכם — {TRIAL_DAYS} ימי ניסיון חינם וביטול בכל עת.</p>
         </Reveal>
-        <div className="mt-12 grid gap-4 md:grid-cols-2">
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          <Reveal>
+            <div className="surface relative h-full rounded-[28px] p-7">
+              <h3 className="text-xl font-semibold">חינם</h3>
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="font-display text-5xl font-bold" dir="ltr">
+                  ₪0
+                </span>
+                <span className="text-mute">לתמיד</span>
+              </div>
+              <p className="mt-2 text-sm text-mute">בלי כרטיס אשראי</p>
+              <ul className="mt-6 space-y-2.5 text-[14.5px]">
+                {[`${FREE_DAILY_LIKES} לייקים ביום`, "בחירה אישית אחת ביום", "צ׳אט מלא עם ההתאמות", "התראת וואטסאפ על התאמה"].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5">
+                    <Check size={15} className="text-gold" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup" className="btn-ghost mt-8 w-full">
+                הצטרפות חינם
+              </Link>
+            </div>
+          </Reveal>
           {(["quarterly_119", "monthly_49"] as const).map((id, i) => {
             const p = PLANS[id];
             const featured = id === "quarterly_119";
@@ -264,14 +288,14 @@ export default async function Landing() {
                   </div>
                   <p className="mt-2 text-sm text-gold-2">{featured ? `≈ ₪${p.perMonth.toFixed(0)} לחודש · ${p.note}` : p.note}</p>
                   <ul className="mt-6 space-y-2.5 text-[14.5px]">
-                    {["לייקים ללא הגבלה", "3 בחירות אישיות ביום", "צ׳אט + פתיחים מהבית", "התראת וואטסאפ על התאמה"].map((f) => (
+                    {["לייקים ללא הגבלה", "כל 3 הבחירות היומיות", "לראות מי אהב/ה אותך", "צ׳אט + פתיחים מהבית"].map((f) => (
                       <li key={f} className="flex items-center gap-2.5">
                         <Check size={15} className="text-gold" /> {f}
                       </li>
                     ))}
                   </ul>
                   <Link href="/signup" className={`${featured ? "btn-gold" : "btn-ghost"} mt-8 w-full`}>
-                    מתחילים {TRIAL_DAYS} ימים חינם
+                    {TRIAL_DAYS} ימי Premium חינם
                   </Link>
                 </div>
               </Reveal>
@@ -300,7 +324,7 @@ export default async function Landing() {
             <h2 className="font-display mx-auto mt-5 max-w-2xl text-[2.2rem] leading-tight font-bold md:text-5xl">
               האדם הנכון אולי כבר <span className="gold-text">כאן.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-mute">שתי דקות להרשמה, {TRIAL_DAYS} ימים חינם, וקהילה שמחכה להכיר אתכם.</p>
+            <p className="mx-auto mt-4 max-w-md text-mute">שתי דקות להרשמה, חינם ובלי כרטיס אשראי, וקהילה שמחכה להכיר אתכם.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/signup" className="btn-gold px-10 text-[17px]">
                 הצטרפו ל־MELA
@@ -338,7 +362,7 @@ export default async function Landing() {
       {/* mobile sticky CTA */}
       <div className="fixed inset-x-0 bottom-0 z-30 bg-gradient-to-t from-ink via-ink/95 to-transparent px-5 pt-8 safe-bottom md:hidden">
         <Link href="/signup" className="btn-gold w-full text-[17px]">
-          מתחילים — {TRIAL_DAYS} ימים חינם
+          הצטרפות חינם
         </Link>
       </div>
     </div>

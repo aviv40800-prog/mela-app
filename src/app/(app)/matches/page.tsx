@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Crown, Heart } from "lucide-react";
+import { isPremium } from "@/lib/quota";
+import { LikesYou } from "@/components/LikesYou";
 import { requirePageUser } from "@/lib/guard";
 import { likesReceived, listMatches } from "@/lib/matching";
 import { Photo } from "@/components/Photo";
@@ -18,6 +20,8 @@ function timeLabel(iso: string) {
 export default async function MatchesPage() {
   const me = await requirePageUser("member");
   const matches = listMatches(me.id);
+  const premium = isPremium(me.id);
+  // Free members only learn how many people liked them; identities are a Premium feature.
   const likes = likesReceived(me.id);
   const fresh = matches.filter((m) => !m.lastMessage);
   const convos = matches.filter((m) => m.lastMessage);
@@ -33,20 +37,26 @@ export default async function MatchesPage() {
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold-2">
             <Heart size={14} className="fill-current" /> אהבו אותך ({likes.length})
           </h2>
-          <div className="animate-rise relative overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
-            <p className="text-[14.5px] text-cream/85">הם כבר מחכים לך בגילוי — לייק בחזרה ויש התאמה.</p>
-            <div className="mt-4 flex -space-x-3 space-x-reverse">
-              {likes.slice(0, 5).map((l) => (
-                <div key={l.id} className="h-12 w-12 overflow-hidden rounded-full ring-2 ring-ink-3">
-                  <Photo src={l.photos[0]} name={l.full_name} className="h-full w-full blur-[3px]" rounded="rounded-full" />
-                </div>
-              ))}
+          {premium ? (
+            <LikesYou likes={likes.map((l) => ({ id: l.id, name: l.full_name, age: l.age, location: l.location, photo: l.photos[0] ?? null, comment: l.comment }))} />
+          ) : (
+            <div className="animate-rise relative overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
+              <p className="text-[14.5px] text-cream/85">
+                {likes.length === 1 ? "מישהו/י כבר אהב/ה אותך." : `${likes.length} אנשים כבר אהבו אותך.`} עם Premium רואים מי — ומחזירים לייק בלחיצה.
+              </p>
+              <div className="mt-4 flex -space-x-3 space-x-reverse">
+                {likes.slice(0, 5).map((l) => (
+                  <div key={l.id} className="h-12 w-12 overflow-hidden rounded-full ring-2 ring-ink-3">
+                    <Photo src={undefined} name="♥" className="h-full w-full scale-110 blur-[2px]" rounded="rounded-full" />
+                  </div>
+                ))}
+              </div>
+              <Link href="/onboarding/plan" className="btn-gold mt-4 w-full py-3 text-sm">
+                <Crown size={15} /> לראות מי אהב/ה אותי
+              </Link>
             </div>
-            <Link href="/discover" className="btn-gold mt-4 w-full py-3 text-sm">
-              לגלות מי
-            </Link>
-          </div>
+          )}
         </section>
       )}
 

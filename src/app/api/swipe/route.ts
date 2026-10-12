@@ -2,6 +2,7 @@ import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
 import { swipe } from "@/lib/matching";
 import { getUser, toPublic } from "@/lib/users";
+import { getQuota, recordLike } from "@/lib/quota";
 
 const Body = z.object({
   targetId: z.number().int().positive(),
@@ -12,11 +13,17 @@ const Body = z.object({
 });
 
 export const POST = handle(async (req: Request) => {
-  const user = await requireUser({ requireSubscription: true });
+  const user = await requireUser({ requireProfile: true });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error("בקשה לא תקינה");
   const { targetId, action, comment } = parsed.data;
   if (targetId === user.id || !getUser(targetId)) return error("פרופיל לא נמצא", 404);
+  // Free tier: a fixed number of likes per Israel calendar day. Passes are never limited.
+  if (action === "like") {
+    const quota = getQuota(user.id);
+    if (quota.left === 0) return error("נגמרו הלייקים להיום", 429, { code: "like_limit", quota });
+  }
   const result = swipe(user.id, targetId, action, comment);
-  return json({ ...result, other: result.isNewMatch ? toPublic(getUser(targetId)!) : undefined });
+  if (action === "like" && result.recorded && !getQuota(user.id).premium) recordLike(user.id);
+  return json({ ...result, quota: getQuota(user.id), other: result.isNewMatch ? toPublic(getUser(targetId)!) : undefined });
 });

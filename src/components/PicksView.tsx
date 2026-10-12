@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Heart, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Crown, Heart, Sparkles, X } from "lucide-react";
+import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
 import { Photo } from "./Photo";
 import { ProfileCard } from "./ProfileCard";
 import { CommentSheet } from "./CommentSheet";
 import { MatchModal, type MiniProfile } from "./MatchModal";
 import { Skeleton } from "./ui/Skeleton";
-import { api, haptic } from "@/lib/client";
+import { ApiError, api, haptic } from "@/lib/client";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
 function untilMidnight() {
@@ -24,10 +26,15 @@ export function PicksView({ me }: { me: MiniProfile }) {
   const [sheet, setSheet] = useState<Prompt | null>(null);
   const [match, setMatch] = useState<{ other: PublicProfile; matchId: number } | null>(null);
   const [clock, setClock] = useState("");
+  const [quota, setQuota] = useState<Quota | null>(null);
+  const [paywall, setPaywall] = useState(false);
 
   useEffect(() => {
-    api<{ picks: Candidate[] }>("/api/daily-picks")
-      .then((d) => setPicks(d.picks))
+    api<{ picks: Candidate[]; quota: Quota }>("/api/daily-picks")
+      .then((d) => {
+        setPicks(d.picks);
+        setQuota(d.quota);
+      })
       .catch(() => setPicks([]));
     setClock(untilMidnight());
     const t = setInterval(() => setClock(untilMidnight()), 30_000);
@@ -35,15 +42,29 @@ export function PicksView({ me }: { me: MiniProfile }) {
   }, []);
 
   async function decide(c: Candidate, action: "like" | "pass", comment?: { text: string; promptKey?: string }) {
+    if (action === "like" && quota?.left === 0) {
+      setSheet(null);
+      setPaywall(true);
+      return;
+    }
     haptic(action === "like" ? [12, 30, 18] : 8);
     setDone((d) => ({ ...d, [c.id]: action }));
     setOpen(null);
     setSheet(null);
-    const res = await api<{ isNewMatch: boolean; matchId: number; other?: PublicProfile }>("/api/swipe", {
-      method: "POST",
-      json: { targetId: c.id, action, comment },
-    }).catch(() => null);
-    if (res?.isNewMatch && res.other) setMatch({ other: res.other, matchId: res.matchId });
+    try {
+      const res = await api<{ isNewMatch: boolean; matchId: number; other?: PublicProfile; quota: Quota }>("/api/swipe", {
+        method: "POST",
+        json: { targetId: c.id, action, comment },
+      });
+      setQuota(res.quota);
+      if (res.isNewMatch && res.other) setMatch({ other: res.other, matchId: res.matchId });
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "like_limit") {
+        setDone(({ [c.id]: _, ...rest }) => rest);
+        setQuota((q) => (q ? { ...q, left: 0 } : q));
+        setPaywall(true);
+      }
+    }
   }
 
   return (
@@ -78,7 +99,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: i * 0.08, type: "spring", stiffness: 300, damping: 28 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => !done[c.id] && setOpen(c)}
+              onClick={() => !done[c.id] && !c.locked && setOpen(c)}
               className="relative aspect-[3/4] w-[72%] shrink-0 snap-center overflow-hidden rounded-[30px] text-right shadow-[var(--shadow-float)] ring-1 ring-white/5"
             >
               <Photo src={c.photos[0]} name={c.full_name} className="h-full w-full" rounded="rounded-[30px]" />
@@ -94,6 +115,22 @@ export function PicksView({ me }: { me: MiniProfile }) {
                   {c.occupation} · {c.location}
                 </div>
               </div>
+              {c.locked && (
+                <Link
+                  href="/onboarding/plan"
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute inset-0 grid place-items-center bg-ink/55 backdrop-blur-xl"
+                  aria-label="פתיחת הבחירה עם Premium"
+                >
+                  <span className="flex flex-col items-center gap-2 px-6 text-center">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_30px_rgba(212,175,55,0.55)]">
+                      <Crown size={24} />
+                    </span>
+                    <span className="text-[15px] font-semibold">עוד בחירה מחכה לך</span>
+                    <span className="text-[12px] text-cream/75">פתחו את כל 3 הבחירות עם Premium</span>
+                  </span>
+                </Link>
+              )}
               <AnimatePresence>
                 {done[c.id] && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 grid place-items-center bg-ink/70 backdrop-blur-sm">
@@ -153,6 +190,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
         )}
       </AnimatePresence>
       <AnimatePresence>{match && <MatchModal me={me} {...match} onClose={() => setMatch(null)} />}</AnimatePresence>
+      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onClose={() => setPaywall(false)} />}</AnimatePresence>
     </section>
   );
 }

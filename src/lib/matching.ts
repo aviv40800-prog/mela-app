@@ -82,7 +82,8 @@ export function dailyPicks(me: User): Candidate[] {
   return ids.map((id) => toCandidate(me.id, id));
 }
 
-export type SwipeResult = { status: MatchStatus; matchId: number; isNewMatch: boolean };
+/** `recorded` is false when this swipe changed nothing (the member had already swiped on this person). */
+export type SwipeResult = { status: MatchStatus; matchId: number; isNewMatch: boolean; recorded: boolean };
 
 export function swipe(
   meId: number,
@@ -98,10 +99,10 @@ export function swipe(
   const result = tx((): SwipeResult => {
     const theirs = db.prepare("SELECT * FROM matches WHERE user_1_id = ? AND user_2_id = ?").get(targetId, meId) as MatchRow | undefined;
     const mine = db.prepare("SELECT * FROM matches WHERE user_1_id = ? AND user_2_id = ?").get(meId, targetId) as MatchRow | undefined;
-    if (mine) return { status: mine.status, matchId: mine.id, isNewMatch: false };
+    if (mine) return { status: mine.status, matchId: mine.id, isNewMatch: false, recorded: false };
 
     if (theirs) {
-      if (theirs.status === "matched") return { status: "matched", matchId: theirs.id, isNewMatch: false };
+      if (theirs.status === "matched") return { status: "matched", matchId: theirs.id, isNewMatch: false, recorded: false };
       if (theirs.status === "pending") {
         const status: MatchStatus = action === "like" ? "matched" : "rejected";
         db.prepare("UPDATE matches SET status = ?, matched_at = CASE WHEN ? = 'matched' THEN datetime('now') END WHERE id = ?").run(
@@ -110,7 +111,7 @@ export function swipe(
           theirs.id,
         );
         if (comment && action === "like") insertMessage(theirs.id, meId, formatComment(comment));
-        return { status, matchId: theirs.id, isNewMatch: status === "matched" };
+        return { status, matchId: theirs.id, isNewMatch: status === "matched", recorded: true };
       }
       // They already passed: record my swipe as rejected so the card doesn't come back.
     }
@@ -119,7 +120,7 @@ export function swipe(
     const { lastInsertRowid } = db.prepare("INSERT INTO matches (user_1_id, user_2_id, status) VALUES (?, ?, ?)").run(meId, targetId, status);
     const matchId = Number(lastInsertRowid);
     if (comment && status === "pending") insertMessage(matchId, meId, formatComment(comment));
-    return { status, matchId, isNewMatch: false };
+    return { status, matchId, isNewMatch: false, recorded: true };
   });
 
   if (result.isNewMatch) {

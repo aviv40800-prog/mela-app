@@ -225,3 +225,33 @@ describe("demo seed", () => {
     delete process.env.MELA_SEED_PHOTOS_DIR;
   });
 });
+
+describe("freemium", () => {
+  it("lets a complete profile in without a subscription", async () => {
+    const { nextOnboardingStep } = await import("@/lib/onboarding");
+    const u = member("חינמי", "male");
+    expect(getSubscription(u.id)).toBeNull();
+    expect(nextOnboardingStep(u)).toBe("/discover");
+  });
+
+  it("caps free likes per day; premium is unlimited", async () => {
+    const { getQuota, recordLike, FREE_DAILY_LIKES } = await import("@/lib/quota");
+    const free = member("חינמי", "male");
+    expect(getQuota(free.id)).toMatchObject({ premium: false, limit: FREE_DAILY_LIKES, used: 0, left: FREE_DAILY_LIKES });
+    for (let i = 0; i < FREE_DAILY_LIKES; i++) recordLike(free.id);
+    expect(getQuota(free.id).left).toBe(0);
+    expect(new Date(getQuota(free.id).resetsAt).getTime()).toBeGreaterThan(Date.now());
+
+    const paid = member("פרימיום", "female");
+    startTrial(paid.id, "monthly_49");
+    expect(getQuota(paid.id)).toMatchObject({ premium: true, left: null });
+  });
+
+  it("reports whether a swipe was actually recorded (repeat likes don't spend quota)", () => {
+    const a = member("אבי", "male");
+    const b = member("ביתי", "female");
+    expect(swipe(a.id, b.id, "like").recorded).toBe(true);
+    expect(swipe(a.id, b.id, "like").recorded).toBe(false);
+    expect(swipe(b.id, a.id, "like")).toMatchObject({ recorded: true, isNewMatch: true });
+  });
+});

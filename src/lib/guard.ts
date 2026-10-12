@@ -5,7 +5,7 @@ import { getUser, touchLastSeen, type User } from "./users";
 import { nextOnboardingStep } from "./onboarding";
 import { isAdmin } from "./admin";
 
-/** For server pages: ensures a session and that the member has reached at least `stage`. */
+/** For server pages: ensures a session and that the member has reached at least `stage` ("profile" and "member" both mean onboarding is done). */
 export async function requirePageUser(stage: "verified" | "profile" | "member"): Promise<User> {
   const id = await getSessionUserId();
   const user = id ? getUser(id) : null;
@@ -15,7 +15,6 @@ export async function requirePageUser(stage: "verified" | "profile" | "member"):
   if (stage === "verified") return user;
   const next = nextOnboardingStep(user);
   if (next === "/onboarding/profile") redirect(next);
-  if (stage === "member" && next === "/onboarding/plan") redirect(next);
   return user;
 }
 

@@ -120,7 +120,8 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
         },
       });
       haptic([10, 30, 10]);
-      router.replace(editing ? "/profile" : res.next);
+      // First-time onboarding offers the plans once (free is one of the options); edits go back to the profile.
+      router.replace(editing ? "/profile" : res.next === "/discover" ? "/onboarding/plan?welcome=1" : res.next);
       router.refresh();
     } catch (e) {
       setServerErr((e as Error).message);
