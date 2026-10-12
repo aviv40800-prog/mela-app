@@ -10,7 +10,7 @@ import { sendMessage, listMessages } from "@/lib/chat";
 
 let phoneSeq = 1000000;
 function member(name: string, gender: Gender, seeking: Gender | "everyone" = gender === "male" ? "female" : "male") {
-  const u = createVerifiedUser(`+972501${phoneSeq++}`);
+  const u = createVerifiedUser(`+97250${phoneSeq++}`);
   updateProfile(u.id, {
     full_name: name,
     age: 28,
@@ -164,5 +164,64 @@ describe("profile email", () => {
     const base = { full_name: "בני", age: 30, gender: "male" as const, seeking: "female" as const, location: "חיפה", occupation: "x", bio: "ביו ארוכה מספיק כאן", photos: ["/api/photos/a.jpg"], prompts: [] };
     updateProfile(a.id, { ...base, email: "same@mela.app" });
     expect(() => updateProfile(b.id, { ...base, email: "same@mela.app" })).toThrow(/UNIQUE constraint failed: users.email/);
+  });
+});
+
+describe("admin & moderation", () => {
+  it("hides banned members from discovery", async () => {
+    const me = member("אני", "female", "male");
+    const a = member("גבר א", "male");
+    const b = member("גבר ב", "male");
+    db.prepare("UPDATE users SET is_banned = 1 WHERE id = ?").run(b.id);
+    const ids = discoveryDeck(me).map((c) => c.id);
+    expect(ids).toContain(a.id);
+    expect(ids).not.toContain(b.id);
+  });
+
+  it("recognises admins from MELA_ADMIN_PHONES in any Israeli format", async () => {
+    const { isAdmin } = await import("@/lib/admin");
+    const u = member("מנהלת", "female");
+    process.env.MELA_ADMIN_PHONES = `052-111-2222, 0${u.phone_number.slice(4, 6)}-${u.phone_number.slice(6)}`; // e.g. "050-1000005"
+    expect(isAdmin(getUser(u.id))).toBe(true);
+    process.env.MELA_ADMIN_PHONES = "052-111-2222";
+    expect(isAdmin(getUser(u.id))).toBe(false);
+    delete process.env.MELA_ADMIN_PHONES;
+  });
+
+  it("lists, searches and filters members", async () => {
+    const { listUsers, overview } = await import("@/lib/admin-data");
+    const a = member("תגסט אלמו", "female");
+    member("דוד אברה", "male");
+    startTrial(a.id, "monthly_49");
+    expect(listUsers({ q: "תגסט" }).rows.map((r) => r.id)).toEqual([a.id]);
+    expect(listUsers({ q: a.phone_number.slice(-7) }).total).toBe(1);
+    expect(listUsers({ filter: "trialing" }).rows.map((r) => r.id)).toEqual([a.id]);
+    expect(overview()).toMatchObject({ users: 2, trialing: 1, active: 0 });
+  });
+});
+
+describe("demo seed", () => {
+  it("is idempotent, adds missing members and assigns seed photos", async () => {
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mela-seed-"));
+    fs.mkdirSync(path.join(dir, "female"));
+    fs.writeFileSync(path.join(dir, "female", "תמונה-1.jpg"), "x");
+    fs.writeFileSync(path.join(dir, "female", "תמונה-2.jpg"), "x");
+    process.env.MELA_SEED_PHOTOS_DIR = dir;
+    process.env.MELA_DATA_DIR = path.join(dir, "data");
+    const { seedDemoData } = await import("@/lib/seed");
+    seedDemoData(db as never);
+    const n = (db.prepare("SELECT COUNT(*) AS n FROM users WHERE is_demo = 1").get() as { n: number }).n;
+    expect(n).toBeGreaterThanOrEqual(40);
+    seedDemoData(db as never);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM users WHERE is_demo = 1").get() as { n: number }).n).toBe(n);
+    const withPhotos = db.prepare("SELECT photos FROM users WHERE is_demo = 1 AND gender = 'female' AND photos <> '[]'").all() as { photos: string }[];
+    expect(withPhotos.length).toBeGreaterThan(0);
+    const names = new Set(withPhotos.flatMap((r) => JSON.parse(r.photos) as string[]));
+    expect([...names].every((p) => /^\/api\/photos\/[\w-]+\.jpg$/.test(p))).toBe(true);
+    expect(names.size).toBe(2); // two distinct files despite Hebrew-only names
+    delete process.env.MELA_SEED_PHOTOS_DIR;
   });
 });

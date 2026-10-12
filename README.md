@@ -39,6 +39,17 @@ npm run db:reset       # delete the local DB (it re-seeds on next start)
 - **Auth**: phone + 6-digit OTP (hashed, 5-minute TTL, 5 attempts, 30-second resend throttle), then an HTTP-only signed JWT cookie (`jose`)
 - **Real-time**: Server-Sent Events (`/api/stream`) on an in-process event bus. It carries messages, read receipts, typing and new matches
 
+## Accounts, admin and demo data
+
+- **Signup** `/signup` and **login** `/login` both use phone + SMS code; sessions last 30 days. The server never reveals
+  whether a number is registered (privacy): logging in with an unknown number opens a new account after verification.
+- **Admin dashboard** `/admin`: set `MELA_ADMIN_PHONES` to your phone(s). It shows KPIs, a signups chart, subscriptions,
+  latest matches and WhatsApp deliveries, plus a searchable member list. Per member you can verify, suspend, extend a
+  trial, grant a month, manage photos, or delete.
+- **Demo community**: 41 sample members (labelled "פרופיל לדוגמה" in the app). Put photos you have rights to in
+  `seed-photos/female` and `seed-photos/male` and they're assigned on the next start, or upload per member from
+  `/admin/users/<id>`. For a real launch set `MELA_SKIP_SEED=1` and `MELA_DEMO_MODE=off`.
+
 ## Data model
 
 | Table | Fields |

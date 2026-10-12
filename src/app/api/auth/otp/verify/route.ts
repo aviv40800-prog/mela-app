@@ -18,7 +18,9 @@ export const POST = handle(async (req: Request) => {
   const result = verifyOtp(phone, parsed.data.code);
   if (result !== "ok") return error(MESSAGES[result], result === "locked" ? 429 : 400);
 
-  const user = getUserByPhone(phone) ?? createVerifiedUser(phone);
+  const existing = getUserByPhone(phone);
+  if (existing?.is_banned) return error("החשבון הושעה. לפרטים: support@mela.app", 403);
+  const user = existing ?? createVerifiedUser(phone);
   await createSession(user.id);
-  return json({ ok: true, next: nextOnboardingStep(user) });
+  return json({ ok: true, isNew: !existing, next: nextOnboardingStep(user) });
 });

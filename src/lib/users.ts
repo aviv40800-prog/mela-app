@@ -18,6 +18,8 @@ export type User = {
   photos: string[];
   is_verified: boolean;
   is_demo: boolean;
+  is_banned: boolean;
+  last_seen_at: string | null;
   created_at: string;
 };
 
@@ -33,13 +35,15 @@ export type PublicProfile = {
   bio: string | null;
   photos: string[];
   is_verified: boolean;
+  /** Seeded sample profile (shown with a "sample profile" label). */
+  is_demo: boolean;
   prompts: Prompt[];
 };
 
-type Row = Omit<User, "photos" | "is_verified" | "is_demo"> & { photos: string; is_verified: number; is_demo: number };
+type Row = Omit<User, "photos" | "is_verified" | "is_demo" | "is_banned"> & { photos: string; is_verified: number; is_demo: number; is_banned: number };
 
 function hydrate(row: Row): User {
-  return { ...row, photos: JSON.parse(row.photos), is_verified: !!row.is_verified, is_demo: !!row.is_demo };
+  return { ...row, photos: JSON.parse(row.photos), is_verified: !!row.is_verified, is_demo: !!row.is_demo, is_banned: !!row.is_banned };
 }
 
 export function getUser(id: number): User | null {
@@ -73,6 +77,7 @@ export function toPublic(user: User): PublicProfile {
     bio: user.bio,
     photos: user.photos,
     is_verified: user.is_verified,
+    is_demo: user.is_demo,
     prompts: getPrompts(user.id),
   };
 }
@@ -109,4 +114,8 @@ export function updateProfile(userId: number, p: ProfileInput) {
 
 export function isProfileComplete(u: User): boolean {
   return !!(u.full_name && u.age && u.gender && u.location && u.occupation && u.bio && u.photos.length > 0 && getPrompts(u.id).length >= 2);
+}
+
+export function touchLastSeen(userId: number) {
+  db.prepare("UPDATE users SET last_seen_at = datetime('now') WHERE id = ? AND (last_seen_at IS NULL OR last_seen_at < datetime('now', '-5 minutes'))").run(userId);
 }

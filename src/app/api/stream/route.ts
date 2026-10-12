@@ -1,12 +1,13 @@
 import { getSessionUserId } from "@/lib/session";
 import { subscribe } from "@/lib/events";
+import { getUser } from "@/lib/users";
 
 export const dynamic = "force-dynamic";
 
 /** Server-Sent Events: pushes new messages, read receipts, typing and new matches to the signed-in member. */
 export async function GET(req: Request) {
   const userId = await getSessionUserId();
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  if (!userId || getUser(userId)?.is_banned !== false) return new Response("Unauthorized", { status: 401 });
 
   const encoder = new TextEncoder();
   let cleanup = () => {};

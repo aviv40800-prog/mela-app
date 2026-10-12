@@ -9,6 +9,7 @@ export type PublicProfile = {
   bio: string | null;
   photos: string[];
   is_verified: boolean;
+  is_demo: boolean;
   prompts: Prompt[];
 };
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean };

@@ -10,6 +10,7 @@ Without a volume, every redeploy wipes all accounts.
 |---|---|---|
 | `SESSION_SECRET` | a long random string (32+ chars) | **Required.** Generate one with `openssl rand -hex 32` |
 | `MELA_DATA_DIR` | `/data` | Already set in the image; must match the volume mount path |
+| `MELA_ADMIN_PHONES` | e.g. `050-123-4567` | Phones (comma-separated) that may open the admin dashboard at `/admin`. Admins sign in with the normal phone code |
 | `MELA_SHOW_OTP` | `1` | **Demo deploys only.** Shows the login code on screen, so anyone can sign in as any number. Remove it once real SMS works |
 | `SMS_PROVIDER` | `console` (demo) or `twilio` | With `twilio`, also set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM_NUMBER` |
 | `MELA_DEMO_MODE` / `MELA_SKIP_SEED` | `off` / `1` | Set these for a real launch to remove the demo members, their likes and their auto-replies |

@@ -24,15 +24,18 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
         <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/55 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black via-black/70 to-transparent" />
 
-        <div className="absolute top-4 right-4 left-4 flex items-start justify-between gap-2">
+        <div className="absolute top-4 right-4 left-4 flex flex-wrap items-start gap-2">
           <span className="flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-3 py-1.5 text-[12px] font-semibold text-gold-2 backdrop-blur-md">
             <Sparkles size={12} /> <span className="tabular">{c.compatibility}%</span> התאמה
           </span>
+          {c.is_demo && (
+            <span className="rounded-full border border-white/15 bg-black/40 px-2.5 py-1.5 text-[11px] text-cream/75 backdrop-blur-md">פרופיל לדוגמה</span>
+          )}
           {c.likedYou && (
             <motion.span
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1.5 text-[12px] font-bold text-ink shadow-[0_6px_20px_-6px_rgba(212,175,55,0.8)]"
+              className="ms-auto flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1.5 text-[12px] font-bold text-ink shadow-[0_6px_20px_-6px_rgba(212,175,55,0.8)]"
             >
               <Heart size={11} className="fill-current" /> אהב/ה אותך
             </motion.span>

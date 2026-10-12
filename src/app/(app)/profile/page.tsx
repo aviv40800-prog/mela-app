@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { BadgeCheck, Camera, ChevronLeft, Feather, MapPin, MessageSquareQuote, Phone, UserRound } from "lucide-react";
+import { BadgeCheck, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, UserRound } from "lucide-react";
 import { requirePageUser } from "@/lib/guard";
+import { isAdmin } from "@/lib/admin";
 import { getSubscription } from "@/lib/billing";
 import { toPublic } from "@/lib/users";
 import { PLANS, promptQuestion } from "@/lib/content";
@@ -156,6 +157,12 @@ export default async function ProfilePage() {
             </div>
             <BadgeCheck size={18} className="text-gold-2" />
           </div>
+          {isAdmin(user) && (
+            <>
+              <Divider />
+              <Row href="/admin" icon={<LayoutDashboard size={18} />} title="לוח ניהול" subtitle="משתמשים, מנויים והתאמות" />
+            </>
+          )}
           <Divider />
           <LogoutRow />
         </div>

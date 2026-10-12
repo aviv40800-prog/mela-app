@@ -20,6 +20,8 @@ ENV NODE_ENV=production \
     MELA_DATA_DIR=/data
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+# Optional demo-profile photos (see seed-photos/README.md)
+COPY --from=build /app/seed-photos ./seed-photos
 RUN mkdir -p /data
 VOLUME ["/data"]
 EXPOSE 3000

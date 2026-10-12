@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .get(user.id, user.id, user.id) as { n: number };
   return (
     <RealtimeShell meId={user.id} initialUnread={n}>
-      <div className="pb-28">{children}</div>
+      <div className="mx-auto min-h-dvh w-full max-w-md pb-28">{children}</div>
     </RealtimeShell>
   );
 }

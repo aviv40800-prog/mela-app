@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl">
       <body className="font-sans">
         <MotionProvider>
-          <div className="mx-auto min-h-dvh w-full max-w-md">{children}</div>
+          {children}
         </MotionProvider>
       </body>
     </html>

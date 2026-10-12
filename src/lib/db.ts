@@ -105,8 +105,16 @@ function open(): DatabaseSync {
   plainRows(db);
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA);
+  migrate(db);
   if (!process.env.MELA_SKIP_SEED) seedDemoData(db);
   return db;
+}
+
+/** Additive, idempotent migrations for databases created by older versions. */
+function migrate(db: DatabaseSync) {
+  const cols = new Set((db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name));
+  if (!cols.has("is_banned")) db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0");
+  if (!cols.has("last_seen_at")) db.exec("ALTER TABLE users ADD COLUMN last_seen_at TEXT");
 }
 
 /**
