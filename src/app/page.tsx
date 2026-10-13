@@ -161,7 +161,7 @@ export default async function Landing() {
 
       {/* ---------- story ---------- */}
       <section id="story" className="relative scroll-mt-20 overflow-hidden px-5 py-24 md:px-8 md:py-32">
-        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[420px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(180,87,58,0.10),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[420px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(184,137,43,0.10),transparent_70%)]" />
         <div className="relative mx-auto max-w-[40rem] text-center">
           <Reveal>
             <p className="eyebrow">הסיפור שלנו</p>
@@ -216,7 +216,7 @@ export default async function Landing() {
           <Reveal className="mt-14">
             <p className="font-display mx-auto max-w-lg text-[1.75rem] leading-snug text-gold-2 md:text-[2.2rem]">זה הזמן להפסיק להתפשר על מי שלא מבינה את מי שאתה.</p>
             <Link href="/signup" data-cta className="btn-gold mt-9 w-full px-12 text-[17px] sm:w-auto">
-              מתחילים – 7 ימים חינם
+              הצטרפות חינם
             </Link>
           </Reveal>
         </div>
@@ -298,7 +298,7 @@ export default async function Landing() {
         <Reveal className="text-center">
           <p className="eyebrow">מחירים פשוטים</p>
           <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">מתחילים בחינם. משדרגים כשמתאים.</h2>
-          <p className="mx-auto mt-4 max-w-lg text-mute">בלי כרטיס אשראי. כש־Premium מתאים לכם — {TRIAL_DAYS} ימי ניסיון חינם וביטול בכל עת.</p>
+          <p className="mx-auto mt-4 max-w-lg text-mute">נרשמים בחינם ובלי כרטיס אשראי. רוצים יותר? משדרגים ל־Premium מתוך האפליקציה, מתי שמתאים לכם.</p>
         </Reveal>
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           <Reveal>
@@ -318,7 +318,7 @@ export default async function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" className="btn-ghost mt-8 w-full">
+              <Link href="/signup" className="btn-gold mt-8 w-full">
                 הצטרפות חינם
               </Link>
             </div>
@@ -330,7 +330,7 @@ export default async function Landing() {
               <Reveal key={id} delay={i * 0.08}>
                 <div className={`relative h-full rounded-[28px] p-7 ${featured ? "glow bg-gradient-to-b from-gold/[0.12] to-gold/[0.02]" : "surface"}`}>
                   {featured && (
-                    <span className="absolute -top-3.5 right-7 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[12px] font-bold text-ink shadow-lg">
+                    <span className="absolute -top-3.5 right-7 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[12px] font-bold text-[#2a1c12] shadow-lg">
                       <Crown size={12} /> מומלץ למציאת אהבה
                     </span>
                   )}
@@ -349,9 +349,7 @@ export default async function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <Link href="/signup" className={`${featured ? "btn-gold" : "btn-ghost"} mt-8 w-full`}>
-                    {TRIAL_DAYS} ימי Premium חינם
-                  </Link>
+                  <p className="mt-8 rounded-2xl border border-line-2 px-4 py-3 text-center text-[13px] text-mute">שדרוג מתוך האפליקציה, בכל רגע</p>
                 </div>
               </Reveal>
             );

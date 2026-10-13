@@ -36,7 +36,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
             <motion.span
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="ms-auto flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1.5 text-[12px] font-bold text-ink shadow-[0_6px_20px_-6px_rgba(180,87,58,0.8)]"
+              className="ms-auto flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1.5 text-[12px] font-bold text-[#2a1c12] shadow-[0_6px_20px_-6px_rgba(184,137,43,0.8)]"
             >
               <Heart size={11} className="fill-current" /> אהב/ה אותך
             </motion.span>
@@ -108,7 +108,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
                   whileTap={{ scale: 0.85 }}
                   whileHover={{ scale: 1.06 }}
                   onClick={() => onPromptLike(p)}
-                  className="absolute -bottom-5 left-5 grid h-12 w-12 place-items-center rounded-full border border-gold/40 bg-ink-2 text-gold-2 shadow-[0_10px_26px_-8px_rgba(90,52,26,0.27),0_0_20px_-6px_rgba(180,87,58,0.5)]"
+                  className="absolute -bottom-5 left-5 grid h-12 w-12 place-items-center rounded-full border border-gold/40 bg-ink-2 text-gold-2 shadow-[0_10px_26px_-8px_rgba(90,52,26,0.27),0_0_20px_-6px_rgba(184,137,43,0.5)]"
                   aria-label="תגובה ולייק על התשובה"
                 >
                   <span className="relative">

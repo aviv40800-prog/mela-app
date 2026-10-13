@@ -25,7 +25,7 @@ export function MatchModal({ me, other, matchId, onClose }: { me: MiniProfile; o
       aria-label="יש התאמה"
     >
       <motion.div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_38%_at_50%_42%,rgba(180,87,58,0.32),transparent)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_38%_at_50%_42%,rgba(184,137,43,0.32),transparent)]"
         animate={{ opacity: [0.6, 1, 0.6] }}
         transition={{ duration: 3, repeat: Infinity }}
       />
@@ -73,7 +73,7 @@ export function MatchModal({ me, other, matchId, onClose }: { me: MiniProfile; o
             initial={{ scale: 0 }}
             animate={{ scale: [0, 1.3, 1] }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="absolute top-1/2 left-1/2 z-10 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-2xl text-ink shadow-[0_0_40px_rgba(180,87,58,0.7)]"
+            className="absolute top-1/2 left-1/2 z-10 grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-2xl text-[#2a1c12] shadow-[0_0_40px_rgba(184,137,43,0.7)]"
           >
             ♥
           </motion.div>

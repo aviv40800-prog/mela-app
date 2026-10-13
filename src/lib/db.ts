@@ -151,6 +151,10 @@ function migrate(db: DatabaseSync) {
   if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");
   if (!subCols.has("payment_last4")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_last4 TEXT");
   if (!subCols.has("payment_exp")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_exp TEXT");
+  // Share-for-likes: invites shared today and the bonus likes they unlocked.
+  const usageCols = new Set((db.prepare("PRAGMA table_info(daily_usage)").all() as { name: string }[]).map((c) => c.name));
+  if (!usageCols.has("shares")) db.exec("ALTER TABLE daily_usage ADD COLUMN shares INTEGER NOT NULL DEFAULT 0");
+  if (!usageCols.has("bonus")) db.exec("ALTER TABLE daily_usage ADD COLUMN bonus INTEGER NOT NULL DEFAULT 0");
 }
 
 /**

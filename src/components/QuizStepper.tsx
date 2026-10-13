@@ -111,7 +111,7 @@ export function QuizStepper({
                     animate={isPicked ? { scale: 1.04 } : picked ? { scale: 0.96, opacity: 0.4 } : { scale: 1, opacity: 1 }}
                     onClick={() => choose(side)}
                     className={`relative flex min-h-44 flex-col items-center justify-center rounded-[26px] p-4 text-center text-[18px] font-semibold transition-colors ${
-                      isPicked || was ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(180,87,58,0.6)]" : "surface"
+                      isPicked || was ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(184,137,43,0.6)]" : "surface"
                     }`}
                   >
                     {q[side]}

@@ -83,7 +83,7 @@ export default async function ProfilePage() {
         <SectionTitle>המנוי שלי</SectionTitle>
         {premium && sub && plan && status ? (
           <>
-        <div className="on-dark relative overflow-hidden rounded-[26px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(180,87,58,0.45),var(--shadow-float)]">
+        <div className="on-dark relative overflow-hidden rounded-[26px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(184,137,43,0.45),var(--shadow-float)]">
           <div className="leather absolute inset-0" />
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-gold-3/70 to-transparent" />
           <div className="tilet absolute inset-x-6 bottom-3 opacity-40" />
@@ -279,11 +279,11 @@ function StrengthRing({ value, children }: { value: number; children: React.Reac
   const c = 2 * Math.PI * r;
   return (
     <div className="relative grid h-[132px] w-[132px] place-items-center">
-      <svg viewBox="0 0 132 132" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_10px_rgba(180,87,58,0.45)]" aria-hidden>
+      <svg viewBox="0 0 132 132" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_10px_rgba(184,137,43,0.45)]" aria-hidden>
         <defs>
           <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#e3a07f" />
-            <stop offset="1" stopColor="#8f3a22" />
+            <stop offset="0" stopColor="#e8cf8f" />
+            <stop offset="1" stopColor="#8a6420" />
           </linearGradient>
         </defs>
         <circle cx="66" cy="66" r={r} fill="none" stroke="rgba(70,42,24,0.07)" strokeWidth="3" />

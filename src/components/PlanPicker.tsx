@@ -76,13 +76,13 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
                 />
               )}
               {"badge" in p && (
-                <span className="absolute -top-3 right-5 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[11px] font-bold text-ink shadow-lg">
+                <span className="absolute -top-3 right-5 flex items-center gap-1 rounded-full bg-gradient-to-l from-gold-2 to-gold px-3 py-1 text-[11px] font-bold text-[#2a1c12] shadow-lg">
                   <Crown size={12} /> {p.badge}
                 </span>
               )}
               <div className="relative flex items-center gap-4">
                 <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-ink" : "border-fg/25"}`}
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-[#2a1c12]" : "border-fg/25"}`}
                 >
                   {active && <Check size={14} strokeWidth={3} />}
                 </span>

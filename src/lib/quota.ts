@@ -7,7 +7,19 @@ export const FREE_DAILY_LIKES = Math.max(1, Number(process.env.MELA_FREE_DAILY_L
 /** Daily picks a free member can open (of 3). */
 export const FREE_DAILY_PICKS = 1;
 
-export type Quota = { premium: boolean; limit: number | null; used: number; left: number | null; resetsAt: string };
+/** Out of likes? Share MELA with this many friends to unlock SHARE_BONUS_LIKES more — once a day. */
+export const SHARES_FOR_BONUS = 3;
+export const SHARE_BONUS_LIKES = 5;
+
+export type Quota = {
+  premium: boolean;
+  limit: number | null;
+  used: number;
+  left: number | null;
+  resetsAt: string;
+  /** Today's share-for-likes progress (free members only). */
+  share?: { shares: number; needed: number; bonus: number; claimed: boolean };
+};
 
 const israelDay = (d = new Date()) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(d);
 
@@ -39,9 +51,39 @@ export function isPremium(userId: number): boolean {
 export function getQuota(userId: number): Quota {
   const resetsAt = nextIsraelMidnight();
   if (isPremium(userId)) return { premium: true, limit: null, used: 0, left: null, resetsAt };
-  const row = db.prepare("SELECT likes FROM daily_usage WHERE user_id = ? AND day = ?").get(userId, israelDay()) as { likes: number } | undefined;
+  const row = db.prepare("SELECT likes, shares, bonus FROM daily_usage WHERE user_id = ? AND day = ?").get(userId, israelDay()) as
+    | { likes: number; shares: number; bonus: number }
+    | undefined;
   const used = row?.likes ?? 0;
-  return { premium: false, limit: FREE_DAILY_LIKES, used, left: Math.max(0, FREE_DAILY_LIKES - used), resetsAt };
+  const bonus = row?.bonus ?? 0;
+  const limit = FREE_DAILY_LIKES + bonus;
+  return {
+    premium: false,
+    limit,
+    used,
+    left: Math.max(0, limit - used),
+    resetsAt,
+    share: { shares: Math.min(row?.shares ?? 0, SHARES_FOR_BONUS), needed: SHARES_FOR_BONUS, bonus: SHARE_BONUS_LIKES, claimed: bonus > 0 },
+  };
+}
+
+/**
+ * Count one invite share for today. The third share unlocks SHARE_BONUS_LIKES extra likes, once per day.
+ * (Shares happen in the member's own share sheet / WhatsApp, so this is trust-based by design — capped daily.)
+ */
+export function recordShare(userId: number): Quota {
+  const day = israelDay();
+  db.prepare(
+    `INSERT INTO daily_usage (user_id, day, likes, shares) VALUES (?, ?, 0, 1)
+     ON CONFLICT(user_id, day) DO UPDATE SET shares = MIN(shares + 1, ?)`,
+  ).run(userId, day, SHARES_FOR_BONUS);
+  db.prepare("UPDATE daily_usage SET bonus = ? WHERE user_id = ? AND day = ? AND shares >= ? AND bonus = 0").run(
+    SHARE_BONUS_LIKES,
+    userId,
+    day,
+    SHARES_FOR_BONUS,
+  );
+  return getQuota(userId);
 }
 
 export function recordLike(userId: number) {

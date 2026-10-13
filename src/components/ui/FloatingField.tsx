@@ -111,7 +111,7 @@ export function FloatingField(props: Props) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 22 }}
-              className="absolute top-[1.1rem] left-3.5 grid h-5 w-5 place-items-center rounded-full bg-gold text-ink"
+              className="absolute top-[1.1rem] left-3.5 grid h-5 w-5 place-items-center rounded-full bg-gold text-[#2a1c12]"
             >
               <Check size={12} strokeWidth={3.5} />
             </motion.span>

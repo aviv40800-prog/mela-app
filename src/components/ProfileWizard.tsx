@@ -158,8 +158,8 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
         },
       });
       haptic([10, 30, 10]);
-      // First-time onboarding offers the plans once (free is one of the options); edits go back to the profile.
-      router.replace(editing ? "/profile" : res.next === "/discover" ? "/onboarding/plan?welcome=1" : res.next);
+      // Free first: new members go straight to Discover; Premium is offered later, when the free likes run out.
+      router.replace(editing ? "/profile" : res.next);
       router.refresh();
     } catch (e) {
       setServerErr((e as Error).message);
@@ -185,7 +185,7 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
           </button>
           <div className="no-scrollbar flex flex-1 gap-1 overflow-x-auto rounded-full border border-line-2 bg-fg/[0.03] p-1">
             {WIZARD_STEPS.map((s, i) => (
-              <button key={s} onClick={() => go(i)} className={`relative flex-1 rounded-full px-3 py-2 text-xs whitespace-nowrap transition-colors ${i === stepIdx ? "text-ink font-semibold" : "text-mute"}`}>
+              <button key={s} onClick={() => go(i)} className={`relative flex-1 rounded-full px-3 py-2 text-xs whitespace-nowrap transition-colors ${i === stepIdx ? "text-[#2a1c12] font-semibold" : "text-mute"}`}>
                 {i === stepIdx && <motion.span layoutId="edit-tab" className="absolute inset-0 rounded-full bg-gradient-to-b from-gold-2 to-gold" />}
                 <span className="relative">{META[s].tab}</span>
               </button>
@@ -521,7 +521,7 @@ function ChoiceGroup<T extends string>({
               }}
               className={`flex w-full items-center rounded-2xl border px-3 py-3.5 text-[15px] font-medium transition-colors ${
                 stacked ? "justify-between px-4 text-right" : "justify-center text-center"
-              } ${active ? "border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_24px_-10px_rgba(180,87,58,0.7)]" : "border-line-2 bg-fg/[0.03] text-cream/85 hover:border-fg/20"}`}
+              } ${active ? "border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_24px_-10px_rgba(184,137,43,0.7)]" : "border-line-2 bg-fg/[0.03] text-cream/85 hover:border-fg/20"}`}
             >
               {text}
               {stacked && <span className={`h-4 w-4 shrink-0 rounded-full border-2 transition ${active ? "border-gold-2 bg-gold-2 shadow-[inset_0_0_0_3px_var(--color-ink-2)]" : "border-fg/25"}`} />}

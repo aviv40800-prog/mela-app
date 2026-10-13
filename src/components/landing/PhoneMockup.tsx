@@ -13,7 +13,7 @@ export function PhoneMockup() {
           <svg className="absolute inset-0 h-full w-full opacity-[0.09]" aria-hidden>
             <defs>
               <pattern id="pm-weave" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <path d="M0 14h28M14 0v28" stroke="#b4573a" strokeWidth="1" />
+                <path d="M0 14h28M14 0v28" stroke="#c9a24a" strokeWidth="1" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#pm-weave)" />

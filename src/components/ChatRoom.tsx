@@ -266,25 +266,25 @@ export function ChatRoom({
                   <div
                     className={`px-4 py-2.5 text-[15.5px] leading-[1.45] whitespace-pre-line ${corners} ${
                       mine
-                        ? "bg-gradient-to-b from-[#cd6d4e] to-[#b4573a] text-[#fffaf3] shadow-[0_8px_22px_-12px_rgba(180,87,58,0.8),inset_0_1px_0_rgba(70,42,24,0.35)]"
+                        ? "bg-gradient-to-b from-[#e6c675] to-[#c9a24a] text-[#2a1c12] shadow-[0_8px_22px_-12px_rgba(184,137,43,0.8),inset_0_1px_0_rgba(70,42,24,0.35)]"
                         : "border border-fg/[0.06] bg-ink-4 text-cream shadow-[0_8px_22px_-14px_rgba(90,52,26,0.27)]"
                     }`}
                   >
                     {proposal ? (
                       <span className="block min-w-[13rem]">
-                        <span className={`flex items-center gap-1.5 text-[11px] font-semibold tracking-wide ${mine ? "text-ink/65" : "text-gold-2"}`}>
+                        <span className={`flex items-center gap-1.5 text-[11px] font-semibold tracking-wide ${mine ? "text-[#2a1c12]/65" : "text-gold-2"}`}>
                           <CalendarHeart size={13} /> הצעה לדייט
                         </span>
                         <span className="font-display mt-1 block text-[1.15rem] leading-snug">{proposal[0]}</span>
                         {proposal[1] && (
-                          <span className={`mt-1.5 flex items-start gap-1 text-[12.5px] leading-snug ${mine ? "text-ink/70" : "text-mute"}`}>
+                          <span className={`mt-1.5 flex items-start gap-1 text-[12.5px] leading-snug ${mine ? "text-[#2a1c12]/70" : "text-mute"}`}>
                             <MapPin size={12} className="mt-[3px] shrink-0" /> {proposal[1]}
                           </span>
                         )}
                       </span>
                     ) : quote ? (
                       <>
-                        <span className={`mb-1.5 block border-r-2 pr-2 text-[12px] leading-snug ${mine ? "border-ink/30 text-ink/70" : "border-gold/60 text-gold-2/90"}`}>
+                        <span className={`mb-1.5 block border-r-2 pr-2 text-[12px] leading-snug ${mine ? "border-[#2a1c12]/30 text-[#2a1c12]/70" : "border-gold/60 text-gold-2/90"}`}>
                           {quote[0].replace("💬 על ", "")}
                         </span>
                         {quote.slice(1).join("\n")}
@@ -344,7 +344,7 @@ export function ChatRoom({
               <motion.span
                 animate={{ scale: [1, 1.12, 1] }}
                 transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1 }}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-gold-3 to-gold text-[#fffaf3]"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12]"
               >
                 <CalendarHeart size={20} />
               </motion.span>
@@ -462,7 +462,7 @@ export function ChatRoom({
               whileTap={{ scale: 0.85 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               disabled={sending}
-              className="mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_22px_-8px_rgba(180,87,58,0.9)]"
+              className="mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12] shadow-[0_8px_22px_-8px_rgba(184,137,43,0.9)]"
               aria-label="שליחה"
             >
               <SendHorizontal size={19} className="rotate-180" />

@@ -124,7 +124,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
                   aria-label="פתיחת הבחירה עם Premium"
                 >
                   <span className="flex flex-col items-center gap-2 px-6 text-center">
-                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_30px_rgba(180,87,58,0.55)]">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12] shadow-[0_0_30px_rgba(184,137,43,0.55)]">
                       <Crown size={24} />
                     </span>
                     <span className="text-[15px] font-semibold">עוד בחירה מחכה לך</span>
@@ -138,7 +138,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: [0, 1.25, 1] }}
-                      className={`grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gradient-to-b from-gold-2 to-gold text-ink shadow-[0_0_40px_rgba(180,87,58,0.6)]" : "glass"}`}
+                      className={`grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gradient-to-b from-gold-2 to-gold text-[#2a1c12] shadow-[0_0_40px_rgba(184,137,43,0.6)]" : "glass"}`}
                     >
                       {done[c.id] === "like" ? <Heart className="fill-current" /> : <X />}
                     </motion.span>
@@ -199,7 +199,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
         )}
       </AnimatePresence>
       <AnimatePresence>{match && <MatchModal me={me} {...match} onClose={() => setMatch(null)} />}</AnimatePresence>
-      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onClose={() => setPaywall(false)} />}</AnimatePresence>
+      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onQuota={setQuota} onClose={() => setPaywall(false)} />}</AnimatePresence>
     </section>
   );
 }

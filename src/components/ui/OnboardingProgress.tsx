@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-export const ONBOARDING_STEPS = 9; // phone, code, photos, basics, looking, about, prompts, quiz, plan
+export const ONBOARDING_STEPS = 8; // phone, code, photos, basics, looking, about, prompts, quiz
 
 /** Sleek continuous progress bar for the signup wizard. */
 export function OnboardingProgress({ step, label }: { step: number; label?: string }) {
@@ -17,7 +17,7 @@ export function OnboardingProgress({ step, label }: { step: number; label?: stri
       </div>
       <div className="relative h-[3px] overflow-hidden rounded-full bg-fg/[0.07]">
         <motion.div
-          className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-gold-3 via-gold-2 to-gold shadow-[0_0_12px_rgba(196,106,72,0.8)]"
+          className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-gold-3 via-gold-2 to-gold shadow-[0_0_12px_rgba(212,175,85,0.8)]"
           initial={false}
           animate={{ width: `${pct * 100}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 22 }}

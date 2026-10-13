@@ -50,7 +50,7 @@ export function SignupsChart({ data }: { data: { day: string; n: number }[] }) {
               {d.n > 0 && (
                 <path
                   d={`M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + barW - r} Q${x + barW},${yy} ${x + barW},${yy + r} V${y(0)} Z`}
-                  fill="#b4573a"
+                  fill="#c9a24a"
                   opacity={hover === null || hover === i ? 1 : 0.55}
                 />
               )}

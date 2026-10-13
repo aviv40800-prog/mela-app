@@ -410,4 +410,16 @@ describe("improve-your-profile check-ins", () => {
     expect(compatibility(me.id, serious.id)).toBeGreaterThan(compatibility(me.id, casual.id) + 15);
     expect(discoveryDeck(getUser(me.id)!).map((c) => [c.id, c.marital_status])[0]).toEqual([serious.id, "single"]);
   });
+
+  it("unlocks 5 extra likes after 3 shares, once a day", async () => {
+    const { getQuota, recordLike, recordShare } = await import("@/lib/quota");
+    const u = member("משתף", "male");
+    for (let i = 0; i < 5; i++) recordLike(u.id);
+    expect(getQuota(u.id)).toMatchObject({ left: 0, limit: 5, share: { shares: 0, claimed: false } });
+    recordShare(u.id);
+    expect(recordShare(u.id)).toMatchObject({ left: 0, share: { shares: 2, claimed: false } });
+    expect(recordShare(u.id)).toMatchObject({ left: 5, limit: 10, share: { shares: 3, claimed: true } });
+    // more shares the same day don't stack
+    expect(recordShare(u.id)).toMatchObject({ left: 5, limit: 10 });
+  });
 });

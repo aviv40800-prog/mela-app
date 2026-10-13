@@ -35,7 +35,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
               {active && (
                 <motion.span
                   layoutId="nav-active"
-                  className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-gold/[0.16] to-gold/[0.04] shadow-[inset_0_0_0_1px_rgba(180,87,58,0.25)]"
+                  className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-gold/[0.16] to-gold/[0.04] shadow-[inset_0_0_0_1px_rgba(184,137,43,0.25)]"
                   transition={{ type: "spring", stiffness: 480, damping: 36 }}
                 />
               )}
@@ -60,7 +60,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
                     initial={{ scale: 0 }}
                     animate={{ scale: [0, 1.3, 1] }}
                     exit={{ scale: 0 }}
-                    className="tabular absolute top-1 left-[calc(50%-22px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold px-1 text-[10px] font-bold text-ink shadow-[0_0_12px_rgba(180,87,58,0.7)] ring-2 ring-ink-2"
+                    className="tabular absolute top-1 left-[calc(50%-22px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold px-1 text-[10px] font-bold text-[#2a1c12] shadow-[0_0_12px_rgba(184,137,43,0.7)] ring-2 ring-ink-2"
                   >
                     {unread > 9 ? "9+" : unread}
                   </motion.span>

@@ -103,7 +103,7 @@ export function DatePlanner({
                   className={`overflow-hidden rounded-[20px] border transition-colors ${expanded ? "border-gold/35 bg-ink-3/90" : "border-line bg-fg/[0.02] hover:border-line-2"}`}
                 >
                   <motion.button layout="position" onClick={() => setOpen(expanded ? null : idea.id)} className="flex w-full items-center gap-3 p-3 text-right" aria-expanded={expanded}>
-                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] transition-colors ${expanded ? "bg-gradient-to-b from-gold-3 to-gold text-ink" : "bg-gold/[0.08] text-gold-2"}`}>
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] transition-colors ${expanded ? "bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12]" : "bg-gold/[0.08] text-gold-2"}`}>
                       <Icon size={18} strokeWidth={1.75} />
                     </span>
                     <span className="min-w-0 flex-1">

@@ -36,7 +36,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
           <Link
             key={f}
             href={href({ filter: f, page: 1 })}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition ${f === filter ? "bg-gold text-ink font-semibold" : "border border-line-2 text-mute hover:text-cream"}`}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] transition ${f === filter ? "bg-gold text-[#2a1c12] font-semibold" : "border border-line-2 text-mute hover:text-cream"}`}
           >
             {USER_FILTERS[f].label}
           </Link>

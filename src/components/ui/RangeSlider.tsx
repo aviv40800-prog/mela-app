@@ -30,7 +30,7 @@ export function RangeSlider({
     <div className="relative h-8" dir="rtl">
       <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-fg/10" />
       <div
-        className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_10px_rgba(180,87,58,0.6)]"
+        className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_10px_rgba(184,137,43,0.6)]"
         style={{ right: `${dual ? pct(lo) : 0}%`, left: `${100 - pct(hi)}%` }}
       />
       {dual && (

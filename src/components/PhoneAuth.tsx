@@ -147,7 +147,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
               />
               <AnimatePresence>
                 {phoneValid && (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="grid h-6 w-6 place-items-center rounded-full bg-gold text-ink">
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="grid h-6 w-6 place-items-center rounded-full bg-gold text-[#2a1c12]">
                     <Check size={14} strokeWidth={3} />
                   </motion.span>
                 )}

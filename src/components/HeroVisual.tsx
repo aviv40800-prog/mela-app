@@ -11,7 +11,7 @@ export function HeroVisual() {
       <div className="absolute inset-0 rounded-full bg-gold/10 blur-3xl" />
       <Card src={a} className="absolute top-2 right-2 h-[270px] w-[190px] rotate-[7deg]" label="ת" />
       <Card src={b} className="absolute bottom-2 left-2 h-[270px] w-[190px] -rotate-[6deg]" label="י" />
-      <div className="animate-pulse-ring absolute top-1/2 left-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold text-2xl text-ink shadow-xl">
+      <div className="animate-pulse-ring absolute top-1/2 left-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold text-2xl text-[#2a1c12] shadow-xl">
         ♥
       </div>
     </div>

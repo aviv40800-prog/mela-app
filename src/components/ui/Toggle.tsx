@@ -16,7 +16,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
         onChange(!checked);
       }}
       className={`relative flex h-[30px] w-[52px] shrink-0 items-center rounded-full p-[3px] transition-colors duration-300 ${
-        checked ? "justify-end bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_18px_-4px_rgba(180,87,58,0.7)]" : "justify-start bg-fg/12"
+        checked ? "justify-end bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_18px_-4px_rgba(184,137,43,0.7)]" : "justify-start bg-fg/12"
       }`}
     >
       <motion.span

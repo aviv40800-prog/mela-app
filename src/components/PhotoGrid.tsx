@@ -245,14 +245,14 @@ function ProgressRing({ value }: { value: number }) {
   const c = 2 * Math.PI * r;
   return (
     <div className="absolute inset-0 grid place-items-center">
-      <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90 drop-shadow-[0_0_8px_rgba(180,87,58,0.6)]">
+      <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90 drop-shadow-[0_0_8px_rgba(184,137,43,0.6)]">
         <circle cx="22" cy="22" r={r} fill="rgba(90,52,26,0.135)" stroke="rgba(70,42,24,0.15)" strokeWidth="3" />
         <motion.circle
           cx="22"
           cy="22"
           r={r}
           fill="none"
-          stroke="#c46a48"
+          stroke="#c9a24a"
           strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray={c}

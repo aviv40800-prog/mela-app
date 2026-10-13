@@ -47,7 +47,7 @@ export function LikesYou({ likes }: { likes: Liker[] }) {
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   onClick={() => answer(l.id, "like")}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_20px_-8px_rgba(180,87,58,0.9)]"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12] shadow-[0_8px_20px_-8px_rgba(184,137,43,0.9)]"
                   aria-label="לייק בחזרה"
                 >
                   <Heart size={19} className="fill-current" />

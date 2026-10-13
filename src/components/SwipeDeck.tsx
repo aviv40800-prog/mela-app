@@ -205,7 +205,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       </div>
 
       <ActionBar x={x} burst={burst} quota={quota} onPass={() => decide("pass")} onLike={() => decide("like")} />
-      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onClose={() => setPaywall(false)} />}</AnimatePresence>
+      <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onQuota={setQuota} onClose={() => setPaywall(false)} />}</AnimatePresence>
 
       <AnimatePresence>
         {sheet && (

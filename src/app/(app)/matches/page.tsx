@@ -42,7 +42,7 @@ export default async function MatchesPage() {
             <LikesYou likes={likes.map((l) => ({ id: l.id, name: l.full_name, age: l.age, location: l.location, photo: l.photos[0] ?? null, comment: l.comment }))} />
           ) : (
             <div className="animate-rise relative isolate overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
-              <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(180,87,58,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(184,137,43,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
               <p className="text-[14.5px] text-cream/85">
                 {likes.length === 1 ? "מישהו/י כבר אהב/ה אותך." : `${likes.length} אנשים כבר אהבו אותך.`} עם Premium רואים מי — ומחזירים לייק בלחיצה.
               </p>
@@ -67,7 +67,7 @@ export default async function MatchesPage() {
           <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
             {fresh.map((m, i) => (
               <Link key={m.matchId} href={`/matches/${m.matchId}`} className="animate-rise w-[76px] shrink-0 text-center" style={{ animationDelay: `${i * 60}ms` }}>
-                <div className="rounded-full bg-gradient-to-b from-gold-3 to-gold-dim p-[2px] shadow-[0_0_22px_-6px_rgba(180,87,58,0.7)] transition-transform duration-300 hover:scale-105">
+                <div className="rounded-full bg-gradient-to-b from-gold-3 to-gold-dim p-[2px] shadow-[0_0_22px_-6px_rgba(184,137,43,0.7)] transition-transform duration-300 hover:scale-105">
                   <div className="h-[72px] w-[72px] overflow-hidden rounded-full ring-2 ring-ink">
                     <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
                   </div>
@@ -107,7 +107,7 @@ export default async function MatchesPage() {
                           : m.lastMessage!.text.replace(/\n/g, " ")}
                       </span>
                       {m.unread > 0 && (
-                        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1.5 text-[11px] font-bold text-ink">{m.unread}</span>
+                        <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1.5 text-[11px] font-bold text-[#2a1c12]">{m.unread}</span>
                       )}
                     </div>
                   </div>
