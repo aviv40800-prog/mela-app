@@ -6,6 +6,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { Logo } from "./Logo";
 import { SwipeDeck } from "./SwipeDeck";
 import { PreferencesSheet } from "./PreferencesSheet";
+import { SwipeTutorial } from "./SwipeTutorial";
 import type { MiniProfile } from "./MatchModal";
 import type { Prefs } from "./PreferencesFields";
 
@@ -35,6 +36,8 @@ export function DiscoverView({ me, prefs: initial }: { me: MiniProfile; prefs: P
       </header>
       {/* Remount → reload the deck with the new preferences */}
       <SwipeDeck key={version} source="discover" me={me} />
+      {/* First visit: a short walkthrough of which way is like and which is pass */}
+      <SwipeTutorial />
       <AnimatePresence>
         {open && (
           <PreferencesSheet

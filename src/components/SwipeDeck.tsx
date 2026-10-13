@@ -259,17 +259,17 @@ function TopCard({
       {/* reactive edge glows */}
       <motion.div
         style={{ opacity: likeGlow }}
-        className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_0_0_2px_rgba(196,106,72,0.95),inset_0_0_60px_rgba(180,87,58,0.35),0_0_50px_-6px_rgba(180,87,58,0.65)]"
+        className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_0_0_3px_rgba(229,56,59,0.95),inset_0_0_70px_rgba(229,56,59,0.3),0_0_50px_-6px_rgba(229,56,59,0.6)]"
       />
       <motion.div
         style={{ opacity: passGlow }}
         className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_0_0_2px_rgba(245,241,232,0.7),inset_0_0_60px_rgba(229,103,90,0.25),0_0_40px_-8px_rgba(229,103,90,0.5)]"
       />
 
-      {/* stamps (like on the left edge = the side the card travels away from in RTL) */}
+      {/* stamps: a right swipe is a like (stamp on the trailing left edge), a left swipe a pass */}
       <motion.div
         style={{ opacity: likeGlow, scale: likeStamp }}
-        className="pointer-events-none absolute top-12 left-7 -rotate-[14deg] rounded-2xl border-[3px] border-gold-2 bg-black/20 px-4 py-1.5 text-3xl font-black text-gold-2 shadow-[0_0_24px_rgba(196,106,72,0.5)] backdrop-blur-sm"
+        className="pointer-events-none absolute top-12 left-7 -rotate-[14deg] rounded-2xl border-[3px] border-[#ff4d55] bg-black/25 px-4 py-1.5 text-3xl font-black text-[#ff5a61] shadow-[0_0_24px_rgba(229,56,59,0.55)] backdrop-blur-sm"
       >
         אהבתי
       </motion.div>
@@ -304,8 +304,8 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
   const passScale = useTransform(x, [-160, 0], [1.16, 1]);
   const likeHalo = useTransform(x, [0, 160], [0.55, 1]);
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[100px] z-30 mx-auto flex max-w-md items-center justify-center gap-7">
-
+    // dir=ltr: pass (✕) sits on the left and like (♥) on the right — the same sides as the swipes.
+    <div dir="ltr" className="pointer-events-none fixed inset-x-0 bottom-[100px] z-30 mx-auto flex max-w-md items-center justify-center gap-7">
       <motion.button
         style={{ scale: passScale }}
         whileTap={{ scale: 0.82 }}
@@ -319,11 +319,18 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
         style={{ scale: likeScale }}
         whileTap={{ scale: 0.82 }}
         onClick={onLike}
-        className="pointer-events-auto relative grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[inset_0_1px_0_rgba(70,42,24,0.6)]"
+        className="pointer-events-auto relative grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-[#ff6b70] via-[#e5383b] to-[#b8141c] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-2px_0_rgba(90,0,8,0.25)]"
         aria-label="לייק"
       >
-        <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(180,87,58,0.85)]" />
-        <Heart size={32} className="fill-current" />
+        <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(229,56,59,0.85)]" />
+        {/* a soft heartbeat every few seconds, so the button feels alive */}
+        <motion.span
+          animate={{ scale: [1, 1.18, 1, 1.12, 1] }}
+          transition={{ duration: 1.1, times: [0, 0.15, 0.3, 0.45, 0.7], repeat: Infinity, repeatDelay: 2.4, ease: "easeInOut" }}
+          className="grid place-items-center drop-shadow-[0_2px_4px_rgba(90,0,8,0.35)]"
+        >
+          <Heart size={32} className="fill-current" />
+        </motion.span>
         {quota && !quota.premium && (
           <motion.span
             key={quota.left ?? 0}
@@ -332,7 +339,7 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
             transition={{ type: "spring", stiffness: 600, damping: 18 }}
             aria-label={quota.left === 0 ? "נגמרו הלייקים להיום" : `נותרו ${quota.left} לייקים היום`}
             className={`tabular absolute -top-1 -left-1 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[11px] font-bold ring-2 ring-ink ${
-              quota.left === 0 ? "bg-ink-4 text-mute" : "bg-cream text-ink"
+              quota.left === 0 ? "bg-ink-4 text-mute" : "bg-white text-[#b8141c]"
             }`}
           >
             {quota.left}
@@ -346,27 +353,29 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
   );
 }
 
-/** Gold particle burst from the like button. */
+/** A burst of little red hearts from the like button. */
 function Burst() {
   return (
     <span className="pointer-events-none absolute inset-0">
       <motion.span
-        className="absolute inset-0 rounded-full border-2 border-gold-2"
+        className="absolute inset-0 rounded-full border-2 border-[#ff4d55]"
         initial={{ scale: 1, opacity: 0.9 }}
         animate={{ scale: 2.1, opacity: 0 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       />
-      {Array.from({ length: 8 }).map((_, i) => {
-        const a = (i / 8) * Math.PI * 2;
+      {Array.from({ length: 9 }).map((_, i) => {
+        const a = (i / 9) * Math.PI * 2 - Math.PI / 2;
         return (
           <motion.span
             key={i}
-            className="absolute top-1/2 left-1/2 h-1.5 w-1.5 rounded-full bg-gold-2"
-            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-            animate={{ x: Math.cos(a) * 56, y: Math.sin(a) * 56, opacity: 0, scale: 0.4 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          />
+            className="absolute top-1/2 left-1/2 -mt-1.5 -ml-1.5 text-[#ff4d55]"
+            initial={{ x: 0, y: 0, opacity: 1, scale: 0.6, rotate: 0 }}
+            animate={{ x: Math.cos(a) * 64, y: Math.sin(a) * 64 - 10, opacity: 0, scale: 1.1, rotate: (i % 2 ? 1 : -1) * 25 }}
+            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Heart size={12} className="fill-current" />
+          </motion.span>
         );
       })}
     </span>
