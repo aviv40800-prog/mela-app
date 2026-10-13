@@ -10,6 +10,7 @@ export type PublicProfile = {
   photos: string[];
   is_verified: boolean;
   is_demo: boolean;
+  religiosity: "secular" | "traditional" | "religious" | null;
   prompts: Prompt[];
 };
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm?: number | null; shared?: string[]; locked?: boolean };

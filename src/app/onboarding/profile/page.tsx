@@ -24,6 +24,8 @@ export default async function ProfileSetupPage({ searchParams }: { searchParams:
         pref_age_min: user.pref_age_min,
         pref_age_max: user.pref_age_max,
         pref_distance_km: user.pref_distance_km,
+        religiosity: user.religiosity ?? undefined,
+        partner_religiosity: user.partner_religiosity ?? undefined,
       }}
     />
   );

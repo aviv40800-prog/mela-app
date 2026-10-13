@@ -144,3 +144,17 @@ export const LOCATIONS = [
 
 /** Chat messages starting with this line are date proposals; ChatRoom renders them as a card. */
 export const DATE_PREFIX = "📍 הצעה לדייט";
+
+/** Opening questionnaire: how observant am I, and how much does it matter in a partner. */
+export const RELIGIOSITY = { secular: "חילוני/ת", traditional: "מסורתי/ת", religious: "דתי/ה" } as const;
+export type Religiosity = keyof typeof RELIGIOSITY;
+export const PARTNER_RELIGIOSITY = {
+  any: "לא משנה לי",
+  traditional_up: "מסורתי/ת או דתי/ה",
+  religious: "חשוב לי שיהיה/תהיה דתי/ה",
+} as const;
+export type PartnerReligiosity = keyof typeof PARTNER_RELIGIOSITY;
+
+/** Only these three "this or that" questions are asked at sign-up; the rest are offered later, three at a time. */
+export const ONBOARDING_QUIZ_KEYS = ["coffee", "weekend", "kids"] as const;
+export const ONBOARDING_QUIZ = ONBOARDING_QUIZ_KEYS.map((k) => QUIZ_QUESTIONS.find((q) => q.key === k)!);

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, UserRound } from "lucide-react";
+import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, Scale, UserRound } from "lucide-react";
 import { requirePageUser } from "@/lib/guard";
 import { isAdmin } from "@/lib/admin";
 import { getSubscription, hasAccess } from "@/lib/billing";
 import { getQuota } from "@/lib/quota";
 import { toPublic } from "@/lib/users";
-import { PLANS, promptQuestion } from "@/lib/content";
+import { PARTNER_RELIGIOSITY, PLANS, RELIGIOSITY, promptQuestion } from "@/lib/content";
 import { Photo } from "@/components/Photo";
 import { MembershipActions, LogoutRow } from "@/components/AccountActions";
 import { PreferencesCard } from "@/components/PreferencesCard";
@@ -184,6 +184,17 @@ export default async function ProfilePage() {
             icon={<MessageSquareQuote size={18} />}
             title={`שאלות מהבית (${pub.prompts.length}/3)`}
             subtitle={pub.prompts.map((p) => promptQuestion(p.question_key).replace("...", "")).join(" · ")}
+          />
+          <Divider />
+          <Row
+            href={edit("quiz")}
+            icon={<Scale size={18} />}
+            title="דת ומסורת"
+            subtitle={
+              user.religiosity
+                ? `${RELIGIOSITY[user.religiosity]} · בצד השני: ${PARTNER_RELIGIOSITY[user.partner_religiosity ?? "any"]}`
+                : "עוד לא ענית — זה עוזר לנו להתאים"
+            }
           />
         </div>
       </section>

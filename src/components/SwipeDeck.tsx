@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionValue, type PanInfo } from "framer-motion";
-import { Heart, Moon, RotateCcw, X } from "lucide-react";
+import { Heart, Moon, RotateCcw, Share2, Sprout, X } from "lucide-react";
 import { ProfileCard } from "./ProfileCard";
 import { CommentSheet } from "./CommentSheet";
 import { MatchModal, type MiniProfile } from "./MatchModal";
 import { CardSkeleton } from "./ui/Skeleton";
 import { ApiError, api, haptic } from "@/lib/client";
 import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
+import { QuizOfferSheet, countSwipeForOffer } from "./QuizOfferSheet";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
 type SwipeResponse = { status: string; matchId: number; isNewMatch: boolean; other?: PublicProfile; quota: Quota };
@@ -25,6 +26,9 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const [burst, setBurst] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [quota, setQuota] = useState<Quota | null>(null);
+  const [widened, setWidened] = useState(false);
+  const [swipes, setSwipes] = useState<number | null>(null);
+  const [offer, setOffer] = useState<{ key: string; cat: string; a: string; b: string }[] | null>(null);
   const [paywall, setPaywall] = useState(false);
   const busy = useRef(false);
   const x = useMotionValue(0);
@@ -34,8 +38,10 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
     setError(null);
     try {
       const url = source === "discover" ? "/api/discover" : "/api/daily-picks";
-      const data = await api<{ candidates?: Candidate[]; picks?: Candidate[]; quota?: Quota }>(url);
+      const data = await api<{ candidates?: Candidate[]; picks?: Candidate[]; quota?: Quota; widened?: boolean; swipes?: number }>(url);
       setDeck(data.candidates ?? data.picks ?? []);
+      setWidened(!!data.widened);
+      if (data.swipes !== undefined) setSwipes(data.swipes);
       if (data.quota) setQuota(data.quota);
     } catch (e) {
       setError((e as Error).message);
@@ -99,19 +105,26 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       setDeck((d) => (kept ? (d?.slice(1) ?? null) : d));
       x.set(0);
       busy.current = false;
+      if (kept) setSwipes((n) => (n ?? 0) + 1);
+      // Every few swipes, offer three more questions (optional) to sharpen the matches.
+      if (kept && source === "discover" && countSwipeForOffer()) {
+        api<{ questions: { key: string; cat: string; a: string; b: string }[] }>("/api/quiz/next")
+          .then((r) => r.questions.length && setOffer(r.questions))
+          .catch(() => {});
+      }
     },
-    [top, x, quota],
+    [top, x, quota, source],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (sheet || match || (e.target as HTMLElement).closest("input,textarea")) return;
+      if (sheet || match || offer || (e.target as HTMLElement).closest("input,textarea")) return;
       if (e.key === "ArrowRight") void decide("like");
       if (e.key === "ArrowLeft") void decide("pass");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [decide, sheet, match]);
+  }, [decide, sheet, match, offer]);
 
   function onDragEnd(_: unknown, info: PanInfo) {
     const { offset, velocity } = info;
@@ -122,23 +135,44 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
 
   if (deck === null) return <CardSkeleton />;
 
-  if (!top)
+  if (!top) {
+    // A member who hasn't swiped yet and sees nobody isn't "done" — the community is still growing.
+    const fresh = source === "discover" && swipes === 0;
+    const invite = async () => {
+      const url = window.location.origin;
+      const text = "הצטרפו אליי ל־MELA — אפליקציית ההיכרויות של הקהילה. אהבה עם שורשים 🤎";
+      try {
+        if (navigator.share) return void (await navigator.share({ title: "MELA", text, url }));
+      } catch {
+        return;
+      }
+      window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank", "noopener");
+    };
     return (
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex h-[calc(100dvh-196px)] flex-col items-center justify-center px-8 text-center">
         <div className="relative mb-7">
           <div className="absolute inset-0 animate-pulse-ring rounded-full" />
           <div className="glow grid h-24 w-24 place-items-center rounded-full bg-gradient-to-b from-gold/20 to-gold/5 text-gold">
-            <Moon size={32} strokeWidth={1.5} />
+            {fresh ? <Sprout size={34} strokeWidth={1.5} /> : <Moon size={32} strokeWidth={1.5} />}
           </div>
         </div>
-        <h2 className="font-display text-[1.7rem] font-bold">{source === "picks" ? "ראית את כל הבחירות" : "זהו להיום"}</h2>
-        <p className="mt-2 max-w-xs text-[15px] text-mute">
-          {source === "picks" ? "3 בחירות חדשות יחכו לך מחר בבוקר." : "פרופילים חדשים מצטרפים כל יום. בינתיים — בחירות היום והחידון מחכים לך."}
+        <h2 className="font-display text-[1.7rem] font-bold">{source === "picks" ? "ראית את כל הבחירות" : fresh ? "את/ה מהראשונים כאן" : "עברת על כולם להיום"}</h2>
+        <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-mute">
+          {source === "picks"
+            ? "3 בחירות חדשות יחכו לך מחר בבוקר."
+            : fresh
+              ? "הקהילה של MELA רק מתחילה, ועוד אין מספיק פרופילים שמתאימים לחיפוש שלך. כל יום מצטרפים חדשים — ככל שתזמינו יותר חברים, כך תגיעו מהר יותר להתאמה."
+              : "פרופילים חדשים מצטרפים כל יום. אפשר גם להרחיב את טווח הגילאים או המרחק בכפתור הסינון למעלה."}
         </p>
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
         <div className="mt-9 flex w-full flex-col gap-3">
           {source === "discover" && (
-            <Link href="/picks" className="btn-gold">
+            <button onClick={invite} className="btn-gold">
+              <Share2 size={17} /> להזמין חברים ל־MELA
+            </button>
+          )}
+          {source === "discover" && !fresh && (
+            <Link href="/picks" className="btn-ghost">
               לבחירות היום
             </Link>
           )}
@@ -148,10 +182,24 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         </div>
       </motion.div>
     );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative">
       <div className="relative h-[calc(100dvh-196px)]">
+        <AnimatePresence>
+          {widened && (
+            <motion.button
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              onClick={() => setWidened(false)}
+              className="absolute inset-x-0 top-14 z-20 mx-auto w-fit max-w-[88%] rounded-full border border-gold/30 bg-black/60 px-4 py-2 text-center text-[12px] leading-snug text-cream/90 backdrop-blur-md"
+            >
+              אין עדיין אנשים בטווח שבחרת — מציגים גם מעט מחוץ לו
+            </motion.button>
+          )}
+        </AnimatePresence>
         {deck[1] && <BackCard key={deck[1].id} c={deck[1]} x={x} />}
         <TopCard key={top.id} c={top} x={x} onDragEnd={onDragEnd} onPromptLike={setSheet} />
       </div>
@@ -170,6 +218,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         )}
       </AnimatePresence>
       <AnimatePresence>{match && <MatchModal me={me} {...match} onClose={() => setMatch(null)} />}</AnimatePresence>
+      <AnimatePresence>{offer && !match && <QuizOfferSheet questions={offer} onClose={() => setOffer(null)} onAnswered={load} />}</AnimatePresence>
     </motion.div>
   );
 }

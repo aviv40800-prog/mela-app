@@ -1,12 +1,12 @@
 import "server-only";
 import { db } from "./db";
-import { ALL_QUESTIONS, BONUS_QUESTIONS } from "./content";
+import { ALL_QUESTIONS, BONUS_QUESTIONS, QUIZ_QUESTIONS } from "./content";
 
 /** A new batch of "improve your profile" questions opens every CHECKIN_EVERY_DAYS days. */
 export const CHECKIN_EVERY_DAYS = 3;
 export const CHECKIN_BATCH = 3;
 
-type Q = (typeof BONUS_QUESTIONS)[number];
+type Q = (typeof ALL_QUESTIONS)[number];
 export type Checkin = { questions: Q[]; nextAt: string | null; answered: number; total: number };
 
 function answeredKeys(userId: number): Set<string> {
@@ -17,8 +17,8 @@ function answeredKeys(userId: number): Set<string> {
  * "Smart" pick: favour the areas the member has told us least about (values, relationship, lifestyle,
  * culture), taking one question per area in turn, so every batch rounds out the picture.
  */
-function smartPick(answered: Set<string>, n: number): Q[] {
-  const remaining = BONUS_QUESTIONS.filter((q) => !answered.has(q.key));
+function smartPick(answered: Set<string>, n: number, pool: readonly Q[] = BONUS_QUESTIONS): Q[] {
+  const remaining = pool.filter((q) => !answered.has(q.key));
   const cats = [...new Set(remaining.map((q) => q.cat))];
   const answeredIn = (cat: string) => ALL_QUESTIONS.filter((q) => q.cat === cat && answered.has(q.key)).length;
   cats.sort((a, b) => answeredIn(a) - answeredIn(b));
@@ -79,4 +79,15 @@ export function sharedAnswers(me: number, other: number, limit = 3): string[] {
     .sort((x, y) => order.indexOf(x.q!.cat) - order.indexOf(y.q!.cat))
     .slice(0, limit)
     .map((x) => x.q![x.r.choice]);
+}
+
+/**
+ * The next few questions offered while swiping ("3 more for better matches"): the core this-or-that
+ * questions first (most are skipped at sign-up), then the deeper ones — always the least-covered areas.
+ */
+export function nextQuestions(userId: number, n = 3): { questions: Q[]; remaining: number } {
+  const answered = answeredKeys(userId);
+  const core = smartPick(answered, n, QUIZ_QUESTIONS);
+  const questions = core.length >= n ? core : [...core, ...smartPick(answered, n - core.length, BONUS_QUESTIONS)];
+  return { questions, remaining: ALL_QUESTIONS.filter((q) => !answered.has(q.key)).length };
 }

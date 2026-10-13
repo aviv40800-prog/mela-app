@@ -114,7 +114,14 @@ function open(): DatabaseSync {
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA);
   migrate(db);
-  if (!process.env.MELA_SKIP_SEED) seedDemoData(db);
+  if (!process.env.MELA_SKIP_SEED) {
+    seedDemoData(db);
+    // Demo members get a spread of observance levels so the opening questionnaire shows up in discovery.
+    db.exec(`UPDATE users SET
+       religiosity = CASE id % 3 WHEN 0 THEN 'secular' WHEN 1 THEN 'traditional' ELSE 'religious' END,
+       partner_religiosity = CASE id % 4 WHEN 0 THEN 'traditional_up' ELSE 'any' END
+     WHERE is_demo = 1 AND religiosity IS NULL`);
+  }
   return db;
 }
 
@@ -130,6 +137,9 @@ function migrate(db: DatabaseSync) {
   // When the member last completed a "improve your profile" question batch.
   if (!cols.has("last_checkin_at")) db.exec("ALTER TABLE users ADD COLUMN last_checkin_at TEXT");
   if (!cols.has("checkin_batch")) db.exec("ALTER TABLE users ADD COLUMN checkin_batch TEXT"); // JSON keys of the open batch
+  // Opening questionnaire: own observance + what matters in a partner.
+  if (!cols.has("religiosity")) db.exec("ALTER TABLE users ADD COLUMN religiosity TEXT");
+  if (!cols.has("partner_religiosity")) db.exec("ALTER TABLE users ADD COLUMN partner_religiosity TEXT");
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");

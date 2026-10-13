@@ -20,7 +20,24 @@ const COMPATIBLE = `
   AND (u.seeking = 'everyone' OR u.seeking = :gender)
 `;
 
-/** Compatibility 50–99: "This or That" agreement, same city, age proximity. */
+const LEVEL = { secular: 0, traditional: 1, religious: 2 } as const;
+
+/**
+ * How well `b`'s observance fits what `a` asked for (and vice versa): a clear miss on something a member
+ * said matters costs a lot; the same level is a small bonus. Unknown answers are neutral.
+ */
+export function religionFit(a: User, b: User): number {
+  const miss = (want: User["partner_religiosity"], have: User["religiosity"]) => {
+    if (!want || !have || want === "any") return 0;
+    const need = want === "religious" ? 2 : 1;
+    return Math.max(0, need - LEVEL[have]) * 9;
+  };
+  let fit = -miss(a.partner_religiosity, b.religiosity) - miss(b.partner_religiosity, a.religiosity);
+  if (a.religiosity && a.religiosity === b.religiosity) fit += 4;
+  return fit;
+}
+
+/** Compatibility 50–99: "This or That" agreement, observance, same city, age proximity. */
 export function compatibility(me: number, other: number): number {
   const { agree, total } = db
     .prepare(
@@ -32,12 +49,13 @@ export function compatibility(me: number, other: number): number {
   const u2 = getUser(other)!;
   let score = total > 0 ? 55 + Math.round(((agree ?? 0) / total) * 30) : 68;
   if (u1.location && u1.location === u2.location) score += 8;
+  score += religionFit(u1, u2);
   if (u1.age && u2.age) score -= Math.min(10, Math.max(0, Math.abs(u1.age - u2.age) - 3) * 2);
   return Math.max(50, Math.min(99, score));
 }
 
 /** Discovery candidates honouring the member's preferences: gender, age range and max distance. */
-function candidateIds(me: User, limit: number): number[] {
+function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
   const rows = db
     .prepare(
       `SELECT u.id, u.location FROM users u
@@ -47,8 +65,14 @@ function candidateIds(me: User, limit: number): number[] {
          AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = u.id AND m.user_2_id = :me AND m.status <> 'pending')
        ORDER BY u.id DESC LIMIT 1000`,
     )
-    .all({ me: me.id, seeking: me.seeking, gender: me.gender, amin: me.pref_age_min, amax: me.pref_age_max }) as { id: number; location: string | null }[];
-  const maxKm = me.pref_distance_km;
+    .all({
+      me: me.id,
+      seeking: me.seeking,
+      gender: me.gender,
+      amin: ignorePrefs ? null : me.pref_age_min,
+      amax: ignorePrefs ? null : me.pref_age_max,
+    }) as { id: number; location: string | null }[];
+  const maxKm = ignorePrefs ? null : me.pref_distance_km;
   return rows
     .filter((r) => {
       if (!maxKm) return true;
@@ -74,11 +98,24 @@ function toCandidate(me: number, id: number): Candidate {
   };
 }
 
-export function discoveryDeck(me: User, limit = 20): Candidate[] {
-  return candidateIds(me, 200)
+export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candidate[] {
+  return candidateIds(me, 200, ignorePrefs)
     .map((id) => toCandidate(me.id, id))
     .sort((a, b) => b.compatibility - a.compatibility)
     .slice(0, limit);
+}
+
+/**
+ * The Discover feed. When the member's age/distance range leaves nobody (common while the community is
+ * small), show people just outside it instead of an empty screen, and say so (`widened`).
+ */
+export function discoverFeed(me: User, limit = 20): { candidates: Candidate[]; widened: boolean; swipes: number } {
+  const swipes = (db.prepare("SELECT COUNT(*) AS n FROM matches WHERE user_1_id = ?").get(me.id) as { n: number }).n;
+  const candidates = discoveryDeck(me, limit);
+  const hasPrefs = me.pref_age_min != null || me.pref_age_max != null || me.pref_distance_km != null;
+  if (candidates.length || !hasPrefs) return { candidates, widened: false, swipes };
+  const wider = discoveryDeck(me, limit, true);
+  return { candidates: wider, widened: wider.length > 0, swipes };
 }
 
 /** 3 curated picks per day, fixed for the calendar day (Asia/Jerusalem). */

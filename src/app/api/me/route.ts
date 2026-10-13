@@ -24,6 +24,8 @@ const Profile = z.object({
   pref_age_min: z.number().int().min(18).max(99).nullable().optional(),
   pref_age_max: z.number().int().min(18).max(99).nullable().optional(),
   pref_distance_km: z.number().int().min(1).max(500).nullable().optional(),
+  religiosity: z.enum(["secular", "traditional", "religious"], "נא לבחור איך את/ה מגדיר/ה את עצמך"),
+  partner_religiosity: z.enum(["any", "traditional_up", "religious"], "נא לבחור מה חשוב לך בצד השני"),
   prompts: z
     .array(z.object({ question_key: z.enum(promptKeys), answer_text: z.string().trim().min(2).max(200) }))
     .min(2)

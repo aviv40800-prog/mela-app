@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./db";
+import type { PartnerReligiosity, Religiosity } from "./content";
 
 export type Gender = "male" | "female";
 export type Seeking = Gender | "everyone";
@@ -23,6 +24,8 @@ export type User = {
   pref_age_min: number | null;
   pref_age_max: number | null;
   pref_distance_km: number | null;
+  religiosity: Religiosity | null;
+  partner_religiosity: PartnerReligiosity | null;
   created_at: string;
 };
 
@@ -40,6 +43,7 @@ export type PublicProfile = {
   is_verified: boolean;
   /** Seeded sample profile (shown with a "sample profile" label). */
   is_demo: boolean;
+  religiosity: Religiosity | null;
   prompts: Prompt[];
 };
 
@@ -81,6 +85,7 @@ export function toPublic(user: User): PublicProfile {
     photos: user.photos,
     is_verified: user.is_verified,
     is_demo: user.is_demo,
+    religiosity: user.religiosity,
     prompts: getPrompts(user.id),
   };
 }
@@ -96,6 +101,8 @@ export type ProfileInput = {
   bio: string;
   photos: string[];
   prompts: Prompt[];
+  religiosity?: Religiosity;
+  partner_religiosity?: PartnerReligiosity;
 } & Partial<Preferences>;
 
 export type Preferences = { seeking: Seeking; pref_age_min: number | null; pref_age_max: number | null; pref_distance_km: number | null };
@@ -124,6 +131,9 @@ export function updateProfile(userId: number, p: ProfileInput) {
         p.pref_distance_km ?? null,
         userId,
       );
+    }
+    if (p.religiosity && p.partner_religiosity) {
+      db.prepare("UPDATE users SET religiosity = ?, partner_religiosity = ? WHERE id = ?").run(p.religiosity, p.partner_religiosity, userId);
     }
     db.prepare("DELETE FROM cultural_prompts WHERE user_id = ?").run(userId);
     const ins = db.prepare("INSERT INTO cultural_prompts (user_id, question_key, answer_text) VALUES (?, ?, ?)");

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, Loader2, Plus, X } from "lucide-react";
 import { api, haptic } from "@/lib/client";
-import { CULTURAL_PROMPTS, QUIZ_QUESTIONS, promptQuestion } from "@/lib/content";
+import { CULTURAL_PROMPTS, ONBOARDING_QUIZ, PARTNER_RELIGIOSITY, RELIGIOSITY, promptQuestion, type PartnerReligiosity, type Religiosity } from "@/lib/content";
 import { CITY_NAMES } from "@/lib/cities";
 import { PreferencesFields } from "./PreferencesFields";
 import { QuizStepper } from "./QuizStepper";
@@ -30,6 +30,8 @@ export type ProfileDraft = {
   pref_age_min: number | null;
   pref_age_max: number | null;
   pref_distance_km: number | null;
+  religiosity?: Religiosity;
+  partner_religiosity?: PartnerReligiosity;
 };
 
 
@@ -39,13 +41,13 @@ const META: Record<WizardStep, { title: string; subtitle: string; tab: string }>
   about: { title: "קצת עליך", subtitle: "מה את/ה עושה ומה חשוב לך. כנות מנצחת.", tab: "עליי" },
   looking: { title: "את מי את/ה מחפש/ת?", subtitle: "אפשר לשנות את זה בכל רגע, ישירות ממסך הגילוי.", tab: "חיפוש" },
   prompts: { title: "שאלות מהבית", subtitle: "בחר/י 2–3 שאלות. כאן מתחילות השיחות הכי טובות.", tab: "שאלות" },
-  quiz: { title: "זה או זה?", subtitle: `${QUIZ_QUESTIONS.length} שאלות מהירות — מהבית ומהחיים. כל תשובה משפרת את ההתאמות.`, tab: "שאלון" },
+  quiz: { title: "שאלון פתיחה", subtitle: "2 שאלות על אורח החיים ועוד 3 של \"זה או זה\". את השאר נציע בהמשך — בקצב שלך.", tab: "שאלון" },
 };
 
 // Mirrors the server-side zod rules in /api/me.
 const emailOk = (e: string) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 function errors(d: ProfileDraft, tiles: Tile[], quiz: Record<string, "a" | "b"> | null) {
-  const quizLeft = quiz ? QUIZ_QUESTIONS.filter((q) => !quiz[q.key]).length : QUIZ_QUESTIONS.length;
+  const quizLeft = quiz ? ONBOARDING_QUIZ.filter((q) => !quiz[q.key]).length : ONBOARDING_QUIZ.length;
   const answered = d.prompts.filter((p) => p.answer_text.trim().length >= 2);
   return {
     photos: tiles.some((t) => !t.url && !t.error) ? "התמונות עדיין עולות…" : tiles.filter((t) => t.url).length === 0 ? "צריך לפחות תמונה אחת" : null,
@@ -57,7 +59,9 @@ function errors(d: ProfileDraft, tiles: Tile[], quiz: Record<string, "a" | "b"> 
     bio: d.bio.trim().length < 10 ? `עוד ${10 - d.bio.trim().length} תווים לפחות` : null,
     email: emailOk(d.email.trim()) ? null : "כתובת אימייל לא תקינה",
     prompts: answered.length < 2 ? `ענה/י על ${2 - answered.length} שאלות נוספות` : null,
-    quiz: quizLeft > 0 ? `נשארו ${quizLeft} שאלות` : null,
+    religiosity: !d.religiosity ? "נא לבחור" : null,
+    partner_religiosity: !d.partner_religiosity ? "נא לבחור" : null,
+    quiz: quizLeft > 0 ? (quizLeft === 1 ? "נשארה שאלה אחת" : `נשארו ${quizLeft} שאלות`) : null,
   };
 }
 type Errors = ReturnType<typeof errors>;
@@ -67,7 +71,7 @@ const STEP_FIELDS: Record<WizardStep, (keyof Errors)[]> = {
   looking: [],
   about: ["occupation", "bio", "email"],
   prompts: ["prompts"],
-  quiz: ["quiz"],
+  quiz: ["religiosity", "partner_religiosity", "quiz"],
 };
 const stepValid = (e: Errors, s: WizardStep) => STEP_FIELDS[s].every((k) => !e[k]);
 
@@ -261,8 +265,30 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
 
             {step === "quiz" && (
               <>
-                <QuizStepper answers={quiz} onAnswer={(key, choice) => setQuiz((a) => ({ ...(a ?? {}), [key]: choice }))} />
-                {showErrors && errs.quiz && <p className="mt-3 px-1 text-[12px] text-danger">{errs.quiz}</p>}
+                <div className="space-y-7">
+                  <ChoiceGroup
+                    label="איך את/ה מגדיר/ה את עצמך?"
+                    value={d.religiosity}
+                    options={RELIGIOSITY}
+                    onChange={(v) => setD((s) => ({ ...s, religiosity: v }))}
+                    error={showErrors ? errs.religiosity : null}
+                  />
+                  <ChoiceGroup
+                    label="כמה חשוב לך שהצד השני יהיה דתי/ה?"
+                    value={d.partner_religiosity}
+                    options={PARTNER_RELIGIOSITY}
+                    onChange={(v) => setD((s) => ({ ...s, partner_religiosity: v }))}
+                    error={showErrors ? errs.partner_religiosity : null}
+                    stacked
+                  />
+                  <div>
+                    <span className="label px-1">ועוד 3 שאלות מהירות — זה או זה?</span>
+                    <div className="mt-2">
+                      <QuizStepper questions={ONBOARDING_QUIZ} answers={quiz} onAnswer={(key, choice) => setQuiz((a) => ({ ...(a ?? {}), [key]: choice }))} />
+                    </div>
+                    {showErrors && errs.quiz && <p className="mt-3 px-1 text-[12px] text-danger">{errs.quiz}</p>}
+                  </div>
+                </div>
               </>
             )}
 
@@ -426,5 +452,53 @@ function PromptPicker({ open, current, used, onClose, onPick }: { open: boolean;
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** Single-choice pills for the opening questionnaire. */
+function ChoiceGroup<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  error,
+  stacked = false,
+}: {
+  label: string;
+  value?: T;
+  options: Record<T, string>;
+  onChange: (v: T) => void;
+  error?: string | null;
+  stacked?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label}>
+      <span className="label px-1">{label}</span>
+      <div className={stacked ? "mt-2 space-y-2" : "mt-2 grid grid-cols-3 gap-2"}>
+        {(Object.entries(options) as [T, string][]).map(([v, text]) => {
+          const active = value === v;
+          return (
+            <motion.button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                haptic(6);
+                onChange(v);
+              }}
+              className={`flex w-full items-center rounded-2xl border px-3 py-3.5 text-[15px] font-medium transition-colors ${
+                stacked ? "justify-between px-4 text-right" : "justify-center text-center"
+              } ${active ? "border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_24px_-10px_rgba(212,175,55,0.7)]" : "border-line-2 bg-white/[0.03] text-cream/85 hover:border-white/20"}`}
+            >
+              {text}
+              {stacked && <span className={`h-4 w-4 shrink-0 rounded-full border-2 transition ${active ? "border-gold-2 bg-gold-2 shadow-[inset_0_0_0_3px_var(--color-ink-2)]" : "border-white/25"}`} />}
+            </motion.button>
+          );
+        })}
+      </div>
+      {error && <p className="mt-2 px-1 text-[12px] text-danger">{error}</p>}
+    </div>
   );
 }

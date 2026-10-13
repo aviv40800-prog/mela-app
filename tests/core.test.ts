@@ -360,4 +360,43 @@ describe("improve-your-profile check-ins", () => {
     expect(more).toHaveLength(3);
     expect(more.some((id) => plan.ideas.some((i) => i.id === id))).toBe(false);
   });
+
+  it("ranks observance fit and respects what matters to each side", async () => {
+    const { compatibility } = await import("@/lib/matching");
+    const me = member("מחפש", "male");
+    const religious = member("דתייה", "female");
+    const secular = member("חילונית", "female");
+    db.prepare("UPDATE users SET religiosity = 'religious', partner_religiosity = 'religious' WHERE id = ?").run(me.id);
+    db.prepare("UPDATE users SET religiosity = 'religious', partner_religiosity = 'any' WHERE id = ?").run(religious.id);
+    db.prepare("UPDATE users SET religiosity = 'secular', partner_religiosity = 'any' WHERE id = ?").run(secular.id);
+    expect(compatibility(me.id, religious.id)).toBeGreaterThan(compatibility(me.id, secular.id) + 15);
+    expect(discoveryDeck(getUser(me.id)!).map((c) => c.id)[0]).toBe(religious.id);
+  });
+
+  it("widens the feed instead of showing an empty deck when the range is too narrow", async () => {
+    const { discoverFeed } = await import("@/lib/matching");
+    const me = member("חדש", "male");
+    const her = member("היא", "female");
+    db.prepare("UPDATE users SET pref_age_min = 40, pref_age_max = 45 WHERE id = ?").run(me.id);
+    const feed = discoverFeed(getUser(me.id)!);
+    expect(feed).toMatchObject({ widened: true, swipes: 0 });
+    expect(feed.candidates.map((c) => c.id)).toEqual([her.id]);
+    db.prepare("UPDATE users SET pref_age_min = NULL, pref_age_max = NULL WHERE id = ?").run(me.id);
+    expect(discoverFeed(getUser(me.id)!).widened).toBe(false);
+  });
+
+  it("asks 3 questions at sign-up and offers the rest three at a time", async () => {
+    const { ONBOARDING_QUIZ, QUIZ_QUESTIONS } = await import("@/lib/content");
+    const { nextQuestions } = await import("@/lib/checkin");
+    expect(ONBOARDING_QUIZ).toHaveLength(3);
+    const u = member("א", "male");
+    const ins = db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, 'a')");
+    ONBOARDING_QUIZ.forEach((q) => ins.run(u.id, q.key));
+    const first = nextQuestions(u.id);
+    expect(first.questions).toHaveLength(3);
+    expect(first.questions.every((q) => QUIZ_QUESTIONS.some((c) => c.key === q.key))).toBe(true);
+    expect(first.questions.some((q) => ONBOARDING_QUIZ.some((o) => o.key === q.key))).toBe(false);
+    first.questions.forEach((q) => ins.run(u.id, q.key));
+    expect(nextQuestions(u.id).questions.map((q) => q.key)).not.toEqual(first.questions.map((q) => q.key));
+  });
 });
