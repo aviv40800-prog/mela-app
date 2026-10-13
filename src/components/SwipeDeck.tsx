@@ -194,7 +194,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               onClick={() => setWidened(false)}
-              className="absolute inset-x-0 top-14 z-20 mx-auto w-fit max-w-[88%] rounded-full border border-gold/30 bg-black/60 px-4 py-2 text-center text-[12px] leading-snug text-cream/90 backdrop-blur-md"
+              className="on-dark absolute inset-x-0 top-14 z-20 mx-auto w-fit max-w-[88%] rounded-full border border-gold/30 bg-black/60 px-4 py-2 text-center text-[12px] leading-snug text-cream/90 backdrop-blur-md"
             >
               אין עדיין אנשים בטווח שבחרת — מציגים גם מעט מחוץ לו
             </motion.button>
@@ -275,7 +275,7 @@ function TopCard({
       </motion.div>
       <motion.div
         style={{ opacity: passGlow, scale: passStamp }}
-        className="pointer-events-none absolute top-12 right-7 rotate-[14deg] rounded-2xl border-[3px] border-cream/80 bg-black/20 px-4 py-1.5 text-3xl font-black text-cream/90 backdrop-blur-sm"
+        className="on-dark pointer-events-none absolute top-12 right-7 rotate-[14deg] rounded-2xl border-[3px] border-cream/80 bg-black/20 px-4 py-1.5 text-3xl font-black text-cream/90 backdrop-blur-sm"
       >
         לא הפעם
       </motion.div>

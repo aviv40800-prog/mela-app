@@ -83,7 +83,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
             <div className="eyebrow mb-3">מה משותף לכם</div>
             <div className="flex flex-wrap gap-2">
               {c.shared.map((t) => (
-                <span key={t} className="rounded-full border border-gold/30 bg-black/20 px-3 py-1.5 text-[13px] text-cream/90">
+                <span key={t} className="rounded-full border border-gold/30 bg-ink-3/80 px-3 py-1.5 text-[13px] font-medium text-cream">
                   {t}
                 </span>
               ))}

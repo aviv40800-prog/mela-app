@@ -158,17 +158,19 @@ export function PicksView({ me }: { me: MiniProfile }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
-            className="fixed inset-0 z-40 mx-auto max-w-md overflow-y-auto bg-ink px-3 pt-[max(env(safe-area-inset-top),12px)] pb-40"
+            className="fixed inset-0 z-[45] mx-auto max-w-md overflow-y-auto bg-ink px-3 pt-[max(env(safe-area-inset-top),12px)] pb-40"
           >
             <button onClick={() => setOpen(null)} className="mb-3 flex h-12 items-center gap-1 px-2 text-sm text-mute transition hover:text-cream">
               <ArrowRight size={18} /> חזרה לבחירות
             </button>
             <ProfileCard c={open} onPromptLike={setSheet} />
-            <div className="fixed inset-x-0 bottom-8 z-50 mx-auto flex max-w-md justify-center gap-7">
+            {/* Above the bottom nav (z-40); ✕ left and red ♥ right, like Discover */}
+            <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto h-40 max-w-md bg-gradient-to-t from-ink via-ink/85 to-transparent" />
+            <div dir="ltr" className="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),28px)] z-50 mx-auto flex max-w-md items-center justify-center gap-7">
               <motion.button
                 whileTap={{ scale: 0.82 }}
                 onClick={() => decide(open, "pass")}
-                className="grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/80 shadow-xl backdrop-blur-xl"
+                className="grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/90 text-cream/85 shadow-[0_14px_34px_-12px_rgba(90,52,26,0.35)] backdrop-blur-xl"
                 aria-label="דילוג"
               >
                 <X size={28} />
@@ -176,10 +178,16 @@ export function PicksView({ me }: { me: MiniProfile }) {
               <motion.button
                 whileTap={{ scale: 0.82 }}
                 onClick={() => decide(open, "like")}
-                className="grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[0_14px_44px_-6px_rgba(180,87,58,0.85)]"
+                className="grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-[#ff6b70] via-[#e5383b] to-[#b8141c] text-white shadow-[0_14px_44px_-6px_rgba(229,56,59,0.85),inset_0_1px_0_rgba(255,255,255,0.45)]"
                 aria-label="לייק"
               >
-                <Heart size={32} className="fill-current" />
+                <motion.span
+                  animate={{ scale: [1, 1.18, 1, 1.12, 1] }}
+                  transition={{ duration: 1.1, times: [0, 0.15, 0.3, 0.45, 0.7], repeat: Infinity, repeatDelay: 2.4 }}
+                  className="grid place-items-center"
+                >
+                  <Heart size={32} className="fill-current" />
+                </motion.span>
               </motion.button>
             </div>
           </motion.div>

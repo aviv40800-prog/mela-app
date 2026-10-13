@@ -182,7 +182,7 @@ export function PhotoGrid({ tiles, onChange }: { tiles: Tile[]; onChange: (updat
               )}
 
               {main && tile.url && (
-                <span className="absolute right-2.5 bottom-2.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold text-gold-2 backdrop-blur">
+                <span className="on-dark absolute right-2.5 bottom-2.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-semibold text-gold-2 backdrop-blur">
                   תמונה ראשית
                 </span>
               )}
@@ -233,7 +233,7 @@ function IconChip({ children, label, onClick }: { children: React.ReactNode; lab
       whileTap={{ scale: 0.85 }}
       onClick={onClick}
       aria-label={label}
-      className="grid h-7 w-7 place-items-center rounded-full bg-black/55 text-cream backdrop-blur-md transition hover:bg-black/75"
+      className="on-dark grid h-7 w-7 place-items-center rounded-full bg-black/55 text-cream backdrop-blur-md transition hover:bg-black/75"
     >
       {children}
     </motion.button>
