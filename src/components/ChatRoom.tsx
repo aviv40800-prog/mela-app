@@ -3,12 +3,12 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, Coffee, MapPin, SendHorizontal, X } from "lucide-react";
-import { DatePlanner, DatePlannerSheet } from "./DatePlanner";
+import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, MapPin, MessageCircleQuestion, RefreshCw, SendHorizontal, X } from "lucide-react";
+import { DatePlannerSheet } from "./DatePlanner";
 import { Photo } from "./Photo";
 import { useRealtime } from "./Realtime";
 import { api, haptic } from "@/lib/client";
-import { DATE_PREFIX, ICEBREAKERS } from "@/lib/content";
+import { CONVO_QUESTIONS, DATE_PREFIX, ICEBREAKERS, promptQuestion } from "@/lib/content";
 import type { DatePlan } from "@/lib/dates";
 import type { ChatMessage, PublicProfile } from "@/lib/types";
 
@@ -26,6 +26,13 @@ function dayLabel(iso: string) {
 }
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
+/** A date suggestion is only offered once both have really been talking. */
+const DATE_READY = { total: 10, each: 4 };
+/** After "not now", offer again only after this many more messages. */
+const DATE_REOFFER_AFTER = 12;
+
+const shuffle = <T,>(xs: readonly T[], seed: number) =>
+  [...xs].map((x, i) => ({ x, k: Math.sin(seed * 9301 + i * 49297) })).sort((a, b) => a.k - b.k).map((o) => o.x);
 
 export function ChatRoom({
   matchId,
@@ -46,14 +53,22 @@ export function ChatRoom({
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
   const [sending, setSending] = useState(false);
-  const [tray, setTray] = useState(initial.length > 0 && initial.length < 3);
+  const [tray, setTray] = useState(false);
+  const [round, setRound] = useState(() => Math.floor(Math.random() * 1000));
   const [planner, setPlanner] = useState(false);
+  const offerKey = `mela:date-offer:${matchId}`;
+  const [dismissedAt, setDismissedAt] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(offerKey);
+      if (v) setDismissedAt(Number(v));
+    } catch {}
+  }, [offerKey]);
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastTypingSent = useRef(0);
   const first = partner.full_name.split(" ")[0];
-  const [icebreakers] = useState(() => [...ICEBREAKERS].sort(() => Math.random() - 0.5).slice(0, 4));
 
   const markRead = () => void api(`/api/matches/${matchId}/read`, { method: "POST" }).catch(() => {});
   useEffect(markRead, [matchId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -132,7 +147,26 @@ export function ChatRoom({
 
   const lastMine = [...messages].reverse().find((m) => m.sender_id === meId);
   const proposed = messages.some((m) => m.text_content.startsWith(DATE_PREFIX));
-  const nudge = messages.length >= 8 && !proposed;
+  const mineCount = messages.filter((m) => m.sender_id === meId).length;
+  const dateReady = messages.length >= DATE_READY.total && mineCount >= DATE_READY.each && messages.length - mineCount >= DATE_READY.each;
+  const showDateOffer = dateReady && !proposed && !planner && (dismissedAt === null || messages.length >= dismissedAt + DATE_REOFFER_AFTER);
+  function dismissDateOffer() {
+    setDismissedAt(messages.length);
+    try {
+      localStorage.setItem(offerKey, String(messages.length));
+    } catch {}
+  }
+
+  // "Idea for a question": something personal from their profile, then light questions early on and deeper ones once it flows.
+  const personal = partner.prompts.map((p) => `ראיתי שכתבת על ״${promptQuestion(p.question_key).replace("...", "")}״: ״${p.answer_text.slice(0, 40)}״ — ספר/י לי עוד?`);
+  const pool = messages.length < 8 ? [...ICEBREAKERS, ...CONVO_QUESTIONS.light] : [...CONVO_QUESTIONS.deeper, ...CONVO_QUESTIONS.light];
+  const ideas = [...shuffle(personal, round).slice(0, 1), ...shuffle(pool, round)].slice(0, 3);
+  function pickIdea(q: string) {
+    haptic(8);
+    setText(q);
+    setTray(false);
+    requestAnimationFrame(() => input.current?.focus());
+  }
 
   return (
     <main className="flex h-dvh flex-col">
@@ -153,7 +187,10 @@ export function ChatRoom({
             </motion.div>
           </AnimatePresence>
         </div>
+        {dateReady && (
         <motion.button
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setPlanner(true)}
           className="flex h-10 items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.07] px-3.5 text-[13px] font-medium text-gold-2 transition hover:border-gold/60 hover:bg-gold/[0.12]"
@@ -161,6 +198,7 @@ export function ChatRoom({
         >
           <CalendarHeart size={16} strokeWidth={1.75} /> דייט
         </motion.button>
+        )}
       </header>
 
       <div ref={scroller} className="no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-3">
@@ -189,17 +227,10 @@ export function ChatRoom({
                 ))}
               </div>
             ) : (
-              <p className="mt-1.5 max-w-[16rem] text-sm text-mute">ההודעה הראשונה היא החלק הכי קשה. אפשר להתחיל מפתיח מהבית — או ישר מהצעה לדייט.</p>
+              <p className="mt-1.5 max-w-[16rem] text-sm text-mute">ההודעה הראשונה היא החלק הכי קשה. צריך השראה? לחצו על ״רעיון לשאלה״ למטה.</p>
             )}
           </motion.div>
         )}
-        {/* Until someone proposes a date, the planner sits at the top of the conversation and scrolls away as it grows. */}
-        {!proposed && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 260, damping: 30 }} className="pb-2">
-            <DatePlanner matchId={matchId} partnerFirst={first} initial={plan} onPropose={send} compact />
-          </motion.div>
-        )}
-
         {messages.map((m, i) => {
           const prev = messages[i - 1];
           const next = messages[i + 1];
@@ -297,53 +328,105 @@ export function ChatRoom({
         {planner && <DatePlannerSheet matchId={matchId} partnerFirst={first} initial={plan} onPropose={async (t) => { setPlanner(false); await send(t); }} onClose={() => setPlanner(false)} />}
       </AnimatePresence>
 
-      {/* after a real conversation, nudge toward actually meeting */}
+      {/* After a real back-and-forth: offer a date suggestion — nothing opens until someone taps */}
       <AnimatePresence>
-        {nudge && !tray && (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            onClick={() => setPlanner(true)}
-            className="mx-4 mb-2 flex items-center gap-3 rounded-2xl border border-gold/25 bg-ink-3/80 px-4 py-2.5 text-right backdrop-blur-xl"
+        {showDateOffer && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="glass-gold mx-4 mb-2 rounded-[24px] p-4"
+            role="dialog"
+            aria-label="המלצה לדייט"
           >
-            <CalendarHeart size={17} className="shrink-0 text-gold-2" strokeWidth={1.75} />
-            <span className="flex-1 text-[13px] text-cream/85">נראה שיש כימיה. מוכנים להיפגש? יש לנו 3 רעיונות בשבילכם</span>
-            <span className="text-[12px] font-semibold text-gold-2">לרעיונות</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* icebreaker tray */}
-      <AnimatePresence initial={false}>
-        {tray && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 400, damping: 38 }} className="overflow-hidden">
-            <div className="flex items-center justify-between px-5 pt-1 pb-2">
-              <span className="eyebrow flex items-center gap-1.5">
-                <Coffee size={12} /> פתיחים מהבית
-              </span>
-              <button onClick={() => setTray(false)} className="text-mute-2 transition hover:text-cream" aria-label="סגירת פתיחים">
-                <X size={15} />
+            <div className="flex items-start gap-3">
+              <motion.span
+                animate={{ scale: [1, 1.12, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 1 }}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-gold-3 to-gold text-[#fffaf3]"
+              >
+                <CalendarHeart size={20} />
+              </motion.span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] font-semibold">נראה שזורם ביניכם</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-mute">רוצים המלצה לדייט? 3 רעיונות שמתאימים לשניכם ולאזור שלכם.</p>
+              </div>
+              <button onClick={dismissDateOffer} className="text-mute-2 transition hover:text-cream" aria-label="סגירה">
+                <X size={16} />
               </button>
             </div>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3">
-              {icebreakers.map((ib, i) => (
-                <motion.button
-                  key={ib}
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => send(ib)}
-                  className="max-w-[16rem] shrink-0 rounded-2xl border border-gold/20 bg-gradient-to-b from-gold/[0.08] to-transparent px-3.5 py-2.5 text-right text-[13px] leading-snug text-cream/90 transition hover:border-gold/45"
-                >
-                  {ib}
-                </motion.button>
-              ))}
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setPlanner(true)} className="btn-gold flex-1 !py-2.5 text-[14px]">
+                כן, תראו לי
+              </button>
+              <button onClick={dismissDateOffer} className="btn-ghost !px-5 !py-2.5 text-[14px]">
+                לא עכשיו
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* "Idea for a question" — right above the keyboard */}
+      <div className="px-4 pb-2">
+        <AnimatePresence initial={false} mode="wait">
+          {tray ? (
+            <motion.div
+              key="tray"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              className="surface rounded-[22px] p-3"
+            >
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="eyebrow flex items-center gap-1.5">
+                  <MessageCircleQuestion size={13} /> רעיונות לשאלה
+                </span>
+                <div className="flex items-center gap-1">
+                  <motion.button whileTap={{ rotate: -180 }} onClick={() => setRound((n) => n + 1)} className="grid h-8 w-8 place-items-center rounded-full text-mute transition hover:text-gold-2" aria-label="רעיונות אחרים">
+                    <RefreshCw size={15} />
+                  </motion.button>
+                  <button onClick={() => setTray(false)} className="grid h-8 w-8 place-items-center rounded-full text-mute transition hover:text-cream" aria-label="סגירה">
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {ideas.map((q, i) => (
+                  <motion.button
+                    key={`${round}-${q}`}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => pickIdea(q)}
+                    className="block w-full rounded-2xl border border-gold/20 bg-gold/[0.05] px-3.5 py-2.5 text-right text-[14px] leading-snug text-cream/90 transition hover:border-gold/45"
+                  >
+                    {q}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.button
+              key="chip"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                haptic(6);
+                setTray(true);
+              }}
+              className="flex items-center gap-1.5 rounded-full border border-gold/35 bg-ink-3/80 px-3.5 py-1.5 text-[13px] font-medium text-gold-2 shadow-[var(--shadow-soft)] backdrop-blur"
+            >
+              <MessageCircleQuestion size={15} /> רעיון לשאלה
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* composer */}
       <form
@@ -353,16 +436,6 @@ export function ChatRoom({
         }}
         className="flex items-end gap-2 border-t border-line bg-ink/80 px-3 pt-3 backdrop-blur-2xl safe-bottom"
       >
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.85 }}
-          onClick={() => setTray((t) => !t)}
-          className={`mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${tray ? "bg-gold/15 text-gold-2" : "text-mute hover:text-gold-2"}`}
-          aria-label="פתיחים"
-          aria-pressed={tray}
-        >
-          <Coffee size={20} strokeWidth={1.75} />
-        </motion.button>
         <div className="field flex-1 !rounded-[24px] !p-0">
           <textarea
             ref={input}

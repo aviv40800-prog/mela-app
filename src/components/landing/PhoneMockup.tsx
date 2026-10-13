@@ -18,18 +18,18 @@ export function PhoneMockup() {
             </defs>
             <rect width="100%" height="100%" fill="url(#pm-weave)" />
           </svg>
-          <div className="font-display emboss absolute inset-x-0 top-28 text-center text-[9rem] leading-none font-bold opacity-80">ס</div>
+          <div className="font-display emboss absolute inset-x-0 top-28 text-center text-[9rem] leading-none font-bold opacity-80">ב</div>
           <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black via-black/70 to-transparent" />
           <div className="absolute top-12 right-4 flex items-center gap-1 rounded-full border border-gold/30 bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-gold-2 backdrop-blur">
             <CompatRing value={92} size={11} /> 92% התאמה
           </div>
           <div className="absolute inset-x-0 bottom-24 px-5">
             <div className="flex items-baseline gap-2 text-[1.7rem] leading-none font-bold">
-              סבלה <span className="text-[1.3rem] font-light text-cream/85">27</span>
+              בתאל <span className="text-[1.3rem] font-light text-cream/85">25</span>
               <BadgeCheck size={18} className="self-center text-gold-2" />
             </div>
             <div className="mt-2.5 flex gap-1.5 text-[11px]">
-              <span className="rounded-full bg-fg/10 px-2.5 py-1">מעצבת UX</span>
+              <span className="rounded-full bg-fg/10 px-2.5 py-1">סטודנטית לאחיות</span>
               <span className="flex items-center gap-1 rounded-full bg-fg/10 px-2.5 py-1">
                 <MapPin size={10} /> חיפה
               </span>
@@ -39,11 +39,12 @@ export function PhoneMockup() {
               <div className="font-display mt-1 text-[13px] leading-snug">ג׳בנה של סבתא, קטורת ושקט של בוקר שבת.</div>
             </div>
           </div>
-          <div className="absolute inset-x-0 bottom-6 flex justify-center gap-5">
-            <span className="grid h-12 w-12 place-items-center rounded-full border border-fg/15 bg-ink-3/80">
+          {/* same layout as the app: ✕ (pass) on the left, red ♥ (like) on the right */}
+          <div dir="ltr" className="absolute inset-x-0 bottom-6 flex justify-center gap-5">
+            <span className="grid h-12 w-12 place-items-center rounded-full border border-white/25 bg-white/10 backdrop-blur">
               <X size={20} />
             </span>
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_10px_30px_-6px_rgba(180,87,58,0.8)]">
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-[#ff6b70] via-[#e5383b] to-[#b8141c] text-white shadow-[0_10px_30px_-6px_rgba(229,56,59,0.8)]">
               <Heart size={24} className="fill-current" />
             </span>
           </div>
