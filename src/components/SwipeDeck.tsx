@@ -259,7 +259,7 @@ function TopCard({
       {/* reactive edge glows */}
       <motion.div
         style={{ opacity: likeGlow }}
-        className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_0_0_2px_rgba(229,193,88,0.95),inset_0_0_60px_rgba(212,175,55,0.35),0_0_50px_-6px_rgba(212,175,55,0.65)]"
+        className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_0_0_2px_rgba(196,106,72,0.95),inset_0_0_60px_rgba(180,87,58,0.35),0_0_50px_-6px_rgba(180,87,58,0.65)]"
       />
       <motion.div
         style={{ opacity: passGlow }}
@@ -269,7 +269,7 @@ function TopCard({
       {/* stamps (like on the left edge = the side the card travels away from in RTL) */}
       <motion.div
         style={{ opacity: likeGlow, scale: likeStamp }}
-        className="pointer-events-none absolute top-12 left-7 -rotate-[14deg] rounded-2xl border-[3px] border-gold-2 bg-black/20 px-4 py-1.5 text-3xl font-black text-gold-2 shadow-[0_0_24px_rgba(229,193,88,0.5)] backdrop-blur-sm"
+        className="pointer-events-none absolute top-12 left-7 -rotate-[14deg] rounded-2xl border-[3px] border-gold-2 bg-black/20 px-4 py-1.5 text-3xl font-black text-gold-2 shadow-[0_0_24px_rgba(196,106,72,0.5)] backdrop-blur-sm"
       >
         אהבתי
       </motion.div>
@@ -310,7 +310,7 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
         style={{ scale: passScale }}
         whileTap={{ scale: 0.82 }}
         onClick={onPass}
-        className="pointer-events-auto grid h-[62px] w-[62px] place-items-center rounded-full border border-white/15 bg-ink-3/80 text-cream/85 shadow-[0_14px_34px_-12px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-colors hover:text-cream"
+        className="pointer-events-auto grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/80 text-cream/85 shadow-[0_14px_34px_-12px_rgba(90,52,26,0.285)] backdrop-blur-xl transition-colors hover:text-cream"
         aria-label="דילוג"
       >
         <X size={28} strokeWidth={2.4} />
@@ -319,10 +319,10 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
         style={{ scale: likeScale }}
         whileTap={{ scale: 0.82 }}
         onClick={onLike}
-        className="pointer-events-auto relative grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]"
+        className="pointer-events-auto relative grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[inset_0_1px_0_rgba(70,42,24,0.6)]"
         aria-label="לייק"
       >
-        <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(212,175,55,0.85)]" />
+        <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(180,87,58,0.85)]" />
         <Heart size={32} className="fill-current" />
         {quota && !quota.premium && (
           <motion.span

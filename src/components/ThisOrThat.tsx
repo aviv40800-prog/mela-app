@@ -45,13 +45,13 @@ export function ThisOrThat() {
           <p className="eyebrow">משפר את ההתאמות שלך</p>
           <h2 className="font-display mt-1 text-[1.65rem] font-bold">זה או זה?</h2>
         </div>
-        <span className="tabular rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-gold-2" dir="ltr">
+        <span className="tabular rounded-full bg-fg/[0.05] px-2.5 py-1 text-xs text-gold-2" dir="ltr">
           {Math.min(answered, QUIZ_QUESTIONS.length)}/{QUIZ_QUESTIONS.length}
         </span>
       </div>
-      <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+      <div className="mt-4 h-[3px] overflow-hidden rounded-full bg-fg/[0.07]">
         <motion.div
-          className="mr-0 ml-auto h-full rounded-full bg-gradient-to-l from-gold-3 to-gold shadow-[0_0_10px_rgba(229,193,88,0.7)]"
+          className="mr-0 ml-auto h-full rounded-full bg-gradient-to-l from-gold-3 to-gold shadow-[0_0_10px_rgba(196,106,72,0.7)]"
           animate={{ width: `${(answered / QUIZ_QUESTIONS.length) * 100}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
         />
@@ -81,7 +81,7 @@ export function ThisOrThat() {
                   animate={picked ? { scale: 1.03 } : result ? { scale: 0.97, opacity: 0.45 } : { scale: 1, opacity: 1 }}
                   onClick={() => choose(side)}
                   className={`relative flex min-h-40 flex-col items-center justify-center overflow-hidden rounded-3xl p-4 text-center text-[17px] font-semibold transition-colors ${
-                    picked ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(212,175,55,0.6)]" : "surface hover:border-line-2"
+                    picked ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(180,87,58,0.6)]" : "surface hover:border-line-2"
                   }`}
                 >
                   {q[side]}
@@ -103,7 +103,7 @@ export function ThisOrThat() {
                 </motion.button>
               );
             })}
-            <span className="pointer-events-none absolute top-1/2 left-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/40 bg-ink text-xs font-bold text-gold shadow-[0_0_20px_-4px_rgba(212,175,55,0.5)]">
+            <span className="pointer-events-none absolute top-1/2 left-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-gold/40 bg-ink text-xs font-bold text-gold shadow-[0_0_20px_-4px_rgba(180,87,58,0.5)]">
               או
             </span>
           </motion.div>

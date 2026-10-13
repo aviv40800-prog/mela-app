@@ -1,28 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #0d0d0f;
-  --color-ink-2: #121214;
-  --color-ink-3: #19191c;
-  --color-ink-4: #222226;
-  --color-line: rgb(255 255 255 / 0.07);
-  --color-line-2: rgb(255 255 255 / 0.12);
-  --color-gold: #d4af37;
-  --color-gold-2: #e5c158;
-  --color-gold-3: #f3dc94;
-  --color-gold-dim: #8a7124;
-  --color-cream: #f5f1e8;
-  --color-mute: #a39e93;
-  --color-mute-2: #6f6b64;
+  /* "Sand & terracotta": token names are historical — ink = sand surfaces, cream = text, gold = terracotta accent. */
+  --color-ink: #ecdfca; /* page sand */
+  --color-ink-2: #e6d6bd; /* deeper sand (sheets, bars) */
+  --color-ink-3: #f8f0e3; /* raised card */
+  --color-ink-4: #ddc9aa; /* pressed / track */
+  --color-line: rgb(70 42 24 / 0.1);
+  --color-line-2: rgb(70 42 24 / 0.17);
+  --color-fg: #46291a; /* translucent overlays: bg-fg/5 etc. */
+  --color-gold: #b4573a; /* terracotta leather */
+  --color-gold-2: #9e4529; /* accent text */
+  --color-gold-3: #e3a07f;
+  --color-gold-dim: #d08a68;
+  --color-gilt: #b8862e; /* real gold — logo, embossing */
+  --color-coffee: #4a2c1a; /* roasted bean */
+  --color-cream: #2e1d12; /* text */
+  --color-mute: #76594a;
+  --color-mute-2: #a08672;
   --color-danger: #e5675a;
   --color-success: #8fcf9a;
   --font-sans: "Heebo Variable", system-ui, sans-serif;
   --font-display: "Frank Ruhl Libre Variable", "Heebo Variable", serif;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-soft: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -16px rgb(0 0 0 / 0.8);
-  --shadow-float: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 24px 60px -24px rgb(0 0 0 / 0.95), 0 8px 18px -10px rgb(0 0 0 / 0.6);
-  --shadow-gold: 0 14px 40px -12px rgb(212 175 55 / 0.55);
+  --shadow-soft: 0 1px 0 rgb(70 42 24 / 0.5) inset, 0 12px 32px -18px rgb(90 52 26 / 0.3);
+  --shadow-float: 0 1px 0 rgb(70 42 24 / 0.6) inset, 0 24px 60px -28px rgb(90 52 26 / 0.35), 0 8px 18px -12px rgb(90 52 26 / 0.18);
+  --shadow-gold: 0 14px 34px -14px rgb(143 58 34 / 0.55);
 }
 
 @layer base {
@@ -37,9 +41,9 @@
   }
   body {
     background:
-      radial-gradient(90% 45% at 85% -5%, rgb(212 175 55 / 0.11), transparent 60%),
-      radial-gradient(70% 40% at 0% 10%, rgb(160 110 50 / 0.06), transparent 70%),
-      linear-gradient(180deg, #0f0f12 0%, var(--color-ink) 40%);
+      radial-gradient(90% 45% at 85% -5%, rgb(196 106 72 / 0.16), transparent 60%),
+      radial-gradient(70% 40% at 0% 10%, rgb(184 134 46 / 0.12), transparent 70%),
+      linear-gradient(180deg, #f1e6d4 0%, var(--color-ink) 40%);
     background-attachment: fixed;
     min-height: 100dvh;
     overflow-x: clip;
@@ -55,7 +59,7 @@
     inset: 0;
     pointer-events: none;
     z-index: 100;
-    opacity: 0.035;
+    opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   h1,
@@ -79,7 +83,7 @@
     text-wrap: pretty;
   }
   ::selection {
-    background: rgb(212 175 55 / 0.35);
+    background: rgb(180 87 58 / 0.35);
   }
   input,
   textarea,
@@ -88,7 +92,7 @@
     font: inherit;
   }
   :focus-visible {
-    outline: 2px solid rgb(229 193 88 / 0.7);
+    outline: 2px solid rgb(158 69 41 / 0.7);
     outline-offset: 2px;
   }
   button:focus:not(:focus-visible) {
@@ -100,12 +104,12 @@
   /* ---------- surfaces ---------- */
   .glass {
     position: relative;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.018));
+    background: linear-gradient(180deg, rgb(70 42 24 / 0.065), rgb(70 42 24 / 0.018));
     border: 1px solid var(--color-line);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 1px 0 rgb(70 42 24 / 0.07),
       var(--shadow-soft);
   }
   /* Glass with a lit gold edge — the border fades from gold at the top to nothing, like light on metal. */
@@ -113,8 +117,8 @@
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(120% 80% at 100% 0%, rgb(212 175 55 / 0.1), transparent 55%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015));
+      radial-gradient(120% 80% at 100% 0%, rgb(180 87 58 / 0.1), transparent 55%),
+      linear-gradient(180deg, rgb(70 42 24 / 0.05), rgb(70 42 24 / 0.015));
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow: var(--shadow-float);
@@ -126,7 +130,7 @@
     z-index: -1;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(180deg, rgb(229 193 88 / 0.55), rgb(229 193 88 / 0.08) 45%, rgb(255 255 255 / 0.06));
+    background: linear-gradient(180deg, rgb(158 69 41 / 0.55), rgb(158 69 41 / 0.08) 45%, rgb(70 42 24 / 0.06));
     mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -148,7 +152,7 @@
   /* Opaque premium surface — for things that stack (swipe cards, sheets). */
   .surface {
     background:
-      radial-gradient(120% 60% at 100% 0%, rgb(212 175 55 / 0.05), transparent 60%),
+      radial-gradient(120% 60% at 100% 0%, rgb(180 87 58 / 0.05), transparent 60%),
       linear-gradient(180deg, var(--color-ink-3), var(--color-ink-2));
     border: 1px solid var(--color-line);
     box-shadow: var(--shadow-float);
@@ -159,22 +163,22 @@
   }
   .gold-hairline {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(212 175 55 / 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgb(180 87 58 / 0.5), transparent);
   }
   .glow {
     box-shadow:
-      0 0 0 1px rgb(212 175 55 / 0.38),
-      0 0 30px -6px rgb(212 175 55 / 0.45);
+      0 0 0 1px rgb(180 87 58 / 0.38),
+      0 0 30px -6px rgb(180 87 58 / 0.45);
   }
   .ring-gold {
     box-shadow:
-      0 0 0 1.5px rgb(229 193 88 / 0.9),
-      0 0 0 5px rgb(212 175 55 / 0.14);
+      0 0 0 1.5px rgb(158 69 41 / 0.9),
+      0 0 0 5px rgb(180 87 58 / 0.14);
   }
 
   /* ---------- type ---------- */
   .gold-text {
-    background: linear-gradient(100deg, #b8922a 0%, #e5c158 35%, #fff1c1 50%, #e5c158 65%, #b8922a 100%);
+    background: linear-gradient(100deg, #7d5418 0%, #b8862e 30%, #e2b85e 48%, #b8862e 66%, #7d5418 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -185,7 +189,7 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     line-height: 1.3;
-    color: rgb(229 193 88 / 0.85);
+    color: rgb(158 69 41 / 0.85);
   }
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -203,11 +207,11 @@
     border-radius: 9999px;
     padding: 0.95rem 1.5rem;
     font-weight: 600;
-    color: #1a1406;
-    background: linear-gradient(180deg, #f0d47c, #d4af37 55%, #b8922a);
+    color: #fffaf3;
+    background: linear-gradient(180deg, #c4694a, #b4573a 55%, #93412a);
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.5),
-      inset 0 -1px 0 rgb(0 0 0 / 0.15),
+      inset 0 -1px 0 rgb(60 20 10 / 0.25),
       var(--shadow-gold);
     transition:
       transform 0.25s var(--ease-out-expo),
@@ -246,14 +250,14 @@
     padding: 0.9rem 1.5rem;
     font-weight: 500;
     border: 1px solid var(--color-line-2);
-    background: rgb(255 255 255 / 0.03);
+    background: rgb(70 42 24 / 0.03);
     transition:
       background 0.2s,
       border-color 0.2s,
       transform 0.25s var(--ease-out-expo);
   }
   .btn-ghost:hover {
-    background: rgb(255 255 255 / 0.07);
+    background: rgb(70 42 24 / 0.07);
   }
   .btn-ghost:active {
     transform: scale(0.97);
@@ -264,7 +268,7 @@
     width: 100%;
     border-radius: 1rem;
     padding: 0.9rem 1rem;
-    background: rgb(255 255 255 / 0.035);
+    background: rgb(70 42 24 / 0.035);
     border: 1px solid var(--color-line-2);
     color: var(--color-cream);
     outline: none;
@@ -274,13 +278,13 @@
       background 0.25s;
   }
   .field::placeholder {
-    color: rgb(163 158 147 / 0.55);
+    color: rgb(118 89 74 / 0.6);
   }
   .field:focus,
   .field:focus-within {
-    border-color: rgb(229 193 88 / 0.75);
-    background: rgb(255 255 255 / 0.05);
-    box-shadow: 0 0 0 4px rgb(212 175 55 / 0.13);
+    border-color: rgb(158 69 41 / 0.75);
+    background: rgb(70 42 24 / 0.05);
+    box-shadow: 0 0 0 4px rgb(180 87 58 / 0.13);
   }
   .label {
     display: block;
@@ -293,14 +297,14 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background: rgb(255 255 255 / 0.045);
+    background: rgb(70 42 24 / 0.045);
   }
   .skeleton::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(100%);
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06) 40%, rgb(229 193 88 / 0.07) 50%, rgb(255 255 255 / 0.06) 60%, transparent);
+    background: linear-gradient(90deg, transparent, rgb(70 42 24 / 0.06) 40%, rgb(158 69 41 / 0.07) 50%, rgb(70 42 24 / 0.06) 60%, transparent);
     animation: skeleton 1.6s ease-in-out infinite;
   }
 
@@ -308,9 +312,34 @@
   .tilet {
     height: 6px;
     background:
-      repeating-linear-gradient(135deg, transparent 0 4px, rgb(212 175 55 / 0.9) 4px 6px, transparent 6px 10px),
-      repeating-linear-gradient(45deg, transparent 0 4px, rgb(212 175 55 / 0.55) 4px 6px, transparent 6px 10px);
+      repeating-linear-gradient(135deg, transparent 0 4px, rgb(184 134 46 / 0.9) 4px 6px, transparent 6px 10px),
+      repeating-linear-gradient(45deg, transparent 0 4px, rgb(180 87 58 / 0.6) 4px 6px, transparent 6px 10px);
     mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  }
+  /* Text on photos and on leather keeps light colours. */
+  .on-dark {
+    --color-cream: #fbf4ea;
+    --color-mute: #ecd9c8;
+    --color-mute-2: #d9bfa9;
+    --color-gold: #e2b866;
+    --color-gold-2: #f2c98f;
+    --color-fg: #ffffff;
+    color: var(--color-cream);
+  }
+  /* Leather surface (premium cards, final CTA) — terracotta with a fine grain, like the brand vision. */
+  .leather {
+    background:
+      radial-gradient(120% 90% at 20% 0%, rgb(255 220 190 / 0.18), transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0 0.05 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)'/%3E%3C/svg%3E"),
+      linear-gradient(135deg, #bd6142, #9c4429 60%, #84361f);
+  }
+  /* Embossed gold lettering, as on the leather in the brand vision. */
+  .emboss {
+    background: linear-gradient(180deg, #f1d08a, #c99a45 45%, #8f6420);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 1px 0 rgb(255 230 200 / 0.35)) drop-shadow(0 -1px 0 rgb(60 20 8 / 0.45));
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -358,10 +387,10 @@
 }
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgb(212 175 55 / 0.45);
+    box-shadow: 0 0 0 0 rgb(180 87 58 / 0.45);
   }
   100% {
-    box-shadow: 0 0 0 22px rgb(212 175 55 / 0);
+    box-shadow: 0 0 0 22px rgb(180 87 58 / 0);
   }
 }
 @keyframes float {
@@ -419,9 +448,9 @@ html[data-reduce-motion] *::after {
   width: 26px;
   height: 26px;
   border-radius: 9999px;
-  background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
+  background: radial-gradient(circle at 35% 30%, #f3c2a8, #c46a48 45%, #8f3a22);
   border: 3px solid var(--color-ink);
-  box-shadow: 0 0 0 1px rgb(212 175 55 / 0.6), 0 4px 12px rgb(0 0 0 / 0.6);
+  box-shadow: 0 0 0 1px rgb(180 87 58 / 0.6), 0 4px 12px rgb(90 52 26 / 0.24);
   cursor: grab;
 }
 .range-thumb::-moz-range-thumb {
@@ -429,15 +458,28 @@ html[data-reduce-motion] *::after {
   width: 22px;
   height: 22px;
   border-radius: 9999px;
-  background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
+  background: radial-gradient(circle at 35% 30%, #f3c2a8, #c46a48 45%, #8f3a22);
   border: 3px solid var(--color-ink);
-  box-shadow: 0 0 0 1px rgb(212 175 55 / 0.6), 0 4px 12px rgb(0 0 0 / 0.6);
+  box-shadow: 0 0 0 1px rgb(180 87 58 / 0.6), 0 4px 12px rgb(90 52 26 / 0.24);
   cursor: grab;
 }
 .range-thumb:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px rgb(212 175 55 / 0.35);
+  box-shadow: 0 0 0 4px rgb(180 87 58 / 0.35);
 }
 .range-thumb::-webkit-slider-runnable-track,
 .range-thumb::-moz-range-track {
   background: transparent;
+}
+
+/* Primary buttons on leather turn to sand so they still stand out. */
+.on-dark .btn-gold {
+  color: #8f3a22;
+  background: linear-gradient(180deg, #fbf4ea, #ecdcc4);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    0 14px 30px -14px rgb(40 15 5 / 0.6);
+}
+.on-dark .btn-ghost {
+  border-color: rgb(255 240 225 / 0.35);
+  background: rgb(255 240 225 / 0.08);
 }

@@ -44,7 +44,7 @@ export function AdminPhotos({ userId, initial, name }: { userId: number; initial
     <div>
       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
         {photos.map((p, i) => (
-          <div key={p} className={`group relative aspect-[3/4] overflow-hidden rounded-2xl ${i === 0 ? "ring-2 ring-gold/60" : "ring-1 ring-white/10"}`}>
+          <div key={p} className={`group relative aspect-[3/4] overflow-hidden rounded-2xl ${i === 0 ? "ring-2 ring-gold/60" : "ring-1 ring-fg/10"}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p} alt={name} className="h-full w-full object-cover" />
             <div className="absolute inset-x-0 top-0 flex justify-between p-1.5 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">

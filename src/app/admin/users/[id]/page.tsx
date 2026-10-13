@@ -69,7 +69,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             ) : (
               <ul className="space-y-3">
                 {prompts.map((p) => (
-                  <li key={p.question_key} className="rounded-2xl border border-line bg-white/[0.02] p-4">
+                  <li key={p.question_key} className="rounded-2xl border border-line bg-fg/[0.02] p-4">
                     <div className="eyebrow">{promptQuestion(p.question_key)}</div>
                     <p className="mt-1.5 text-[15px]">{p.answer_text}</p>
                   </li>

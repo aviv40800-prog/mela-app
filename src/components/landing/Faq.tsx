@@ -12,7 +12,7 @@ export function Faq({ items }: { items: { q: string; a: string }[] }) {
         const isOpen = open === i;
         return (
           <li key={it.q}>
-            <button onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-right transition-colors hover:bg-white/[0.02]">
+            <button onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-right transition-colors hover:bg-fg/[0.02]">
               <span className="text-[16px] font-medium">{it.q}</span>
               <motion.span animate={{ rotate: isOpen ? 45 : 0 }} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-gold/30 text-gold-2">
                 <Plus size={16} />

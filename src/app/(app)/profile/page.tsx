@@ -83,8 +83,8 @@ export default async function ProfilePage() {
         <SectionTitle>המנוי שלי</SectionTitle>
         {premium && sub && plan && status ? (
           <>
-        <div className="relative overflow-hidden rounded-[26px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(212,175,55,0.45),var(--shadow-float)]">
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(229,193,88,0.28),transparent_55%),radial-gradient(90%_80%_at_0%_100%,rgba(138,113,36,0.35),transparent_60%),linear-gradient(135deg,#1d1a12,#0f0e0b)]" />
+        <div className="on-dark relative overflow-hidden rounded-[26px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(180,87,58,0.45),var(--shadow-float)]">
+          <div className="leather absolute inset-0" />
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-l from-transparent via-gold-3/70 to-transparent" />
           <div className="tilet absolute inset-x-6 bottom-3 opacity-40" />
           <div className="relative">
@@ -137,7 +137,7 @@ export default async function ProfilePage() {
                   FREE MEMBER
                 </div>
               </div>
-              <span className="rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-semibold text-mute">חינם</span>
+              <span className="rounded-full bg-fg/[0.07] px-3 py-1 text-[11px] font-semibold text-mute">חינם</span>
             </div>
             <div className="mt-6">
               <div className="flex items-baseline justify-between text-sm">
@@ -146,7 +146,7 @@ export default async function ProfilePage() {
                   {quota.used} / {quota.limit}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-fg/[0.07]">
                 <div
                   className="mr-0 ml-auto h-full rounded-full bg-gradient-to-l from-gold-3 to-gold"
                   style={{ width: `${Math.min(100, (quota.used / (quota.limit ?? 1)) * 100)}%` }}
@@ -261,7 +261,7 @@ function IconBox({ children }: { children: React.ReactNode }) {
 
 function Row({ href, icon, title, subtitle, children }: { href: string; icon: React.ReactNode; title: string; subtitle: string; children?: React.ReactNode }) {
   return (
-    <Link href={href} className="group flex items-center gap-3.5 px-4 py-4 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]">
+    <Link href={href} className="group flex items-center gap-3.5 px-4 py-4 transition-colors hover:bg-fg/[0.03] active:bg-fg/[0.05]">
       <IconBox>{icon}</IconBox>
       <div className="min-w-0 flex-1">
         <div className="text-[15px]">{title}</div>
@@ -279,14 +279,14 @@ function StrengthRing({ value, children }: { value: number; children: React.Reac
   const c = 2 * Math.PI * r;
   return (
     <div className="relative grid h-[132px] w-[132px] place-items-center">
-      <svg viewBox="0 0 132 132" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_10px_rgba(212,175,55,0.45)]" aria-hidden>
+      <svg viewBox="0 0 132 132" className="absolute inset-0 -rotate-90 drop-shadow-[0_0_10px_rgba(180,87,58,0.45)]" aria-hidden>
         <defs>
           <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#f3dc94" />
-            <stop offset="1" stopColor="#b8922a" />
+            <stop offset="0" stopColor="#e3a07f" />
+            <stop offset="1" stopColor="#8f3a22" />
           </linearGradient>
         </defs>
-        <circle cx="66" cy="66" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
+        <circle cx="66" cy="66" r={r} fill="none" stroke="rgba(70,42,24,0.07)" strokeWidth="3" />
         <circle cx="66" cy="66" r={r} fill="none" stroke="url(#ring)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value / 100)} />
       </svg>
       {children}

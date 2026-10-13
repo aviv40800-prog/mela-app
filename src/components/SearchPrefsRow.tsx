@@ -16,7 +16,7 @@ export function SearchPrefsRow({ prefs }: { prefs: Prefs }) {
   const dist = prefs.pref_distance_km ? `עד ${prefs.pref_distance_km} ק״מ` : "בכל הארץ";
   return (
     <>
-      <button onClick={() => setOpen(true)} className="surface group flex w-full items-center gap-3.5 rounded-[24px] px-4 py-4 text-right transition-colors hover:bg-white/[0.03]">
+      <button onClick={() => setOpen(true)} className="surface group flex w-full items-center gap-3.5 rounded-[24px] px-4 py-4 text-right transition-colors hover:bg-fg/[0.03]">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-gold/20 bg-gold/[0.07] text-gold-2">
           <SlidersHorizontal size={18} />
         </span>

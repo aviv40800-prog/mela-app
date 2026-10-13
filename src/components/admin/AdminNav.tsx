@@ -37,7 +37,7 @@ export function AdminNav({ name, superAdmin = false }: { name: string; superAdmi
             );
           })}
         </nav>
-        <button onClick={logout} className="grid h-9 w-9 place-items-center rounded-xl text-mute transition hover:bg-white/5 hover:text-cream lg:hidden" aria-label="התנתקות">
+        <button onClick={logout} className="grid h-9 w-9 place-items-center rounded-xl text-mute transition hover:bg-fg/5 hover:text-cream lg:hidden" aria-label="התנתקות">
           <LogOut size={17} />
         </button>
         <div className="hidden text-xs text-mute lg:block">

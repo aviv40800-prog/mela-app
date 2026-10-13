@@ -25,8 +25,8 @@ function Card({ src, className, label }: { src?: string; className: string; labe
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="relative h-full w-full bg-[radial-gradient(120%_80%_at_30%_10%,#3a2a12,#121214_70%)]">
-          <div className="absolute inset-x-0 top-6 text-center font-display text-7xl font-bold text-gold/25">{label}</div>
+        <div className="leather on-dark relative h-full w-full">
+          <div className="absolute inset-x-0 top-6 text-center font-display emboss text-7xl font-bold opacity-80">{label}</div>
           <div className="absolute inset-x-4 bottom-4 space-y-2">
             <div className="h-2.5 w-2/3 rounded-full bg-cream/20" />
             <div className="h-2 w-1/2 rounded-full bg-cream/10" />

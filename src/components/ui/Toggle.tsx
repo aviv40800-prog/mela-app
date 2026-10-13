@@ -16,13 +16,13 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
         onChange(!checked);
       }}
       className={`relative flex h-[30px] w-[52px] shrink-0 items-center rounded-full p-[3px] transition-colors duration-300 ${
-        checked ? "justify-end bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_18px_-4px_rgba(212,175,55,0.7)]" : "justify-start bg-white/12"
+        checked ? "justify-end bg-gradient-to-l from-gold-2 to-gold shadow-[0_0_18px_-4px_rgba(180,87,58,0.7)]" : "justify-start bg-fg/12"
       }`}
     >
       <motion.span
         layout
         transition={{ type: "spring", stiffness: 600, damping: 34 }}
-        className={`block h-6 w-6 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.4)] ${checked ? "bg-ink" : "bg-cream"}`}
+        className={`block h-6 w-6 rounded-full shadow-[0_2px_6px_rgba(90,52,26,0.12)] ${checked ? "bg-ink" : "bg-cream"}`}
       />
     </button>
   );

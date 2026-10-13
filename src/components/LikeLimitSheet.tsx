@@ -38,13 +38,13 @@ export function LikeLimitSheet({ quota, onClose }: { quota: Quota; onClose: () =
         role="dialog"
         aria-label="נגמרו הלייקים להיום"
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(212,175,55,0.25),transparent)]" />
-        <div className="relative mx-auto mb-6 h-1 w-10 rounded-full bg-white/20" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(180,87,58,0.25),transparent)]" />
+        <div className="relative mx-auto mb-6 h-1 w-10 rounded-full bg-fg/20" />
         <motion.div
           initial={{ scale: 0.6, rotate: -12 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 14 }}
-          className="relative mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_40px_rgba(212,175,55,0.6)]"
+          className="relative mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_40px_rgba(180,87,58,0.6)]"
         >
           <Crown size={28} />
         </motion.div>

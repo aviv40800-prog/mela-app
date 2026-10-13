@@ -30,7 +30,7 @@ export function SignupsChart({ data }: { data: { day: string; n: number }[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ direction: "ltr" }} role="img" aria-label={`הרשמות ב־${data.length} הימים האחרונים: ${total}`}>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} stroke="rgba(255,255,255,0.07)" strokeWidth={1} />
+            <line x1={pad.left} x2={W - pad.right} y1={y(t)} y2={y(t)} stroke="rgba(70,42,24,0.07)" strokeWidth={1} />
             <text x={pad.left - 8} y={y(t) + 3.5} textAnchor="end" className="fill-mute-2 text-[10px]">
               {t}
             </text>
@@ -46,11 +46,11 @@ export function SignupsChart({ data }: { data: { day: string; n: number }[] }) {
             <g key={d.day} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
               {/* hit target: the whole band, taller than the mark */}
               <rect x={pad.left + band * i} y={pad.top} width={band} height={innerH} fill="transparent" />
-              {hover === i && <rect x={pad.left + band * i + 2} y={pad.top} width={band - 4} height={innerH} rx={6} fill="rgba(255,255,255,0.035)" />}
+              {hover === i && <rect x={pad.left + band * i + 2} y={pad.top} width={band - 4} height={innerH} rx={6} fill="rgba(70,42,24,0.035)" />}
               {d.n > 0 && (
                 <path
                   d={`M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + barW - r} Q${x + barW},${yy} ${x + barW},${yy + r} V${y(0)} Z`}
-                  fill="#d4af37"
+                  fill="#b4573a"
                   opacity={hover === null || hover === i ? 1 : 0.55}
                 />
               )}
@@ -67,7 +67,7 @@ export function SignupsChart({ data }: { data: { day: string; n: number }[] }) {
             </g>
           );
         })}
-        <line x1={pad.left} x2={W - pad.right} y1={y(0)} y2={y(0)} stroke="rgba(255,255,255,0.14)" strokeWidth={1} />
+        <line x1={pad.left} x2={W - pad.right} y1={y(0)} y2={y(0)} stroke="rgba(70,42,24,0.14)" strokeWidth={1} />
       </svg>
 
       {hover !== null && (

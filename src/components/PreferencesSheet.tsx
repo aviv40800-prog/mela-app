@@ -37,7 +37,7 @@ export function PreferencesSheet({ initial, onClose, onSaved }: { initial: Prefs
         role="dialog"
         aria-label="העדפות חיפוש"
       >
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-fg/20" />
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">את מי להראות לי?</h2>
           <button onClick={onClose} className="text-mute transition hover:text-cream" aria-label="סגירה">

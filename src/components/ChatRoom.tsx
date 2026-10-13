@@ -137,7 +137,7 @@ export function ChatRoom({
   return (
     <main className="flex h-dvh flex-col">
       <header className="relative z-10 flex items-center gap-3 border-b border-line bg-ink/70 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 backdrop-blur-2xl">
-        <Link href="/matches" className="grid h-10 w-10 place-items-center rounded-full text-mute transition hover:bg-white/5 hover:text-cream" aria-label="חזרה">
+        <Link href="/matches" className="grid h-10 w-10 place-items-center rounded-full text-mute transition hover:bg-fg/5 hover:text-cream" aria-label="חזרה">
           <ArrowRight size={21} />
         </Link>
         <div className="h-11 w-11 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-ink">
@@ -235,8 +235,8 @@ export function ChatRoom({
                   <div
                     className={`px-4 py-2.5 text-[15.5px] leading-[1.45] whitespace-pre-line ${corners} ${
                       mine
-                        ? "bg-gradient-to-b from-[#ecce73] to-[#d4af37] text-[#1a1406] shadow-[0_8px_22px_-12px_rgba(212,175,55,0.8),inset_0_1px_0_rgba(255,255,255,0.35)]"
-                        : "border border-white/[0.06] bg-ink-4 text-cream shadow-[0_8px_22px_-14px_rgba(0,0,0,0.9)]"
+                        ? "bg-gradient-to-b from-[#cd6d4e] to-[#b4573a] text-[#fffaf3] shadow-[0_8px_22px_-12px_rgba(180,87,58,0.8),inset_0_1px_0_rgba(70,42,24,0.35)]"
+                        : "border border-fg/[0.06] bg-ink-4 text-cream shadow-[0_8px_22px_-14px_rgba(90,52,26,0.27)]"
                     }`}
                   >
                     {proposal ? (
@@ -283,7 +283,7 @@ export function ChatRoom({
         <AnimatePresence>
           {typing && (
             <motion.div initial={{ opacity: 0, y: 10, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} style={{ transformOrigin: "right bottom" }} className="mt-3 flex justify-start">
-              <div className="flex gap-1.5 rounded-[22px] rounded-br-sm border border-white/[0.06] bg-ink-4 px-4 py-3.5">
+              <div className="flex gap-1.5 rounded-[22px] rounded-br-sm border border-fg/[0.06] bg-ink-4 px-4 py-3.5">
                 {[0, 1, 2].map((d) => (
                   <motion.span key={d} className="h-2 w-2 rounded-full bg-gold-2/80" animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.15 }} />
                 ))}
@@ -389,7 +389,7 @@ export function ChatRoom({
               whileTap={{ scale: 0.85 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
               disabled={sending}
-              className="mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_22px_-8px_rgba(212,175,55,0.9)]"
+              className="mb-[3px] grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_22px_-8px_rgba(180,87,58,0.9)]"
               aria-label="שליחה"
             >
               <SendHorizontal size={19} className="rotate-180" />

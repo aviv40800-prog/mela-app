@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image", title: "MELA — אהבה עם שורשים", description: DESCRIPTION },
   alternates: { canonical: "/" },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "MELA" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "MELA" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d0d0f",
+  themeColor: "#ecdfca",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

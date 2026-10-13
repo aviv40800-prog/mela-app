@@ -35,9 +35,9 @@ export function CommentSheet({ name, prompt, onClose, onSend }: { name: string; 
         onClick={(e) => e.stopPropagation()}
         className="surface mx-auto w-full max-w-md rounded-t-[34px] px-6 pt-3 safe-bottom"
       >
-        <div className="mx-auto mb-5 h-1 w-10 cursor-grab rounded-full bg-white/20" />
+        <div className="mx-auto mb-5 h-1 w-10 cursor-grab rounded-full bg-fg/20" />
         <div className="flex items-start justify-between gap-3">
-          <div className="rounded-2xl border border-line bg-white/[0.03] p-4">
+          <div className="rounded-2xl border border-line bg-fg/[0.03] p-4">
             <div className="eyebrow">{promptQuestion(prompt.question_key)}</div>
             <p className="font-display mt-1.5 text-lg leading-snug">{prompt.answer_text}</p>
           </div>

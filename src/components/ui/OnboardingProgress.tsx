@@ -15,9 +15,9 @@ export function OnboardingProgress({ step, label }: { step: number; label?: stri
           {step}/{ONBOARDING_STEPS}
         </span>
       </div>
-      <div className="relative h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+      <div className="relative h-[3px] overflow-hidden rounded-full bg-fg/[0.07]">
         <motion.div
-          className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-gold-3 via-gold-2 to-gold shadow-[0_0_12px_rgba(229,193,88,0.8)]"
+          className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-gold-3 via-gold-2 to-gold shadow-[0_0_12px_rgba(196,106,72,0.8)]"
           initial={false}
           animate={{ width: `${pct * 100}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 22 }}

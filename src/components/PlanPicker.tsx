@@ -82,7 +82,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
               )}
               <div className="relative flex items-center gap-4">
                 <span
-                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-ink" : "border-white/25"}`}
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition ${active ? "border-gold bg-gold text-ink" : "border-fg/25"}`}
                 >
                   {active && <Check size={14} strokeWidth={3} />}
                 </span>
@@ -103,7 +103,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-2 text-center text-[12px]">
-        <div className="rounded-2xl border border-line bg-white/[0.02] p-3">
+        <div className="rounded-2xl border border-line bg-fg/[0.02] p-3">
           <div className="font-semibold text-cream">חינם</div>
           <div className="mt-1 text-mute">{freeLikes} לייקים ביום · בחירה 1 ביום · צ׳אט</div>
         </div>

@@ -183,7 +183,7 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
           <button onClick={() => router.back()} className="grid h-10 w-10 place-items-center rounded-full border border-line-2 text-mute transition hover:text-cream" aria-label="חזרה">
             <ArrowRight size={18} />
           </button>
-          <div className="no-scrollbar flex flex-1 gap-1 overflow-x-auto rounded-full border border-line-2 bg-white/[0.03] p-1">
+          <div className="no-scrollbar flex flex-1 gap-1 overflow-x-auto rounded-full border border-line-2 bg-fg/[0.03] p-1">
             {WIZARD_STEPS.map((s, i) => (
               <button key={s} onClick={() => go(i)} className={`relative flex-1 rounded-full px-3 py-2 text-xs whitespace-nowrap transition-colors ${i === stepIdx ? "text-ink font-semibold" : "text-mute"}`}>
                 {i === stepIdx && <motion.span layoutId="edit-tab" className="absolute inset-0 rounded-full bg-gradient-to-b from-gold-2 to-gold" />}
@@ -459,7 +459,7 @@ function PromptPicker({ open, current, used, onClose, onPick }: { open: boolean;
             onClick={(e) => e.stopPropagation()}
             className="surface mx-auto max-h-[80dvh] w-full max-w-md overflow-y-auto rounded-t-[32px] px-5 pt-3 safe-bottom"
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-fg/20" />
             <h3 className="mb-3 px-1 font-semibold">בחר/י שאלה</h3>
             <ul className="space-y-1.5 pb-2">
               {CULTURAL_PROMPTS.map((q) => {
@@ -470,7 +470,7 @@ function PromptPicker({ open, current, used, onClose, onPick }: { open: boolean;
                       disabled={disabled}
                       onClick={() => onPick(q.key)}
                       className={`w-full rounded-2xl px-4 py-3.5 text-right text-[15px] transition ${
-                        q.key === current ? "bg-gold/12 text-gold-2 ring-1 ring-gold/40" : disabled ? "text-mute-2" : "hover:bg-white/[0.05]"
+                        q.key === current ? "bg-gold/12 text-gold-2 ring-1 ring-gold/40" : disabled ? "text-mute-2" : "hover:bg-fg/[0.05]"
                       }`}
                     >
                       {q.question}
@@ -521,10 +521,10 @@ function ChoiceGroup<T extends string>({
               }}
               className={`flex w-full items-center rounded-2xl border px-3 py-3.5 text-[15px] font-medium transition-colors ${
                 stacked ? "justify-between px-4 text-right" : "justify-center text-center"
-              } ${active ? "border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_24px_-10px_rgba(212,175,55,0.7)]" : "border-line-2 bg-white/[0.03] text-cream/85 hover:border-white/20"}`}
+              } ${active ? "border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_24px_-10px_rgba(180,87,58,0.7)]" : "border-line-2 bg-fg/[0.03] text-cream/85 hover:border-fg/20"}`}
             >
               {text}
-              {stacked && <span className={`h-4 w-4 shrink-0 rounded-full border-2 transition ${active ? "border-gold-2 bg-gold-2 shadow-[inset_0_0_0_3px_var(--color-ink-2)]" : "border-white/25"}`} />}
+              {stacked && <span className={`h-4 w-4 shrink-0 rounded-full border-2 transition ${active ? "border-gold-2 bg-gold-2 shadow-[inset_0_0_0_3px_var(--color-ink-2)]" : "border-fg/25"}`} />}
             </motion.button>
           );
         })}

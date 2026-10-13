@@ -80,7 +80,7 @@ export function DatePlanner({
           whileTap={{ scale: 0.9, rotate: -90 }}
           onClick={more}
           disabled={loading}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line-2 bg-white/[0.03] px-3 py-1.5 text-[12px] text-mute transition hover:border-gold/40 hover:text-gold-2"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-line-2 bg-fg/[0.03] px-3 py-1.5 text-[12px] text-mute transition hover:border-gold/40 hover:text-gold-2"
         >
           {loading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
           רעיונות אחרים
@@ -100,7 +100,7 @@ export function DatePlanner({
                   initial={{ opacity: 0, y: 14, filter: "blur(4px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { ...spring, delay: n * 0.06 } }}
                   exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
-                  className={`overflow-hidden rounded-[20px] border transition-colors ${expanded ? "border-gold/35 bg-ink-3/90" : "border-line bg-white/[0.02] hover:border-line-2"}`}
+                  className={`overflow-hidden rounded-[20px] border transition-colors ${expanded ? "border-gold/35 bg-ink-3/90" : "border-line bg-fg/[0.02] hover:border-line-2"}`}
                 >
                   <motion.button layout="position" onClick={() => setOpen(expanded ? null : idea.id)} className="flex w-full items-center gap-3 p-3 text-right" aria-expanded={expanded}>
                     <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] transition-colors ${expanded ? "bg-gradient-to-b from-gold-3 to-gold text-ink" : "bg-gold/[0.08] text-gold-2"}`}>
@@ -169,7 +169,7 @@ export function DatePlannerSheet(props: Parameters<typeof DatePlanner>[0] & { on
         aria-label="רעיונות לדייט"
       >
         <div className="mb-3 flex items-center justify-between px-1">
-          <div className="mx-auto h-1 w-10 rounded-full bg-white/20" />
+          <div className="mx-auto h-1 w-10 rounded-full bg-fg/20" />
         </div>
         <button onClick={onClose} className="absolute top-4 left-5 text-mute transition hover:text-cream" aria-label="סגירה">
           <X size={20} />

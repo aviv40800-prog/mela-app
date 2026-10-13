@@ -76,7 +76,7 @@ export function QuizStepper({
             type="button"
             onClick={() => !busy && setIdx(i)}
             aria-label={`שאלה ${i + 1}`}
-            className={`h-2 rounded-full transition-all duration-300 ${i === idx ? "w-6 bg-gold-2" : answers[x.key] ? "w-2 bg-gold/60" : "w-2 bg-white/15"}`}
+            className={`h-2 rounded-full transition-all duration-300 ${i === idx ? "w-6 bg-gold-2" : answers[x.key] ? "w-2 bg-gold/60" : "w-2 bg-fg/15"}`}
           />
         ))}
       </div>
@@ -91,7 +91,7 @@ export function QuizStepper({
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
           >
             <div className="mb-4 flex items-center justify-between px-1">
-              <span className={`rounded-full px-3 py-1 text-[11.5px] font-semibold ${q.cat === "culture" ? "bg-gold/15 text-gold-2" : "bg-white/[0.07] text-cream/80"}`}>
+              <span className={`rounded-full px-3 py-1 text-[11.5px] font-semibold ${q.cat === "culture" ? "bg-gold/15 text-gold-2" : "bg-fg/[0.07] text-cream/80"}`}>
                 {QUESTION_CATEGORIES[q.cat] ?? q.cat}
               </span>
               <span className="tabular text-xs text-mute">
@@ -111,7 +111,7 @@ export function QuizStepper({
                     animate={isPicked ? { scale: 1.04 } : picked ? { scale: 0.96, opacity: 0.4 } : { scale: 1, opacity: 1 }}
                     onClick={() => choose(side)}
                     className={`relative flex min-h-44 flex-col items-center justify-center rounded-[26px] p-4 text-center text-[18px] font-semibold transition-colors ${
-                      isPicked || was ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(212,175,55,0.6)]" : "surface"
+                      isPicked || was ? "border border-gold/60 bg-gradient-to-b from-gold/20 to-gold/5 text-gold-2 shadow-[0_0_34px_-8px_rgba(180,87,58,0.6)]" : "surface"
                     }`}
                   >
                     {q[side]}

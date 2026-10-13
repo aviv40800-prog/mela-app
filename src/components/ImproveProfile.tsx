@@ -34,7 +34,7 @@ export function ImproveProfile() {
   return (
     <>
       <div className={`relative overflow-hidden rounded-[24px] p-5 ${available ? "border border-gold/35" : "surface"}`}>
-        {available && <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.2),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />}
+        {available && <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(180,87,58,0.2),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />}
         <div className="flex items-start gap-3.5">
           <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${available ? "bg-gradient-to-b from-gold-3 to-gold text-ink" : "border border-gold/20 bg-gold/[0.07] text-gold-2"}`}>
             <PenLine size={18} />
@@ -57,7 +57,7 @@ export function ImproveProfile() {
               {c.answered}/{c.total}
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-fg/[0.07]">
             <motion.div className="h-full rounded-full bg-gradient-to-l from-gold-3 to-gold" initial={false} animate={{ width: `${pct}%` }} />
           </div>
         </div>
@@ -81,7 +81,7 @@ export function ImproveProfile() {
               role="dialog"
               aria-label="שיפור הפרופיל"
             >
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-fg/20" />
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-xl font-semibold">בואו נכיר אותך עוד קצת</h2>
                 <button onClick={() => setOpen(false)} className="text-mute transition hover:text-cream" aria-label="סגירה">

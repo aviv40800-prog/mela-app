@@ -108,7 +108,7 @@ export function PhotoGrid({ tiles, onChange }: { tiles: Tile[]; onChange: (updat
                 onClick={() => fileRef.current?.click()}
                 whileTap={{ scale: 0.95 }}
                 className={`${span} group relative grid place-items-center overflow-hidden rounded-[22px] border border-dashed transition-colors ${
-                  isNext ? "border-gold/40 bg-gold/[0.035] text-gold" : "border-white/10 bg-white/[0.02] text-mute-2"
+                  isNext ? "border-gold/40 bg-gold/[0.035] text-gold" : "border-fg/10 bg-fg/[0.02] text-mute-2"
                 } hover:border-gold/60 hover:text-gold`}
                 aria-label={main ? "הוספת תמונה ראשית" : "הוספת תמונה"}
               >
@@ -151,8 +151,8 @@ export function PhotoGrid({ tiles, onChange }: { tiles: Tile[]; onChange: (updat
                   setDragKey(null);
                 }
               }}
-              className={`${span} relative overflow-hidden rounded-[22px] bg-ink-3 shadow-[0_10px_30px_-14px_rgba(0,0,0,0.9)] ${
-                main ? "ring-1 ring-gold/50" : "ring-1 ring-white/5"
+              className={`${span} relative overflow-hidden rounded-[22px] bg-ink-3 shadow-[0_10px_30px_-14px_rgba(90,52,26,0.27)] ${
+                main ? "ring-1 ring-gold/50" : "ring-1 ring-fg/5"
               } ${tile.url ? "cursor-grab active:cursor-grabbing" : ""}`}
             >
               {src && (
@@ -245,14 +245,14 @@ function ProgressRing({ value }: { value: number }) {
   const c = 2 * Math.PI * r;
   return (
     <div className="absolute inset-0 grid place-items-center">
-      <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90 drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]">
-        <circle cx="22" cy="22" r={r} fill="rgba(0,0,0,0.45)" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+      <svg width="44" height="44" viewBox="0 0 44 44" className="-rotate-90 drop-shadow-[0_0_8px_rgba(180,87,58,0.6)]">
+        <circle cx="22" cy="22" r={r} fill="rgba(90,52,26,0.135)" stroke="rgba(70,42,24,0.15)" strokeWidth="3" />
         <motion.circle
           cx="22"
           cy="22"
           r={r}
           fill="none"
-          stroke="#e5c158"
+          stroke="#c46a48"
           strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray={c}

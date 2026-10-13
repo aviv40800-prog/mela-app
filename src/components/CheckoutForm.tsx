@@ -108,10 +108,10 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
       {/* card preview */}
       <div className="mt-6 [perspective:1200px]">
         <motion.div animate={{ rotateY: flip ? 180 : 0 }} transition={{ type: "spring", stiffness: 140, damping: 18 }} className="relative h-48 [transform-style:preserve-3d]" dir="ltr">
-          <div className="absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(212,175,55,0.5)] [backface-visibility:hidden]">
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(229,193,88,0.3),transparent_55%),linear-gradient(135deg,#1d1a12,#0f0e0b)]" />
+          <div className="on-dark absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(180,87,58,0.5)] [backface-visibility:hidden]">
+            <div className="leather absolute inset-0 -z-10" />
             <div className="flex items-start justify-between">
-              <span className="font-display gold-text text-lg font-bold tracking-[0.3em]">MELA</span>
+              <span className="font-display emboss text-lg font-bold tracking-[0.3em]">MELA</span>
               <span className="text-sm font-bold text-cream/90">{BRAND_LABEL[brand]}</span>
             </div>
             <div className="mt-6 h-8 w-11 rounded-md bg-gradient-to-br from-gold-3 to-gold-dim opacity-80" />
@@ -121,10 +121,10 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
               <span className="tabular">{exp || "MM/YY"}</span>
             </div>
           </div>
-          <div className="absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 bg-[linear-gradient(135deg,#1d1a12,#0f0e0b)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <div className="leather on-dark absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 [backface-visibility:hidden] [transform:rotateY(180deg)]">
             <div className="mt-6 h-10 bg-black/70" />
             <div className="mx-5 mt-5 flex items-center justify-end rounded-md bg-cream/90 px-3 py-2">
-              <span className="tabular font-semibold text-ink">{cvv.replace(/./g, "•") || "CVV"}</span>
+              <span className="tabular font-semibold text-[#2e1d12]">{cvv.replace(/./g, "•") || "CVV"}</span>
             </div>
           </div>
         </motion.div>
@@ -223,7 +223,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
                 initial={{ scale: 0 }}
                 animate={{ scale: [0, 1.2, 1] }}
                 transition={{ duration: 0.5 }}
-                className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_50px_rgba(212,175,55,0.6)]"
+                className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_50px_rgba(180,87,58,0.6)]"
               >
                 <Check size={38} strokeWidth={3} />
               </motion.div>

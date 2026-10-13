@@ -101,7 +101,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
               transition={{ delay: i * 0.08, type: "spring", stiffness: 300, damping: 28 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => !done[c.id] && !c.locked && setOpen(c)}
-              className="relative aspect-[3/4] w-[72%] shrink-0 snap-center overflow-hidden rounded-[30px] text-right shadow-[var(--shadow-float)] ring-1 ring-white/5"
+              className="on-dark relative aspect-[3/4] w-[72%] shrink-0 snap-center overflow-hidden rounded-[30px] text-right shadow-[var(--shadow-float)] ring-1 ring-fg/5"
             >
               <Photo src={c.photos[0]} name={c.full_name} className="h-full w-full" rounded="rounded-[30px]" />
               <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent" />
@@ -124,7 +124,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
                   aria-label="פתיחת הבחירה עם Premium"
                 >
                   <span className="flex flex-col items-center gap-2 px-6 text-center">
-                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_30px_rgba(212,175,55,0.55)]">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_0_30px_rgba(180,87,58,0.55)]">
                       <Crown size={24} />
                     </span>
                     <span className="text-[15px] font-semibold">עוד בחירה מחכה לך</span>
@@ -138,7 +138,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: [0, 1.25, 1] }}
-                      className={`grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gradient-to-b from-gold-2 to-gold text-ink shadow-[0_0_40px_rgba(212,175,55,0.6)]" : "glass"}`}
+                      className={`grid h-16 w-16 place-items-center rounded-full ${done[c.id] === "like" ? "bg-gradient-to-b from-gold-2 to-gold text-ink shadow-[0_0_40px_rgba(180,87,58,0.6)]" : "glass"}`}
                     >
                       {done[c.id] === "like" ? <Heart className="fill-current" /> : <X />}
                     </motion.span>
@@ -168,7 +168,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
               <motion.button
                 whileTap={{ scale: 0.82 }}
                 onClick={() => decide(open, "pass")}
-                className="grid h-[62px] w-[62px] place-items-center rounded-full border border-white/15 bg-ink-3/80 shadow-xl backdrop-blur-xl"
+                className="grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/80 shadow-xl backdrop-blur-xl"
                 aria-label="דילוג"
               >
                 <X size={28} />
@@ -176,7 +176,7 @@ export function PicksView({ me }: { me: MiniProfile }) {
               <motion.button
                 whileTap={{ scale: 0.82 }}
                 onClick={() => decide(open, "like")}
-                className="grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[0_14px_44px_-6px_rgba(212,175,55,0.85)]"
+                className="grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-gold-3 via-gold-2 to-gold text-ink shadow-[0_14px_44px_-6px_rgba(180,87,58,0.85)]"
                 aria-label="לייק"
               >
                 <Heart size={32} className="fill-current" />

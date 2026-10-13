@@ -64,7 +64,7 @@ export function QuizOfferSheet({ questions, onClose, onAnswered }: { questions: 
         role="dialog"
         aria-label="שאלות להתאמה מדויקת יותר"
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-fg/20" />
         <button onClick={close} className="absolute top-5 left-5 text-mute transition hover:text-cream" aria-label="סגירה">
           <X size={20} />
         </button>

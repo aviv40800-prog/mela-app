@@ -19,7 +19,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md px-4" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }} aria-label="ניווט ראשי">
-      <div className="relative flex items-center justify-around rounded-[30px] border border-white/[0.08] bg-ink-2/75 px-1.5 py-1.5 shadow-[0_24px_60px_-20px_rgba(0,0,0,1),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl backdrop-saturate-150">
+      <div className="relative flex items-center justify-around rounded-[30px] border border-fg/[0.08] bg-ink-2/75 px-1.5 py-1.5 shadow-[0_24px_60px_-20px_rgba(90,52,26,0.3),inset_0_1px_0_rgba(70,42,24,0.05)] backdrop-blur-2xl backdrop-saturate-150">
         {TABS.map(({ href, label, Icon }) => {
           const active = path === href || path.startsWith(href + "/");
           return (
@@ -35,7 +35,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
               {active && (
                 <motion.span
                   layoutId="nav-active"
-                  className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-gold/[0.16] to-gold/[0.04] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.25)]"
+                  className="absolute inset-0 rounded-[24px] bg-gradient-to-b from-gold/[0.16] to-gold/[0.04] shadow-[inset_0_0_0_1px_rgba(180,87,58,0.25)]"
                   transition={{ type: "spring", stiffness: 480, damping: 36 }}
                 />
               )}
@@ -60,7 +60,7 @@ export function BottomNav({ unread = 0, profileDot = false }: { unread?: number;
                     initial={{ scale: 0 }}
                     animate={{ scale: [0, 1.3, 1] }}
                     exit={{ scale: 0 }}
-                    className="tabular absolute top-1 left-[calc(50%-22px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold px-1 text-[10px] font-bold text-ink shadow-[0_0_12px_rgba(212,175,55,0.7)] ring-2 ring-ink-2"
+                    className="tabular absolute top-1 left-[calc(50%-22px)] grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-b from-gold-2 to-gold px-1 text-[10px] font-bold text-ink shadow-[0_0_12px_rgba(180,87,58,0.7)] ring-2 ring-ink-2"
                   >
                     {unread > 9 ? "9+" : unread}
                   </motion.span>

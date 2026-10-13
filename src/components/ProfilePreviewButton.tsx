@@ -25,7 +25,7 @@ export function ProfilePreviewButton({ profile }: { profile: Candidate }) {
           >
             <div className="sticky top-0 z-10 mb-3 flex items-center justify-between bg-ink/80 px-2 py-2 backdrop-blur-xl">
               <span className="eyebrow">כך אחרים רואים אותך</span>
-              <button onClick={() => setOpen(false)} className="grid h-9 w-9 place-items-center rounded-full bg-white/[0.06] text-mute transition hover:text-cream" aria-label="סגירה">
+              <button onClick={() => setOpen(false)} className="grid h-9 w-9 place-items-center rounded-full bg-fg/[0.06] text-mute transition hover:text-cream" aria-label="סגירה">
                 <X size={18} />
               </button>
             </div>

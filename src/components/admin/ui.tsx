@@ -43,7 +43,7 @@ export function Badge({ tone = "mute", children }: { tone?: "gold" | "green" | "
     gold: "bg-gold/12 text-gold-2",
     green: "bg-success/12 text-success",
     red: "bg-danger/12 text-danger",
-    mute: "bg-white/[0.06] text-mute",
+    mute: "bg-fg/[0.06] text-mute",
   };
   return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${tones[tone]}`}>{children}</span>;
 }

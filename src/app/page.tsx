@@ -19,6 +19,7 @@ import { HeroVisual } from "@/components/HeroVisual";
 import { PhoneMockup } from "@/components/landing/PhoneMockup";
 import { Reveal } from "@/components/landing/Reveal";
 import { StickyCta } from "@/components/landing/StickyCta";
+import { BeanDivider, CoffeeBean } from "@/components/landing/CoffeeBean";
 
 // "אהבה עם שורשים" — the founders' story, verbatim.
 const STORY_INTRO = [
@@ -99,7 +100,7 @@ export default async function Landing() {
             <a href="#faq" className="hover:text-cream">שאלות</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/login" className="rounded-full px-4 py-2 text-sm text-cream/90 transition hover:bg-white/5">
+            <Link href="/login" className="rounded-full px-4 py-2 text-sm text-cream/90 transition hover:bg-fg/5">
               כניסה
             </Link>
             <Link href="/signup" className="btn-gold hidden px-5 py-2.5 text-sm md:inline-flex">
@@ -112,7 +113,9 @@ export default async function Landing() {
       {/* ---------- hero ---------- */}
       <section className="mx-auto grid max-w-6xl items-center gap-6 px-5 pt-6 pb-16 md:grid-cols-2 md:gap-12 md:px-8 md:pt-16 md:pb-24">
         <Reveal className="text-center md:text-right">
-          <p className="eyebrow">אהבה עם שורשים</p>
+          <p className="eyebrow inline-flex items-center gap-2">
+            <CoffeeBean size={10} rotate={-20} /> אהבה עם שורשים
+          </p>
           <h1 className="font-display mt-4 text-[2.7rem] leading-[1.05] font-bold md:text-[4rem]">
             המקום שבו
             <br />
@@ -143,18 +146,22 @@ export default async function Landing() {
       </section>
 
       {/* ---------- cultural band ---------- */}
-      <div className="border-y border-line bg-white/[0.015] py-5">
+      <div className="border-y border-line bg-fg/[0.015] py-5">
         <div className="tilet mx-auto mb-4 max-w-5xl opacity-60" />
         <p className="font-display mx-auto max-w-5xl px-5 text-center text-lg text-cream/70 md:text-2xl">
-          בונה <span className="text-gold">·</span> סיגד <span className="text-gold">·</span> אסקסטה <span className="text-gold">·</span> משפחה <span className="text-gold">·</span> שורשים{" "}
-          <span className="text-gold">·</span> אהבה
+          {["בונה", "סיגד", "אסקסטה", "משפחה", "שורשים", "אהבה"].map((w, i) => (
+            <span key={w} className="inline-flex items-center">
+              {i > 0 && <CoffeeBean size={9} rotate={i * 37} className="mx-3 inline-block md:mx-4" />}
+              {w}
+            </span>
+          ))}
         </p>
         <div className="tilet mx-auto mt-4 max-w-5xl opacity-60" />
       </div>
 
       {/* ---------- story ---------- */}
       <section id="story" className="relative scroll-mt-20 overflow-hidden px-5 py-24 md:px-8 md:py-32">
-        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[420px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(212,175,55,0.10),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[420px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(180,87,58,0.10),transparent_70%)]" />
         <div className="relative mx-auto max-w-[40rem] text-center">
           <Reveal>
             <p className="eyebrow">הסיפור שלנו</p>
@@ -173,7 +180,7 @@ export default async function Landing() {
           </div>
 
           <Reveal className="my-16 md:my-20">
-            <div className="tilet mx-auto max-w-xs opacity-50" />
+            <BeanDivider />
             <p className="font-display mt-10 text-[2.6rem] leading-none font-bold md:text-[3.4rem]">
               הקמנו את <span className="gold-text">MELA.</span>
             </p>
@@ -216,7 +223,7 @@ export default async function Landing() {
       </section>
 
       {/* ---------- how it works ---------- */}
-      <section id="how" className="scroll-mt-20 border-t border-line bg-gradient-to-b from-white/[0.02] to-transparent">
+      <section id="how" className="scroll-mt-20 border-t border-line bg-gradient-to-b from-fg/[0.02] to-transparent">
         <div className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="eyebrow">איך זה עובד</p>
@@ -274,7 +281,7 @@ export default async function Landing() {
       </section>
 
       {/* ---------- promises ---------- */}
-      <section className="border-y border-line bg-white/[0.015]">
+      <section className="border-y border-line bg-fg/[0.015]">
         <div className="mx-auto grid max-w-6xl gap-8 px-5 py-16 md:grid-cols-3 md:px-8">
           {PROMISES.map(({ Icon, t, d }, i) => (
             <Reveal key={t} delay={i * 0.08} className="text-center md:text-right">
@@ -366,11 +373,11 @@ export default async function Landing() {
       {/* ---------- final CTA ---------- */}
       <section className="px-5 pb-24 md:px-8">
         <Reveal>
-          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-gold/25 px-6 py-16 text-center md:py-20">
-            <div className="absolute inset-0 -z-10 bg-[radial-gradient(70%_80%_at_50%_0%,rgba(212,175,55,0.22),transparent_70%),linear-gradient(180deg,#17150f,#0d0d0f)]" />
+          <div className="on-dark relative mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-gold/25 px-6 py-16 text-center shadow-[var(--shadow-float)] md:py-20">
+            <div className="leather absolute inset-0 -z-10" />
             <BadgeCheck className="mx-auto text-gold" size={34} />
             <h2 className="font-display mx-auto mt-5 max-w-2xl text-[2.2rem] leading-tight font-bold md:text-5xl">
-              האדם הנכון אולי כבר <span className="gold-text">כאן.</span>
+              האדם הנכון אולי כבר <span className="emboss">כאן.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-md text-mute">שתי דקות להרשמה, חינם ובלי כרטיס אשראי, וקהילה שמחכה להכיר אתכם.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

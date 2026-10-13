@@ -41,13 +41,13 @@ export function LikesYou({ likes }: { likes: Liker[] }) {
                   </div>
                   {l.comment && <p className="mt-0.5 line-clamp-2 text-[12.5px] whitespace-pre-line text-cream/75">{l.comment.replace(/^💬 על ״[^״]*״\n/, "")}</p>}
                 </div>
-                <motion.button whileTap={{ scale: 0.85 }} onClick={() => answer(l.id, "pass")} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/12 text-mute" aria-label="דילוג">
+                <motion.button whileTap={{ scale: 0.85 }} onClick={() => answer(l.id, "pass")} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-fg/12 text-mute" aria-label="דילוג">
                   <X size={18} />
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   onClick={() => answer(l.id, "like")}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_20px_-8px_rgba(212,175,55,0.9)]"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-ink shadow-[0_8px_20px_-8px_rgba(180,87,58,0.9)]"
                   aria-label="לייק בחזרה"
                 >
                   <Heart size={19} className="fill-current" />

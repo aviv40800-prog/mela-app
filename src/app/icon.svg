@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
+    <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c4694a"/>
+      <stop offset="1" stop-color="#8f3a22"/>
+    </linearGradient>
     <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ebcb6a"/>
-      <stop offset="1" stop-color="#b8922a"/>
+      <stop offset="0" stop-color="#f1d08a"/>
+      <stop offset="1" stop-color="#a87526"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="#0d0d0f"/>
+  <rect width="64" height="64" rx="16" fill="url(#leather)"/>
   <path d="M14 46V18h5l13 17 13-17h5v28h-6V29L32 44 20 29v17z" fill="url(#g)"/>
 </svg>

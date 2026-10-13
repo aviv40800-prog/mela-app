@@ -20,7 +20,7 @@ export function Segmented<T extends string>({
   return (
     <div role="radiogroup" aria-label={label}>
       <span className="label px-1">{label}</span>
-      <div className="flex gap-1 rounded-2xl border border-line-2 bg-white/[0.03] p-1">
+      <div className="flex gap-1 rounded-2xl border border-line-2 bg-fg/[0.03] p-1">
         {options.map(([v, text]) => {
           const active = value === v;
           return (
@@ -38,7 +38,7 @@ export function Segmented<T extends string>({
               {active && (
                 <motion.span
                   layoutId={`seg-${id}`}
-                  className="absolute inset-0 rounded-xl bg-gradient-to-b from-gold-2 to-gold shadow-[0_6px_18px_-8px_rgba(212,175,55,0.9)]"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-b from-gold-2 to-gold shadow-[0_6px_18px_-8px_rgba(180,87,58,0.9)]"
                   transition={{ type: "spring", stiffness: 500, damping: 36 }}
                 />
               )}

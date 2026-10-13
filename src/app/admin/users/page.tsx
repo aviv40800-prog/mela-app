@@ -57,7 +57,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
           </thead>
           <tbody>
             {rows.map((u) => (
-              <tr key={u.id} className="border-b border-line/60 transition-colors last:border-0 hover:bg-white/[0.025]">
+              <tr key={u.id} className="border-b border-line/60 transition-colors last:border-0 hover:bg-fg/[0.025]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <UserChip id={u.id} name={u.full_name} photo={u.photo} sub={[u.location, u.email].filter(Boolean).join(" · ")} />

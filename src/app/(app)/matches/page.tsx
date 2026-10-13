@@ -42,7 +42,7 @@ export default async function MatchesPage() {
             <LikesYou likes={likes.map((l) => ({ id: l.id, name: l.full_name, age: l.age, location: l.location, photo: l.photos[0] ?? null, comment: l.comment }))} />
           ) : (
             <div className="animate-rise relative overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
-              <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(212,175,55,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
+              <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(180,87,58,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
               <p className="text-[14.5px] text-cream/85">
                 {likes.length === 1 ? "מישהו/י כבר אהב/ה אותך." : `${likes.length} אנשים כבר אהבו אותך.`} עם Premium רואים מי — ומחזירים לייק בלחיצה.
               </p>
@@ -67,7 +67,7 @@ export default async function MatchesPage() {
           <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
             {fresh.map((m, i) => (
               <Link key={m.matchId} href={`/matches/${m.matchId}`} className="animate-rise w-[76px] shrink-0 text-center" style={{ animationDelay: `${i * 60}ms` }}>
-                <div className="rounded-full bg-gradient-to-b from-gold-3 to-gold-dim p-[2px] shadow-[0_0_22px_-6px_rgba(212,175,55,0.7)] transition-transform duration-300 hover:scale-105">
+                <div className="rounded-full bg-gradient-to-b from-gold-3 to-gold-dim p-[2px] shadow-[0_0_22px_-6px_rgba(180,87,58,0.7)] transition-transform duration-300 hover:scale-105">
                   <div className="h-[72px] w-[72px] overflow-hidden rounded-full ring-2 ring-ink">
                     <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
                   </div>
@@ -90,7 +90,7 @@ export default async function MatchesPage() {
             {convos.map((m, i) => (
               <li key={m.matchId} className="animate-rise" style={{ animationDelay: `${i * 50}ms` }}>
                 {i > 0 && <div className="hairline mr-[76px]" />}
-                <Link href={`/matches/${m.matchId}`} className="press flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.03] active:bg-white/[0.05]">
+                <Link href={`/matches/${m.matchId}`} className="press flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-fg/[0.03] active:bg-fg/[0.05]">
                   <div className={`h-14 w-14 shrink-0 overflow-hidden rounded-full ${m.unread ? "ring-2 ring-gold/70 ring-offset-2 ring-offset-ink-3" : ""}`}>
                     <Photo src={m.other.photos[0]} name={m.other.full_name} className="h-full w-full" rounded="rounded-full" />
                   </div>
