@@ -319,7 +319,7 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
         style={{ scale: likeScale }}
         whileTap={{ scale: 0.82 }}
         onClick={onLike}
-        className="pointer-events-auto relative grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-[#ff6b70] via-[#e5383b] to-[#b8141c] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-2px_0_rgba(90,0,8,0.25)]"
+        className="pointer-events-auto relative isolate grid h-[74px] w-[74px] place-items-center rounded-full bg-gradient-to-b from-[#ff6b70] via-[#e5383b] to-[#b8141c] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-2px_0_rgba(90,0,8,0.25)]"
         aria-label="לייק"
       >
         <motion.span style={{ opacity: likeHalo }} className="absolute inset-0 -z-10 rounded-full shadow-[0_14px_44px_-6px_rgba(229,56,59,0.85)]" />

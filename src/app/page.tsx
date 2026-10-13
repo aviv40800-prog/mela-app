@@ -373,8 +373,7 @@ export default async function Landing() {
       {/* ---------- final CTA ---------- */}
       <section className="px-5 pb-24 md:px-8">
         <Reveal>
-          <div className="on-dark relative mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-gold/25 px-6 py-16 text-center shadow-[var(--shadow-float)] md:py-20">
-            <div className="leather absolute inset-0 -z-10" />
+          <div className="leather on-dark relative isolate mx-auto max-w-5xl overflow-hidden rounded-[36px] border border-gold/25 px-6 py-16 text-center shadow-[var(--shadow-float)] md:py-20">
             <BadgeCheck className="mx-auto text-gold" size={34} />
             <h2 className="font-display mx-auto mt-5 max-w-2xl text-[2.2rem] leading-tight font-bold md:text-5xl">
               האדם הנכון אולי כבר <span className="emboss">כאן.</span>

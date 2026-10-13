@@ -33,7 +33,7 @@ export function ImproveProfile() {
 
   return (
     <>
-      <div className={`relative overflow-hidden rounded-[24px] p-5 ${available ? "border border-gold/35" : "surface"}`}>
+      <div className={`relative isolate overflow-hidden rounded-[24px] p-5 ${available ? "border border-gold/35" : "surface"}`}>
         {available && <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(180,87,58,0.2),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />}
         <div className="flex items-start gap-3.5">
           <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${available ? "bg-gradient-to-b from-gold-3 to-gold text-ink" : "border border-gold/20 bg-gold/[0.07] text-gold-2"}`}>

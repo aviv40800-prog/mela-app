@@ -16,8 +16,8 @@
   --color-gilt: #b8862e; /* real gold — logo, embossing */
   --color-coffee: #4a2c1a; /* roasted bean */
   --color-cream: #2e1d12; /* text */
-  --color-mute: #76594a;
-  --color-mute-2: #a08672;
+  --color-mute: #6b4f40;
+  --color-mute-2: #8f735f;
   --color-danger: #e5675a;
   --color-success: #8fcf9a;
   --font-sans: "Heebo Variable", system-ui, sans-serif;
@@ -248,16 +248,18 @@
     gap: 0.5rem;
     border-radius: 9999px;
     padding: 0.9rem 1.5rem;
-    font-weight: 500;
-    border: 1px solid var(--color-line-2);
-    background: rgb(70 42 24 / 0.03);
+    font-weight: 600;
+    color: var(--color-cream);
+    border: 1.5px solid rgb(143 58 34 / 0.45);
+    background: rgb(255 250 243 / 0.55);
+    box-shadow: 0 6px 18px -12px rgb(90 52 26 / 0.35);
     transition:
       background 0.2s,
       border-color 0.2s,
       transform 0.25s var(--ease-out-expo);
   }
   .btn-ghost:hover {
-    background: rgb(70 42 24 / 0.07);
+    background: rgb(255 250 243 / 0.85);
   }
   .btn-ghost:active {
     transform: scale(0.97);
@@ -480,6 +482,8 @@ html[data-reduce-motion] *::after {
     0 14px 30px -14px rgb(40 15 5 / 0.6);
 }
 .on-dark .btn-ghost {
-  border-color: rgb(255 240 225 / 0.35);
-  background: rgb(255 240 225 / 0.08);
+  color: #fbf4ea;
+  border-color: rgb(255 240 225 / 0.6);
+  background: rgb(255 240 225 / 0.1);
+  box-shadow: none;
 }

@@ -108,8 +108,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
       {/* card preview */}
       <div className="mt-6 [perspective:1200px]">
         <motion.div animate={{ rotateY: flip ? 180 : 0 }} transition={{ type: "spring", stiffness: 140, damping: 18 }} className="relative h-48 [transform-style:preserve-3d]" dir="ltr">
-          <div className="on-dark absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(180,87,58,0.5)] [backface-visibility:hidden]">
-            <div className="leather absolute inset-0 -z-10" />
+          <div className="leather on-dark absolute inset-0 overflow-hidden rounded-[22px] border border-gold/30 p-5 shadow-[0_30px_60px_-30px_rgba(180,87,58,0.5)] [backface-visibility:hidden]">
             <div className="flex items-start justify-between">
               <span className="font-display emboss text-lg font-bold tracking-[0.3em]">MELA</span>
               <span className="text-sm font-bold text-cream/90">{BRAND_LABEL[brand]}</span>

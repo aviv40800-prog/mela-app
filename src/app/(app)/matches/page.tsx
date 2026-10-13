@@ -41,7 +41,7 @@ export default async function MatchesPage() {
           {premium ? (
             <LikesYou likes={likes.map((l) => ({ id: l.id, name: l.full_name, age: l.age, location: l.location, photo: l.photos[0] ?? null, comment: l.comment }))} />
           ) : (
-            <div className="animate-rise relative overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
+            <div className="animate-rise relative isolate overflow-hidden rounded-[26px] border border-gold/25 p-5 shadow-[var(--shadow-float)]">
               <div className="absolute inset-0 -z-10 bg-[radial-gradient(100%_100%_at_100%_0%,rgba(180,87,58,0.18),transparent_60%),linear-gradient(180deg,var(--color-ink-3),var(--color-ink-2))]" />
               <p className="text-[14.5px] text-cream/85">
                 {likes.length === 1 ? "מישהו/י כבר אהב/ה אותך." : `${likes.length} אנשים כבר אהבו אותך.`} עם Premium רואים מי — ומחזירים לייק בלחיצה.
