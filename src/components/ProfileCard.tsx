@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { BadgeCheck, Briefcase, ChevronDown, Heart, MapPin, MessageCircle } from "lucide-react";
 import { CompatRing } from "./ui/CompatRing";
 import { Photo } from "./Photo";
-import { RELIGIOSITY, promptQuestion } from "@/lib/content";
+import { LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY, promptQuestion } from "@/lib/content";
 import type { Candidate, Prompt } from "@/lib/types";
 
 /**
@@ -61,7 +61,9 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
                 {c.distanceKm != null && <span className="tabular text-cream/60">· {c.distanceKm < 3 ? "קרוב אליך" : `${c.distanceKm} ק״מ`}</span>}
               </span>
             )}
+            {c.marital_status && <span className="rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-md">{MARITAL_STATUS[c.marital_status]}</span>}
             {c.religiosity && <span className="rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-md">{RELIGIOSITY[c.religiosity]}</span>}
+            {c.looking_for && <span className="rounded-full border border-gold/30 bg-black/30 px-3 py-1.5 text-gold-2 backdrop-blur-md">{LOOKING_FOR[c.looking_for]}</span>}
           </div>
           {deck && (c.bio || c.prompts.length > 0) && (
             <motion.div

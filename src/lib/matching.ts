@@ -37,7 +37,16 @@ export function religionFit(a: User, b: User): number {
   return fit;
 }
 
-/** Compatibility 50–99: "This or That" agreement, observance, same city, age proximity. */
+const INTENT = { serious: 0, open: 1, casual: 2 } as const;
+
+/** Looking for the same thing matters: serious vs. casual is a strong mismatch, one step apart is mild. */
+export function intentFit(a: User, b: User): number {
+  if (!a.looking_for || !b.looking_for) return 0;
+  const gap = Math.abs(INTENT[a.looking_for] - INTENT[b.looking_for]);
+  return gap === 0 ? 4 : gap === 1 ? -3 : -16;
+}
+
+/** Compatibility 50–99: "This or That" agreement, observance, intent, same city, age proximity. */
 export function compatibility(me: number, other: number): number {
   const { agree, total } = db
     .prepare(
@@ -49,7 +58,7 @@ export function compatibility(me: number, other: number): number {
   const u2 = getUser(other)!;
   let score = total > 0 ? 55 + Math.round(((agree ?? 0) / total) * 30) : 68;
   if (u1.location && u1.location === u2.location) score += 8;
-  score += religionFit(u1, u2);
+  score += religionFit(u1, u2) + intentFit(u1, u2);
   if (u1.age && u2.age) score -= Math.min(10, Math.max(0, Math.abs(u1.age - u2.age) - 3) * 2);
   return Math.max(50, Math.min(99, score));
 }

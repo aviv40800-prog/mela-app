@@ -158,3 +158,13 @@ export type PartnerReligiosity = keyof typeof PARTNER_RELIGIOSITY;
 /** Only these three "this or that" questions are asked at sign-up; the rest are offered later, three at a time. */
 export const ONBOARDING_QUIZ_KEYS = ["coffee", "weekend", "kids"] as const;
 export const ONBOARDING_QUIZ = ONBOARDING_QUIZ_KEYS.map((k) => QUIZ_QUESTIONS.find((q) => q.key === k)!);
+
+/** Opening questionnaire: family status and what the member is here for. */
+export const MARITAL_STATUS = { single: "רווק/ה", divorced: "גרוש/ה", widowed: "אלמן/ה" } as const;
+export type MaritalStatus = keyof typeof MARITAL_STATUS;
+export const LOOKING_FOR = {
+  serious: "זוגיות רצינית",
+  open: "נראה לאן זה יתפתח",
+  casual: "היכרות קלילה ובילויים",
+} as const;
+export type LookingFor = keyof typeof LOOKING_FOR;

@@ -5,7 +5,19 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, Loader2, Plus, X } from "lucide-react";
 import { api, haptic } from "@/lib/client";
-import { CULTURAL_PROMPTS, ONBOARDING_QUIZ, PARTNER_RELIGIOSITY, RELIGIOSITY, promptQuestion, type PartnerReligiosity, type Religiosity } from "@/lib/content";
+import {
+  CULTURAL_PROMPTS,
+  LOOKING_FOR,
+  MARITAL_STATUS,
+  ONBOARDING_QUIZ,
+  PARTNER_RELIGIOSITY,
+  RELIGIOSITY,
+  promptQuestion,
+  type LookingFor,
+  type MaritalStatus,
+  type PartnerReligiosity,
+  type Religiosity,
+} from "@/lib/content";
 import { CITY_NAMES } from "@/lib/cities";
 import { PreferencesFields } from "./PreferencesFields";
 import { QuizStepper } from "./QuizStepper";
@@ -32,6 +44,8 @@ export type ProfileDraft = {
   pref_distance_km: number | null;
   religiosity?: Religiosity;
   partner_religiosity?: PartnerReligiosity;
+  marital_status?: MaritalStatus;
+  looking_for?: LookingFor;
 };
 
 
@@ -41,7 +55,7 @@ const META: Record<WizardStep, { title: string; subtitle: string; tab: string }>
   about: { title: "קצת עליך", subtitle: "מה את/ה עושה ומה חשוב לך. כנות מנצחת.", tab: "עליי" },
   looking: { title: "את מי את/ה מחפש/ת?", subtitle: "אפשר לשנות את זה בכל רגע, ישירות ממסך הגילוי.", tab: "חיפוש" },
   prompts: { title: "שאלות מהבית", subtitle: "בחר/י 2–3 שאלות. כאן מתחילות השיחות הכי טובות.", tab: "שאלות" },
-  quiz: { title: "שאלון פתיחה", subtitle: "2 שאלות על אורח החיים ועוד 3 של \"זה או זה\". את השאר נציע בהמשך — בקצב שלך.", tab: "שאלון" },
+  quiz: { title: "שאלון פתיחה", subtitle: "כמה שאלות קצרות עליך ועוד 3 של \"זה או זה\". את השאר נציע בהמשך — בקצב שלך.", tab: "שאלון" },
 };
 
 // Mirrors the server-side zod rules in /api/me.
@@ -59,6 +73,8 @@ function errors(d: ProfileDraft, tiles: Tile[], quiz: Record<string, "a" | "b"> 
     bio: d.bio.trim().length < 10 ? `עוד ${10 - d.bio.trim().length} תווים לפחות` : null,
     email: emailOk(d.email.trim()) ? null : "כתובת אימייל לא תקינה",
     prompts: answered.length < 2 ? `ענה/י על ${2 - answered.length} שאלות נוספות` : null,
+    marital_status: !d.marital_status ? "נא לבחור" : null,
+    looking_for: !d.looking_for ? "נא לבחור" : null,
     religiosity: !d.religiosity ? "נא לבחור" : null,
     partner_religiosity: !d.partner_religiosity ? "נא לבחור" : null,
     quiz: quizLeft > 0 ? (quizLeft === 1 ? "נשארה שאלה אחת" : `נשארו ${quizLeft} שאלות`) : null,
@@ -71,7 +87,7 @@ const STEP_FIELDS: Record<WizardStep, (keyof Errors)[]> = {
   looking: [],
   about: ["occupation", "bio", "email"],
   prompts: ["prompts"],
-  quiz: ["religiosity", "partner_religiosity", "quiz"],
+  quiz: ["marital_status", "looking_for", "religiosity", "partner_religiosity", "quiz"],
 };
 const stepValid = (e: Errors, s: WizardStep) => STEP_FIELDS[s].every((k) => !e[k]);
 
@@ -266,6 +282,21 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
             {step === "quiz" && (
               <>
                 <div className="space-y-7">
+                  <ChoiceGroup
+                    label="סטטוס"
+                    value={d.marital_status}
+                    options={MARITAL_STATUS}
+                    onChange={(v) => setD((s) => ({ ...s, marital_status: v }))}
+                    error={showErrors ? errs.marital_status : null}
+                  />
+                  <ChoiceGroup
+                    label="מה את/ה מחפש/ת כאן?"
+                    value={d.looking_for}
+                    options={LOOKING_FOR}
+                    onChange={(v) => setD((s) => ({ ...s, looking_for: v }))}
+                    error={showErrors ? errs.looking_for : null}
+                    stacked
+                  />
                   <ChoiceGroup
                     label="איך את/ה מגדיר/ה את עצמך?"
                     value={d.religiosity}

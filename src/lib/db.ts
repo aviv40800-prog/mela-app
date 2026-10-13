@@ -121,6 +121,10 @@ function open(): DatabaseSync {
        religiosity = CASE id % 3 WHEN 0 THEN 'secular' WHEN 1 THEN 'traditional' ELSE 'religious' END,
        partner_religiosity = CASE id % 4 WHEN 0 THEN 'traditional_up' ELSE 'any' END
      WHERE is_demo = 1 AND religiosity IS NULL`);
+    db.exec(`UPDATE users SET
+       marital_status = CASE WHEN id % 7 = 0 THEN 'divorced' ELSE 'single' END,
+       looking_for = CASE id % 5 WHEN 0 THEN 'open' WHEN 1 THEN 'casual' ELSE 'serious' END
+     WHERE is_demo = 1 AND marital_status IS NULL`);
   }
   return db;
 }
@@ -140,6 +144,8 @@ function migrate(db: DatabaseSync) {
   // Opening questionnaire: own observance + what matters in a partner.
   if (!cols.has("religiosity")) db.exec("ALTER TABLE users ADD COLUMN religiosity TEXT");
   if (!cols.has("partner_religiosity")) db.exec("ALTER TABLE users ADD COLUMN partner_religiosity TEXT");
+  if (!cols.has("marital_status")) db.exec("ALTER TABLE users ADD COLUMN marital_status TEXT");
+  if (!cols.has("looking_for")) db.exec("ALTER TABLE users ADD COLUMN looking_for TEXT");
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");

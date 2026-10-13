@@ -5,7 +5,7 @@ import { isAdmin } from "@/lib/admin";
 import { getSubscription, hasAccess } from "@/lib/billing";
 import { getQuota } from "@/lib/quota";
 import { toPublic } from "@/lib/users";
-import { PARTNER_RELIGIOSITY, PLANS, RELIGIOSITY, promptQuestion } from "@/lib/content";
+import { LOOKING_FOR, MARITAL_STATUS, PARTNER_RELIGIOSITY, PLANS, RELIGIOSITY, promptQuestion } from "@/lib/content";
 import { Photo } from "@/components/Photo";
 import { MembershipActions, LogoutRow } from "@/components/AccountActions";
 import { PreferencesCard } from "@/components/PreferencesCard";
@@ -189,10 +189,16 @@ export default async function ProfilePage() {
           <Row
             href={edit("quiz")}
             icon={<Scale size={18} />}
-            title="דת ומסורת"
+            title="סטטוס, כוונות ומסורת"
             subtitle={
-              user.religiosity
-                ? `${RELIGIOSITY[user.religiosity]} · בצד השני: ${PARTNER_RELIGIOSITY[user.partner_religiosity ?? "any"]}`
+              user.religiosity || user.marital_status
+                ? [
+                    user.marital_status && MARITAL_STATUS[user.marital_status],
+                    user.looking_for && LOOKING_FOR[user.looking_for],
+                    user.religiosity && `${RELIGIOSITY[user.religiosity]} (בצד השני: ${PARTNER_RELIGIOSITY[user.partner_religiosity ?? "any"]})`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
                 : "עוד לא ענית — זה עוזר לנו להתאים"
             }
           />

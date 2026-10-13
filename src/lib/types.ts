@@ -11,6 +11,8 @@ export type PublicProfile = {
   is_verified: boolean;
   is_demo: boolean;
   religiosity: "secular" | "traditional" | "religious" | null;
+  marital_status: "single" | "divorced" | "widowed" | null;
+  looking_for: "serious" | "open" | "casual" | null;
   prompts: Prompt[];
 };
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm?: number | null; shared?: string[]; locked?: boolean };

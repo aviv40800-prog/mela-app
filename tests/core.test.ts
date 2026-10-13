@@ -399,4 +399,15 @@ describe("improve-your-profile check-ins", () => {
     first.questions.forEach((q) => ins.run(u.id, q.key));
     expect(nextQuestions(u.id).questions.map((q) => q.key)).not.toEqual(first.questions.map((q) => q.key));
   });
+
+  it("puts people looking for the same thing first", async () => {
+    const { compatibility } = await import("@/lib/matching");
+    const me = member("רציני", "male");
+    const serious = member("רצינית", "female");
+    const casual = member("קלילה", "female");
+    db.prepare("UPDATE users SET looking_for = 'serious', marital_status = 'single' WHERE id IN (?, ?)").run(me.id, serious.id);
+    db.prepare("UPDATE users SET looking_for = 'casual', marital_status = 'divorced' WHERE id = ?").run(casual.id);
+    expect(compatibility(me.id, serious.id)).toBeGreaterThan(compatibility(me.id, casual.id) + 15);
+    expect(discoveryDeck(getUser(me.id)!).map((c) => [c.id, c.marital_status])[0]).toEqual([serious.id, "single"]);
+  });
 });

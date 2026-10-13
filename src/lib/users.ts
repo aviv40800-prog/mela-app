@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import type { PartnerReligiosity, Religiosity } from "./content";
+import type { LookingFor, MaritalStatus, PartnerReligiosity, Religiosity } from "./content";
 
 export type Gender = "male" | "female";
 export type Seeking = Gender | "everyone";
@@ -26,6 +26,8 @@ export type User = {
   pref_distance_km: number | null;
   religiosity: Religiosity | null;
   partner_religiosity: PartnerReligiosity | null;
+  marital_status: MaritalStatus | null;
+  looking_for: LookingFor | null;
   created_at: string;
 };
 
@@ -44,6 +46,8 @@ export type PublicProfile = {
   /** Seeded sample profile (shown with a "sample profile" label). */
   is_demo: boolean;
   religiosity: Religiosity | null;
+  marital_status: MaritalStatus | null;
+  looking_for: LookingFor | null;
   prompts: Prompt[];
 };
 
@@ -86,6 +90,8 @@ export function toPublic(user: User): PublicProfile {
     is_verified: user.is_verified,
     is_demo: user.is_demo,
     religiosity: user.religiosity,
+    marital_status: user.marital_status,
+    looking_for: user.looking_for,
     prompts: getPrompts(user.id),
   };
 }
@@ -103,6 +109,8 @@ export type ProfileInput = {
   prompts: Prompt[];
   religiosity?: Religiosity;
   partner_religiosity?: PartnerReligiosity;
+  marital_status?: MaritalStatus;
+  looking_for?: LookingFor;
 } & Partial<Preferences>;
 
 export type Preferences = { seeking: Seeking; pref_age_min: number | null; pref_age_max: number | null; pref_distance_km: number | null };
@@ -134,6 +142,9 @@ export function updateProfile(userId: number, p: ProfileInput) {
     }
     if (p.religiosity && p.partner_religiosity) {
       db.prepare("UPDATE users SET religiosity = ?, partner_religiosity = ? WHERE id = ?").run(p.religiosity, p.partner_religiosity, userId);
+    }
+    if (p.marital_status && p.looking_for) {
+      db.prepare("UPDATE users SET marital_status = ?, looking_for = ? WHERE id = ?").run(p.marital_status, p.looking_for, userId);
     }
     db.prepare("DELETE FROM cultural_prompts WHERE user_id = ?").run(userId);
     const ins = db.prepare("INSERT INTO cultural_prompts (user_id, question_key, answer_text) VALUES (?, ?, ?)");

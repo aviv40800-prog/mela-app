@@ -26,6 +26,8 @@ export default async function ProfileSetupPage({ searchParams }: { searchParams:
         pref_distance_km: user.pref_distance_km,
         religiosity: user.religiosity ?? undefined,
         partner_religiosity: user.partner_religiosity ?? undefined,
+        marital_status: user.marital_status ?? undefined,
+        looking_for: user.looking_for ?? undefined,
       }}
     />
   );
