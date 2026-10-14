@@ -4,17 +4,68 @@ import "server-only";
  * Transactional email (sign-in codes). Providers, chosen by EMAIL_PROVIDER:
  *  - "gmail"   — a Gmail account + App Password over SMTP (free, ~500/day): GMAIL_USER, GMAIL_APP_PASSWORD
  *  - "smtp"    — any SMTP server: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+ *  - "brevo"   — Brevo HTTP API (free 300/day): BREVO_API_KEY (an "xkeysib-…" API key). The sender address must be
+ *                verified in Brevo (Senders, domains & IPs → Senders).
  *  - "resend"  — Resend HTTP API (free 3,000/month, needs your own domain): RESEND_API_KEY
  *  - "console" — log only (development / demo; the code is shown on screen)
  * EMAIL_FROM sets the sender, e.g. `MELA <datemela1@gmail.com>`.
+ * Without EMAIL_PROVIDER the provider is inferred from whichever key is set.
  */
-export const emailProvider = () => (process.env.EMAIL_PROVIDER ?? "console").toLowerCase();
+const brevoKey = () => (process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.SENDINBLUE_API_KEY || "").trim();
+
+export function emailProvider(): string {
+  const set = (process.env.EMAIL_PROVIDER ?? "").trim().toLowerCase();
+  if (set && set !== "console") return set === "sendinblue" ? "brevo" : set;
+  if (set === "console") return "console";
+  if (brevoKey()) return "brevo";
+  if (process.env.RESEND_API_KEY) return "resend";
+  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) return "gmail";
+  if (process.env.SMTP_HOST) return "smtp";
+  return "console";
+}
+
+/** Last delivery failure (no secrets) — shown by /api/health/email so a misconfiguration is easy to spot. */
+let lastEmailError: { at: string; provider: string; message: string } | null = null;
+export const getLastEmailError = () => lastEmailError;
+
+/** "MELA <a@b.com>" → { name: "MELA", email: "a@b.com" } */
+function parseFrom(from: string): { name?: string; email: string } {
+  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  return m ? { name: m[1].trim() || undefined, email: m[2].trim() } : { email: from.trim() };
+}
+
+export function emailFrom(): string {
+  return process.env.EMAIL_FROM || (process.env.GMAIL_USER ? `MELA <${process.env.GMAIL_USER}>` : "MELA <datemela1@gmail.com>");
+}
 
 type Mail = { to: string; subject: string; html: string; text: string };
 
 export async function sendEmail(mail: Mail): Promise<void> {
   const provider = emailProvider();
-  const from = process.env.EMAIL_FROM || (process.env.GMAIL_USER ? `MELA <${process.env.GMAIL_USER}>` : "MELA <no-reply@mela.app>");
+  try {
+    await deliver(provider, mail);
+  } catch (e) {
+    lastEmailError = { at: new Date().toISOString(), provider, message: String((e as Error).message ?? e).slice(0, 400) };
+    throw e;
+  }
+}
+
+async function deliver(provider: string, mail: Mail): Promise<void> {
+  const from = emailFrom();
+
+  if (provider === "brevo") {
+    const key = brevoKey();
+    if (!key) throw new Error("BREVO_API_KEY is not set");
+    if (key.startsWith("xsmtpsib-")) throw new Error("this is a Brevo SMTP key — create an API key (xkeysib-…) under SMTP & API → API keys");
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": key, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ sender: parseFrom(from), to: [{ email: mail.to }], subject: mail.subject, htmlContent: mail.html, textContent: mail.text }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`brevo ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    return;
+  }
 
   if (provider === "resend") {
     const res = await fetch("https://api.resend.com/emails", {
@@ -43,6 +94,7 @@ export async function sendEmail(mail: Mail): Promise<void> {
     return;
   }
 
+  if (provider !== "console") throw new Error(`unknown EMAIL_PROVIDER "${provider}" (use brevo, gmail, smtp or resend)`);
   console.info(`[email:console] to=${mail.to} subject="${mail.subject}"\n${mail.text}`);
 }
 

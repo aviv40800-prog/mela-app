@@ -478,4 +478,18 @@ describe("improve-your-profile check-ins", () => {
     old.exec("PRAGMA foreign_keys = ON; DELETE FROM users WHERE id = 1");
     expect(old.prepare("SELECT COUNT(*) AS n FROM matches").get()).toMatchObject({ n: 0 }); // cascade still wired
   });
+
+  it("picks the email provider from the configured key", async () => {
+    const { emailProvider } = await import("@/lib/email");
+    const saved = { ...process.env };
+    delete process.env.EMAIL_PROVIDER;
+    expect(emailProvider()).toBe("console");
+    process.env.BREVO_API_KEY = "xkeysib-test";
+    expect(emailProvider()).toBe("brevo");
+    process.env.EMAIL_PROVIDER = "console";
+    expect(emailProvider()).toBe("console");
+    process.env.EMAIL_PROVIDER = "Brevo";
+    expect(emailProvider()).toBe("brevo");
+    process.env = saved;
+  });
 });
