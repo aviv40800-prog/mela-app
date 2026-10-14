@@ -88,6 +88,15 @@ CREATE TABLE IF NOT EXISTS open_answers (
   PRIMARY KEY (user_id, question_key)
 );
 
+-- AI-guided sign-up: the conversation so far and the profile draft built from it.
+CREATE TABLE IF NOT EXISTS onboarding_chats (
+  user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  messages   TEXT NOT NULL,
+  draft      TEXT NOT NULL,
+  turns      INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- "What would you ask the other side?" — questions members suggest; approved ones become chat ideas.
 CREATE TABLE IF NOT EXISTS community_questions (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,

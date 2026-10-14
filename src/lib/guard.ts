@@ -14,7 +14,7 @@ export async function requirePageUser(stage: "verified" | "profile" | "member"):
   touchLastSeen(user.id);
   if (stage === "verified") return user;
   const next = nextOnboardingStep(user);
-  if (next === "/onboarding/profile") redirect(next);
+  if (next.startsWith("/onboarding/")) redirect(next);
   return user;
 }
 
