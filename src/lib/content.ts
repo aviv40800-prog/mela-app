@@ -10,6 +10,13 @@ export const CULTURAL_PROMPTS = [
   { key: "amharic_word", question: "המילה באמהרית שהכי מתארת אותי..." },
   { key: "first_date", question: "הדייט הראשון המושלם שלנו ייראה כך..." },
   { key: "dealbreaker", question: "אני מחפש/ת מישהו/י ש..." },
+  { key: "perfect_weekend", question: "סוף שבוע מושלם בשבילי זה..." },
+  { key: "talk_for_hours", question: "אני יכול/ה לדבר שעות על..." },
+  { key: "makes_me_laugh", question: "מה שהכי מצחיק אותי..." },
+  { key: "secret_talent", question: "משהו שאני טוב/ה בו ורוב האנשים לא יודעים..." },
+  { key: "green_flag", question: "הדבר הראשון שאני שם/ה לב אליו אצל מישהו/י..." },
+  { key: "five_years", question: "בעוד 5 שנים אני רואה את עצמי..." },
+  { key: "unpopular_opinion", question: "דעה לא פופולרית שלי..." },
 ] as const;
 
 export type PromptKey = (typeof CULTURAL_PROMPTS)[number]["key"];
