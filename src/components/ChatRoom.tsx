@@ -55,6 +55,13 @@ export function ChatRoom({
   const [sending, setSending] = useState(false);
   const [tray, setTray] = useState(false);
   const [round, setRound] = useState(() => Math.floor(Math.random() * 1000));
+  // Questions the community suggested (and an admin approved) join the "idea for a question" pool.
+  const [community, setCommunity] = useState<string[]>([]);
+  useEffect(() => {
+    api<{ questions: string[] }>("/api/community-questions")
+      .then((r) => setCommunity(r.questions))
+      .catch(() => {});
+  }, []);
   const [planner, setPlanner] = useState(false);
   const offerKey = `mela:date-offer:${matchId}`;
   const [dismissedAt, setDismissedAt] = useState<number | null>(null);
@@ -159,7 +166,7 @@ export function ChatRoom({
 
   // "Idea for a question": something personal from their profile, then light questions early on and deeper ones once it flows.
   const personal = partner.prompts.map((p) => `ראיתי שכתבת על ״${promptQuestion(p.question_key).replace("...", "")}״: ״${p.answer_text.slice(0, 40)}״ — ספר/י לי עוד?`);
-  const pool = messages.length < 8 ? [...ICEBREAKERS, ...CONVO_QUESTIONS.light] : [...CONVO_QUESTIONS.deeper, ...CONVO_QUESTIONS.light];
+  const pool = messages.length < 8 ? [...ICEBREAKERS, ...CONVO_QUESTIONS.light, ...community] : [...CONVO_QUESTIONS.deeper, ...CONVO_QUESTIONS.light, ...community];
   const ideas = [...shuffle(personal, round).slice(0, 1), ...shuffle(pool, round)].slice(0, 3);
   function pickIdea(q: string) {
     haptic(8);

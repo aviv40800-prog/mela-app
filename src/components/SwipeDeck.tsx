@@ -10,7 +10,7 @@ import { MatchModal, type MiniProfile } from "./MatchModal";
 import { CardSkeleton } from "./ui/Skeleton";
 import { ApiError, api, haptic } from "@/lib/client";
 import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
-import { QuizOfferSheet, countSwipeForOffer } from "./QuizOfferSheet";
+import { InterestPause, countSwipeForOffer, startPause, type Pause } from "./InterestPause";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
 type SwipeResponse = { status: string; matchId: number; isNewMatch: boolean; other?: PublicProfile; quota: Quota };
@@ -28,7 +28,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const [quota, setQuota] = useState<Quota | null>(null);
   const [widened, setWidened] = useState(false);
   const [swipes, setSwipes] = useState<number | null>(null);
-  const [offer, setOffer] = useState<{ key: string; cat: string; a: string; b: string }[] | null>(null);
+  const [offer, setOffer] = useState<Pause | null>(null);
   const [paywall, setPaywall] = useState(false);
   const busy = useRef(false);
   const x = useMotionValue(0);
@@ -106,11 +106,15 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       x.set(0);
       busy.current = false;
       if (kept) setSwipes((n) => (n ?? 0) + 1);
-      // Every few swipes, offer three more questions (optional) to sharpen the matches.
+      // Every few swipes, a short "moment of interest" (always skippable): up to three light questions,
+      // or — every third time, or once the questions run out — "what would you ask the other side?".
       if (kept && source === "discover" && countSwipeForOffer()) {
-        api<{ questions: { key: string; cat: string; a: string; b: string }[] }>("/api/quiz/next")
-          .then((r) => r.questions.length && setOffer(r.questions))
-          .catch(() => {});
+        const { community } = startPause();
+        if (community) setOffer({ kind: "community" });
+        else
+          api<{ questions: { key: string; cat: string; a: string; b: string }[] }>("/api/quiz/next")
+            .then((r) => setOffer(r.questions.length ? { kind: "quiz", questions: r.questions } : { kind: "community" }))
+            .catch(() => {});
       }
     },
     [top, x, quota, source],
@@ -186,7 +190,11 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="relative">
-      <div className="relative h-[calc(100dvh-196px)]">
+      <motion.div
+        className="relative h-[calc(100dvh-196px)]"
+        animate={offer && !match ? { scale: 0.94, opacity: 0.45, filter: "blur(6px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
+        transition={{ type: "spring", stiffness: 300, damping: 34 }}
+      >
         <AnimatePresence>
           {widened && (
             <motion.button
@@ -202,7 +210,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         </AnimatePresence>
         {deck[1] && <BackCard key={deck[1].id} c={deck[1]} x={x} />}
         <TopCard key={top.id} c={top} x={x} onDragEnd={onDragEnd} onPromptLike={setSheet} />
-      </div>
+      </motion.div>
 
       <ActionBar x={x} burst={burst} quota={quota} onPass={() => decide("pass")} onLike={() => decide("like")} />
       <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onQuota={setQuota} onClose={() => setPaywall(false)} />}</AnimatePresence>
@@ -218,7 +226,17 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         )}
       </AnimatePresence>
       <AnimatePresence>{match && <MatchModal me={me} {...match} onClose={() => setMatch(null)} />}</AnimatePresence>
-      <AnimatePresence>{offer && !match && <QuizOfferSheet questions={offer} onClose={() => setOffer(null)} onAnswered={load} />}</AnimatePresence>
+      <AnimatePresence>
+        {offer && !match && (
+          <InterestPause
+            pause={offer}
+            onClose={(answered) => {
+              setOffer(null);
+              if (answered) void load();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

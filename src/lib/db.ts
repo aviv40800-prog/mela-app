@@ -79,6 +79,26 @@ CREATE TABLE IF NOT EXISTS quiz_answers (
   PRIMARY KEY (user_id, question_key)
 );
 
+-- Free-text answers to interest-pause questions ("or write your own").
+CREATE TABLE IF NOT EXISTS open_answers (
+  user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  question_key TEXT NOT NULL,
+  answer_text  TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, question_key)
+);
+
+-- "What would you ask the other side?" — questions members suggest; approved ones become chat ideas.
+CREATE TABLE IF NOT EXISTS community_questions (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  text        TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  reviewed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_community_status ON community_questions(status, id);
+
 CREATE TABLE IF NOT EXISTS daily_picks (
   user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   pick_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

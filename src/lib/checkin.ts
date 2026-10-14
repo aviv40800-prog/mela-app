@@ -10,7 +10,11 @@ type Q = (typeof ALL_QUESTIONS)[number];
 export type Checkin = { questions: Q[]; nextAt: string | null; answered: number; total: number };
 
 function answeredKeys(userId: number): Set<string> {
-  return new Set((db.prepare("SELECT question_key FROM quiz_answers WHERE user_id = ?").all(userId) as { question_key: string }[]).map((r) => r.question_key));
+  // A free-text answer ("or write your own") counts as answered too, so the question isn't asked again.
+  const rows = db
+    .prepare("SELECT question_key FROM quiz_answers WHERE user_id = ? UNION SELECT question_key FROM open_answers WHERE user_id = ?")
+    .all(userId, userId) as { question_key: string }[];
+  return new Set(rows.map((r) => r.question_key));
 }
 
 /**

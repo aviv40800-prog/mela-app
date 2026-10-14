@@ -492,4 +492,33 @@ describe("improve-your-profile check-ins", () => {
     expect(emailProvider()).toBe("brevo");
     process.env = saved;
   });
+
+  it("collects community questions, limits them per day and exposes only approved ones", async () => {
+    const { suggestQuestion, reviewQuestion, approvedQuestions, listCommunityQuestions, countByStatus } = await import("@/lib/community");
+    const u = member("שואלת", "female");
+    expect(suggestQuestion(u.id, "קצר")).toEqual({ ok: false, reason: "short" });
+    const a = suggestQuestion(u.id, "מה המאכל של סבתא שהכי חסר לך?");
+    expect(a.ok).toBe(true);
+    expect(suggestQuestion(u.id, "  מה המאכל של סבתא   שהכי חסר לך?")).toEqual({ ok: false, reason: "duplicate" });
+    suggestQuestion(u.id, "איך נראה אצלך ערב שישי?");
+    suggestQuestion(u.id, "מה למדת מההורים שלך על אהבה?");
+    expect(suggestQuestion(u.id, "שאלה רביעית באותו יום?")).toEqual({ ok: false, reason: "limit" });
+    expect(approvedQuestions()).toEqual([]);
+    const first = listCommunityQuestions("pending").find((q) => q.text.startsWith("מה המאכל"))!;
+    expect(first.author).toBe("שואלת");
+    reviewQuestion(first.id, "approved", "מה המאכל של סבתא שאת/ה הכי מתגעגע/ת אליו?");
+    expect(approvedQuestions()).toEqual(["מה המאכל של סבתא שאת/ה הכי מתגעגע/ת אליו?"]);
+    expect(countByStatus()).toMatchObject({ pending: 2, approved: 1, rejected: 0 });
+    db.exec("DELETE FROM community_questions");
+  });
+
+  it("counts a free-text pause answer as answered", async () => {
+    const { nextQuestions } = await import("@/lib/checkin");
+    const u = member("כותב", "male");
+    const before = nextQuestions(u.id, 3);
+    db.prepare("INSERT INTO open_answers (user_id, question_key, answer_text) VALUES (?, ?, ?)").run(u.id, before.questions[0].key, "תלוי ביום");
+    const after = nextQuestions(u.id, 3);
+    expect(after.questions.map((q) => q.key)).not.toContain(before.questions[0].key);
+    expect(after.remaining).toBe(before.remaining - 1);
+  });
 });
