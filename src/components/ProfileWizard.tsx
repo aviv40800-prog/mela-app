@@ -96,12 +96,15 @@ export function ProfileWizard({
   editing,
   startStep,
   emailLocked = false,
+  draftKey,
 }: {
   initial: ProfileDraft;
   editing: boolean;
   startStep?: WizardStep;
   /** The member signed in with this email (verified by code) — it's their login, not editable here. */
   emailLocked?: boolean;
+  /** localStorage key for an unfinished sign-up — leaving and coming back resumes at the same step. */
+  draftKey?: string;
 }) {
   const router = useRouter();
   const [d, setD] = useState<ProfileDraft>(() => ({
@@ -127,6 +130,35 @@ export function ProfileWizard({
   const [serverErr, setServerErr] = useState<string | null>(null);
   const [picker, setPicker] = useState<number | null>(null);
   const nudge = useAnimationControls();
+
+  // Resume an unfinished sign-up (nothing is saved on the server until the last step).
+  const [restored, setRestored] = useState(editing || !draftKey);
+  useEffect(() => {
+    if (restored || !draftKey) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(draftKey) ?? "null") as { d: ProfileDraft; photos: string[]; step: number } | null;
+      if (saved?.d) {
+        setD((cur) => ({ ...cur, ...saved.d, email: emailLocked ? cur.email : saved.d.email }));
+        if (saved.photos?.length) setTiles(tilesFromUrls(saved.photos));
+        if (!startStep && saved.step > 0 && saved.step < WIZARD_STEPS.length) setStepIdx(saved.step);
+      }
+    } catch {}
+    setRestored(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const photoUrls = tiles.filter((t) => t.url).map((t) => t.url!);
+  useEffect(() => {
+    if (!restored || editing || !draftKey) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ d, photos: photoUrls, step: stepIdx }));
+    } catch {}
+  }, [restored, d, photoUrls.join("|"), stepIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function exit() {
+    // First step: "back" leaves sign-up. The draft stays on this device, so signing in again picks up here.
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.replace("/");
+    router.refresh();
+  }
 
   const step = WIZARD_STEPS[stepIdx];
   const errs = errors(d, tiles, quiz);
@@ -169,6 +201,10 @@ export function ProfileWizard({
         },
       });
       haptic([10, 30, 10]);
+      if (draftKey)
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {}
       // Free first: new members go straight to Discover; Premium is offered later, when the free likes run out.
       router.replace(editing ? "/profile" : res.next);
       router.refresh();
@@ -419,8 +455,14 @@ export function ProfileWizard({
           )}
         </AnimatePresence>
         <div className="flex gap-3">
-          {!editing && stepIdx > 0 && (
-            <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} onClick={() => go(stepIdx - 1)} className="btn-ghost h-[54px] w-[54px] shrink-0 p-0" aria-label="שלב קודם">
+          {!editing && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              onClick={() => (stepIdx > 0 ? go(stepIdx - 1) : void exit())}
+              className="btn-ghost h-[54px] w-[54px] shrink-0 p-0"
+              aria-label={stepIdx > 0 ? "שלב קודם" : "יציאה מההרשמה"}
+            >
               <ArrowRight size={20} />
             </motion.button>
           )}

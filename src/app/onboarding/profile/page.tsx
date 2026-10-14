@@ -10,6 +10,7 @@ export default async function ProfileSetupPage({ searchParams }: { searchParams:
     <ProfileWizard
       editing={!!edit}
       emailLocked={user.email_verified}
+      draftKey={`mela:wizard:${user.id}`}
       startStep={WIZARD_STEPS.includes(step as WizardStep) ? (step as WizardStep) : undefined}
       initial={{
         full_name: user.full_name ?? "",
