@@ -43,7 +43,7 @@ const STORY_CLOSE = ["פה אתה יכול להיות אתה, כי פה כבר �
 
 import { Faq } from "@/components/landing/Faq";
 import { getSessionUserId } from "@/lib/session";
-import { getUser, isProfileComplete } from "@/lib/users";
+import { getUser } from "@/lib/users";
 import { isAdmin } from "@/lib/admin";
 import { nextOnboardingStep } from "@/lib/onboarding";
 import { PLANS, TRIAL_DAYS } from "@/lib/content";
@@ -84,8 +84,8 @@ const FAQ = [
 export default async function Landing() {
   const id = await getSessionUserId();
   const user = id ? getUser(id) : null;
-  // Admins without a dating profile go to the dashboard, not the sign-up wizard.
-  if (user && !user.is_banned) redirect(isAdmin(user) && !isProfileComplete(user) ? "/admin" : nextOnboardingStep(user));
+  // Members go straight to the app; admins can always see the public page they share.
+  if (user && !user.is_banned && !isAdmin(user)) redirect(nextOnboardingStep(user));
 
   return (
     <div className="relative overflow-x-clip">

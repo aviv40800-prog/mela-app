@@ -35,12 +35,15 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const end = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLElement>(null);
+  const vp = useVisualViewport();
   const done = TOTAL - chat.missing.length;
 
+  // Keep the latest message in view (also when the keyboard opens and the visible area shrinks).
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chat.messages.length, busy, chat.ask]);
+    const el = scroller.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [chat.messages.length, busy, chat.ask, err, vp.height]);
 
   async function send(body: object, optimistic?: string) {
     setBusy(true);
@@ -69,104 +72,109 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
   if (chat.done && revealed) return <Reveal draft={chat.draft} onFix={() => router.push("/onboarding/profile")} onDone={(next) => router.replace(next)} />;
 
   return (
-    <div className="-mx-6 flex flex-1 flex-col pb-40">
-      {/* host bar */}
-      <div className="flex items-center justify-between px-5">
-        <div className="flex items-center gap-2.5">
-          <motion.svg width="30" height="28" viewBox="0 0 240 216" aria-hidden="true" animate={busy ? { scale: [1, 1.08, 1] } : { scale: 1 }} transition={{ duration: 1, repeat: busy ? Infinity : 0 }}>
-            <path d={HEART} fill="rgb(229 56 59 / 0.25)" stroke="#ff5a63" strokeWidth="14" />
-          </motion.svg>
-          <div className="leading-tight">
-            <div className="text-[15px] font-semibold">המארחת של MELA</div>
-            <div className="text-[12px] text-mute">{busy ? "מקלידה…" : "מכירה אותך · בדרך כלל עונה מיד"}</div>
-          </div>
-        </div>
-        <Link href="/onboarding/profile" className="rounded-full border border-gold/30 px-3.5 py-2 text-[13px] text-cream/90 transition hover:border-gold/60">
-          להשלים בטופס
-        </Link>
-      </div>
-
-      {/* live profile */}
-      <section aria-label="מה שלמדתי עלייך" className="mx-4 mt-4 rounded-[20px] border border-gold/35 bg-gradient-to-b from-gold/[0.12] to-gold/[0.04] p-3.5">
+    <div
+      className="fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-md flex-col bg-ink"
+      style={{ height: vp.height ? `${vp.height}px` : "100dvh", transform: vp.top ? `translateY(${vp.top}px)` : undefined }}
+    >
+      {/* header: host + what was learned so far */}
+      <header className="shrink-0 border-b border-line bg-ink/95 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[13px] font-medium text-gold-3">{done ? "מה שלמדתי עלייך עד עכשיו" : "הפרופיל שלך ייבנה כאן תוך כדי שיחה"}</span>
-          <span className="tabular text-[12px] text-mute">
-            {done} / {TOTAL}
-          </span>
-        </div>
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-fg/10">
-          <motion.div className="h-full rounded-full bg-gradient-to-l from-gold-3 to-rose" animate={{ width: `${(done / TOTAL) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
-        </div>
-        <LayoutGroup>
-          <motion.div layout className="mt-2.5 flex flex-wrap gap-1.5">
-            <AnimatePresence initial={false}>
-              {facts(chat.draft).map((f) => (
-                <motion.span
-                  key={f.key + f.label}
-                  layout
-                  initial={{ opacity: 0, y: 26, scale: 0.7 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 26 }}
-                  className="rounded-full border border-gold/25 bg-fg/[0.06] px-2.5 py-1 text-[12.5px]"
-                >
-                  {f.label}
-                </motion.span>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        </LayoutGroup>
-      </section>
-
-      <p className="mx-5 mt-2 text-[11.5px] leading-relaxed text-mute-2">השיחה מעובדת בעזרת בינה מלאכותית (Claude של Anthropic) רק כדי לבנות את הפרופיל שלך. כל פרט אפשר לערוך לפני השמירה.</p>
-
-      {/* conversation */}
-      <div className="mt-4 flex flex-col gap-2.5 px-4" aria-live="polite">
-        {chat.messages.map((m, i) => (
-          <motion.div
-            key={i}
-            {...bubbleIn}
-            className={`max-w-[84%] px-4 py-2.5 text-[15.5px] leading-relaxed ${
-              m.role === "assistant"
-                ? "self-start rounded-[20px] rounded-es-[6px] border border-gold/20 bg-fg/[0.06]"
-                : "self-end rounded-[20px] rounded-ee-[6px] bg-gradient-to-b from-[#ff6670] to-[#c4152a] text-[#fff7f2]"
-            }`}
-          >
-            {m.text}
-          </motion.div>
-        ))}
-        <AnimatePresence>
-          {busy && (
-            <motion.div key="typing" {...bubbleIn} exit={{ opacity: 0 }} className="flex gap-1.5 self-start rounded-[18px] bg-fg/[0.05] px-4 py-3.5" aria-label="מקלידה">
-              {[0, 1, 2].map((d) => (
-                <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-gold" animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }} transition={{ duration: 1.1, repeat: Infinity, delay: d * 0.15 }} />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* inline widgets */}
-        {!busy && chat.ask === "bio" && chat.draft.bio_draft && <BioCard draft={chat.draft.bio_draft} onAnswer={(b) => send(b)} />}
-        {!busy && chat.ask === "photos" && <PhotoPicker onDone={(photos) => send({ photos })} />}
-        {chat.done && (
-          <motion.button {...bubbleIn} onClick={() => setRevealed(true)} className="btn-gold mt-3 w-full">
-            לראות את הפרופיל שלי
-          </motion.button>
-        )}
-        {err && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-danger/30 bg-danger/[0.08] px-3.5 py-2.5 text-[13.5px] text-danger">
-            {err}
-            <Link href="/onboarding/profile" className="shrink-0 underline underline-offset-4">
-              לטופס
-            </Link>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <motion.svg width="28" height="26" viewBox="0 0 240 216" aria-hidden="true" animate={busy ? { scale: [1, 1.08, 1] } : { scale: 1 }} transition={{ duration: 1, repeat: busy ? Infinity : 0 }}>
+              <path d={HEART} fill="rgb(229 56 59 / 0.25)" stroke="#ff5a63" strokeWidth="14" />
+            </motion.svg>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-[15px] font-semibold">המארחת של MELA</div>
+              <div className="truncate text-[12px] text-mute">{busy ? "מקלידה…" : "מכירה אותך · בדרך כלל עונה מיד"}</div>
+            </div>
           </div>
-        )}
-        <div ref={end} />
-      </div>
+          <Link href="/onboarding/profile" className="shrink-0 rounded-full border border-gold/30 px-3 py-1.5 text-[12.5px] text-cream/90 transition hover:border-gold/60">
+            להשלים בטופס
+          </Link>
+        </div>
+        <section aria-label="מה שלמדתי עלייך" className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/[0.1] to-gold/[0.03] px-3 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[12.5px] font-medium text-gold-3">{done ? "מה שלמדתי עלייך" : "הפרופיל שלך ייבנה כאן תוך כדי שיחה"}</span>
+            <span className="tabular text-[11.5px] text-mute">
+              {done} / {TOTAL}
+            </span>
+          </div>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-fg/10">
+            <motion.div className="h-full rounded-full bg-gradient-to-l from-gold-3 to-rose" animate={{ width: `${(done / TOTAL) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
+          </div>
+          {facts(chat.draft).length > 0 && (
+            <LayoutGroup>
+              <motion.div layout className="no-scrollbar -mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1">
+                <AnimatePresence initial={false}>
+                  {facts(chat.draft).map((f) => (
+                    <motion.span
+                      key={f.key + f.label}
+                      layout
+                      initial={{ opacity: 0, y: 18, scale: 0.7 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                      className="shrink-0 rounded-full border border-gold/25 bg-fg/[0.06] px-2.5 py-1 text-[12px] whitespace-nowrap"
+                    >
+                      {f.label}
+                    </motion.span>
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            </LayoutGroup>
+          )}
+        </section>
+      </header>
 
-      {/* composer */}
+      {/* conversation — the only part that scrolls */}
+      <main ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
+        <p className="mb-3 text-center text-[11px] leading-relaxed text-mute-2">השיחה מעובדת בעזרת בינה מלאכותית (Claude של Anthropic) רק כדי לבנות את הפרופיל שלך. כל פרט אפשר לערוך לפני השמירה.</p>
+        <div className="flex flex-col gap-2.5">
+          {chat.messages.map((m, i) => (
+            <motion.div
+              key={i}
+              {...bubbleIn}
+              className={`max-w-[84%] px-4 py-2.5 text-[15.5px] leading-relaxed ${
+                m.role === "assistant"
+                  ? "self-start rounded-[20px] rounded-es-[6px] border border-gold/20 bg-fg/[0.06]"
+                  : "self-end rounded-[20px] rounded-ee-[6px] bg-gradient-to-b from-[#ff6670] to-[#c4152a] text-[#fff7f2]"
+              }`}
+            >
+              {m.text}
+            </motion.div>
+          ))}
+          <AnimatePresence>
+            {busy && (
+              <motion.div key="typing" {...bubbleIn} exit={{ opacity: 0 }} className="flex gap-1.5 self-start rounded-[18px] bg-fg/[0.05] px-4 py-3.5" aria-label="מקלידה">
+                {[0, 1, 2].map((d) => (
+                  <motion.span key={d} className="h-1.5 w-1.5 rounded-full bg-gold" animate={{ opacity: [0.25, 1, 0.25], y: [0, -3, 0] }} transition={{ duration: 1.1, repeat: Infinity, delay: d * 0.15 }} />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* inline widgets */}
+          {!busy && chat.ask === "bio" && chat.draft.bio_draft && <BioCard draft={chat.draft.bio_draft} onAnswer={(b) => send(b)} />}
+          {!busy && chat.ask === "photos" && <PhotoPicker onDone={(photos) => send({ photos })} />}
+          {chat.done && (
+            <motion.button {...bubbleIn} onClick={() => setRevealed(true)} className="btn-gold mt-3 w-full">
+              לראות את הפרופיל שלי
+            </motion.button>
+          )}
+          {err && (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-danger/30 bg-danger/[0.08] px-3.5 py-2.5 text-[13.5px] text-danger">
+              {err}
+              <Link href="/onboarding/profile" className="shrink-0 underline underline-offset-4">
+                לטופס
+              </Link>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* composer — anchored to the bottom of the visible screen, above the home indicator / keyboard */}
       {!chat.done && chat.ask !== "photos" && !(chat.ask === "bio" && chat.draft.bio_draft) && (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md bg-gradient-to-t from-ink via-ink/95 to-transparent px-4 pt-8 safe-bottom">
+        <footer className="shrink-0 border-t border-line bg-ink/95 px-4 pt-2.5 pb-[max(env(safe-area-inset-bottom),12px)] backdrop-blur-xl">
           <AnimatePresence>
             {!busy && chat.choices.length > 0 && (
               <motion.div role="group" aria-label="בחירה מהירה" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="mb-2.5 grid grid-cols-2 gap-2">
@@ -177,7 +185,7 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
                     animate={{ opacity: 1, y: 0, transition: { delay: i * 0.06 } }}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => send({ choice: { field: chat.ask, value: c.value, label: c.label } }, c.label)}
-                    className="min-h-12 rounded-2xl border border-gold/35 bg-gold/[0.08] px-3 text-[14px] text-gold-3 transition hover:border-gold/70"
+                    className="min-h-11 rounded-2xl border border-gold/35 bg-gold/[0.08] px-3 py-2 text-[14px] leading-snug text-gold-3 transition hover:border-gold/70"
                   >
                     {c.label}
                   </motion.button>
@@ -195,17 +203,36 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
               onChange={(e) => setText(e.target.value)}
               maxLength={1000}
               autoComplete="off"
+              enterKeyHint="send"
               placeholder={chat.messages.length <= 2 ? "למשל: אני דנה, 27, אחות ממודיעין…" : "כתבו בחופשיות…"}
-              className="min-w-0 flex-1 bg-transparent py-2.5 text-[15.5px] outline-none placeholder:text-mute-2"
+              className="min-w-0 flex-1 bg-transparent py-2.5 text-[16px] outline-none placeholder:text-mute-2"
             />
             <button disabled={busy || !text.trim()} aria-label="שליחה" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#ff6670] to-[#c4152a] text-white transition disabled:opacity-40">
               {busy ? <Loader2 size={18} className="animate-spin" /> : <ArrowLeft size={19} />}
             </button>
           </form>
-        </div>
+        </footer>
       )}
     </div>
   );
+}
+
+/** The visible viewport (shrinks when the on-screen keyboard opens) so the composer stays above it, iOS included. */
+function useVisualViewport() {
+  const [vp, setVp] = useState<{ height: number; top: number }>({ height: 0, top: 0 });
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return;
+    const update = () => setVp({ height: Math.round(v.height), top: Math.round(v.offsetTop) });
+    update();
+    v.addEventListener("resize", update);
+    v.addEventListener("scroll", update);
+    return () => {
+      v.removeEventListener("resize", update);
+      v.removeEventListener("scroll", update);
+    };
+  }, []);
+  return vp;
 }
 
 function BioCard({ draft, onAnswer }: { draft: string; onAnswer: (b: { bio: "accept" | "other"; text?: string }) => void }) {

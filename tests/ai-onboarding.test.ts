@@ -42,6 +42,11 @@ describe("AI onboarding chat", () => {
     expect(v.draft.age).toBeUndefined();
     expect(v.draft.religiosity).toBeUndefined();
 
+    // The model names a field but talks about something else → no buttons.
+    turns.push({ reply: "וואלה, ומה עושה לך את הסופ״ש?", extracted: empty, bio_draft: null, ask: "looking_for" });
+    v = await ai.chatTurn(u, { text: "עובדת המון" });
+    expect(v.choices).toEqual([]);
+
     turns.push({ reply: "ומה את מחפשת?", extracted: { ...empty, age: 27 }, bio_draft: null, ask: "looking_for" });
     v = await ai.chatTurn(u, { text: "27" });
     expect(v.ask).toBe("looking_for");

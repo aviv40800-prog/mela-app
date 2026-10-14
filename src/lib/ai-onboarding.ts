@@ -168,7 +168,7 @@ const FALLBACK_ASK: Record<Field | "none", string> = {
   age: "בן/בת כמה את/ה?",
   location: "איפה את/ה גר/ה?",
   occupation: "ובמה את/ה עוסק/ת?",
-  looking_for: "ומה הכי מתאים לך עכשיו?",
+  looking_for: "ומה את/ה מחפש/ת כרגע — זוגיות רצינית או לראות לאן זה הולך?",
   marital_status: "ומה הסטטוס שלך?",
   religiosity: "איך היית מגדיר/ה את עצמך מבחינת מסורת?",
   partner_religiosity: "וכמה חשוב לך שהצד השני יהיה דתי/ה?",
@@ -232,7 +232,7 @@ Their Ethiopian-Israeli background is one part of who they are, not the theme. D
 
 What the profile needs — the <state> block lists what's still missing. Weave these in naturally; you can combine basics into one easy question early ("ספר/י קצת — בן/בת כמה, מאיפה, ומה ממלא לך את הימים?"):
 - full_name, gender, age (18+), location (city), occupation.
-- looking_for, marital_status, religiosity, partner_religiosity: the app shows tap buttons when your "ask" names one of them. Ask briefly and casually in one sentence ("ורק שאדע מה להראות לך — מה את/ה מחפש/ת כרגע?"); don't dwell on them.
+- looking_for, marital_status, religiosity, partner_religiosity: the app shows tap buttons when your "ask" names one of them. Ask briefly and casually in one sentence that names the topic plainly — e.g. "מה את/ה מחפש/ת כרגע?", "מה הסטטוס שלך?", "איך היית מגדיר/ה את עצמך מבחינת דת ומסורת?", "כמה חשוב לך שהצד השני יהיה דתי/ה?" — then the buttons show up. Only set "ask" to one of these four when that message is actually about it. Don't dwell on them.
 - prompts: at least 2 profile prompt answers. Choose prompts that fit what they ALREADY told you — often you can fill one from an earlier answer without asking. Prefer the general ones; use the heritage ones only if they talked about it. Keys:
 ${CULTURAL_PROMPTS.map((p) => `  - ${p.key}: ${p.question}`).join("\n")}
 - bio: when the state block says BIO_NEEDED, write bio_draft — first person, in their voice, 2–3 sentences (max 300 chars), with 2–3 concrete, vivid details from this chat and a hint of what they're looking for. No clichés ("אוהב/ת לטייל ולבלות", "מחפש/ת את האחת", "חיובי/ת ואופטימי/ת"). In reply, say you wrote a draft they can approve or tweak. Set ask to "bio".
@@ -325,6 +325,28 @@ export type ChatView = {
   done: boolean;
 };
 
+/**
+ * Choice buttons appear only when the host's last message is actually about that topic — the model's "ask"
+ * alone isn't enough (it can name a field while chatting about something else).
+ */
+const TOPIC: Partial<Record<Field, RegExp>> = {
+  gender: /לשון|זכר|נקבה|גבר|אישה|בחור|בחורה/,
+  looking_for: /מחפש|זוגיות|קשר|רציני|קליל|יתפתח|מטרה|מתאים לך עכשיו|כוונות/,
+  marital_status: /סטטוס|רווק|גרוש|אלמן|נשוי|נשואה|מצב משפחתי/,
+  religiosity: /דתי|מסורת|חילונ|דת\b|שומר|שבת|כשרות|אמונה/,
+  partner_religiosity: /דתי|מסורת|חילונ|דת\b|שומר|שבת/,
+};
+function asksAbout(messages: ChatMsg[], field: Field): boolean {
+  const last = [...messages].reverse().find((m) => m.role === "assistant")?.text ?? "";
+  const re = TOPIC[field];
+  if (!re || !re.test(last)) return false;
+  // the partner question mentions the other side; the own-observance one doesn't
+  const partner = /צד השני|בן הזוג|בת הזוג|בן\/בת הזוג|שלו|שלה|אצל(ו|ה)/.test(last);
+  if (field === "partner_religiosity") return partner;
+  if (field === "religiosity") return !partner;
+  return true;
+}
+
 function view(messages: ChatMsg[], draft: Draft, ask: Field | "none"): ChatView {
   const missing = missingFields(draft);
   // Show the photo / bio widgets whenever they're the next thing needed, whatever the model said.
@@ -335,7 +357,8 @@ function view(messages: ChatMsg[], draft: Draft, ask: Field | "none"): ChatView 
     draft,
     missing,
     ask: effective,
-    choices: opts && effective !== "none" && missing.includes(effective) ? Object.entries(opts).map(([value, label]) => ({ value, label })) : [],
+    choices:
+      opts && effective !== "none" && missing.includes(effective) && asksAbout(messages, effective) ? Object.entries(opts).map(([value, label]) => ({ value, label })) : [],
     done: missing.length === 0,
   };
 }
