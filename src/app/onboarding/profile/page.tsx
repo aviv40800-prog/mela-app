@@ -9,6 +9,7 @@ export default async function ProfileSetupPage({ searchParams }: { searchParams:
   return (
     <ProfileWizard
       editing={!!edit}
+      emailLocked={user.email_verified}
       startStep={WIZARD_STEPS.includes(step as WizardStep) ? (step as WizardStep) : undefined}
       initial={{
         full_name: user.full_name ?? "",

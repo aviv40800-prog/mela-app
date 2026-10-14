@@ -39,7 +39,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
           <Card title="פרטים">
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-3">
               {[
-                ["טלפון", <span key="p" dir="ltr" className="tabular">{u.phone_number}</span>],
+                ["טלפון", <span key="p" dir="ltr" className="tabular">{u.phone_number ?? "—"}</span>],
                 ["אימייל", u.email ?? "—"],
                 ["גיל", u.age ?? "—"],
                 ["מגדר / מחפש/ת", `${u.gender ? SEX[u.gender] : "—"} → ${SEX[u.seeking]}`],

@@ -5,13 +5,13 @@ import path from "node:path";
 import { seedDemoData } from "./seed";
 import { DB_PATH } from "./paths";
 
-const SCHEMA = `
+export const SCHEMA = `
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   email         TEXT UNIQUE,
-  phone_number  TEXT NOT NULL UNIQUE,
+  phone_number  TEXT UNIQUE, -- optional since sign-in moved to email codes
   full_name     TEXT,
   age           INTEGER,
   gender        TEXT CHECK (gender IN ('male', 'female')),
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_match ON messages(match_id, id);
 
 CREATE TABLE IF NOT EXISTS otp_codes (
-  phone_number TEXT PRIMARY KEY,
+  phone_number TEXT PRIMARY KEY, -- the sign-in identifier: a normalised email (or a legacy phone number)
   code_hash    TEXT NOT NULL,
   expires_at   INTEGER NOT NULL,
   attempts     INTEGER NOT NULL DEFAULT 0
@@ -130,8 +130,28 @@ function open(): DatabaseSync {
 }
 
 /** Additive, idempotent migrations for databases created by older versions. */
-function migrate(db: DatabaseSync) {
+export function migrate(db: DatabaseSync) {
+  // Email sign-in: phone_number used to be NOT NULL. SQLite can't drop a constraint in place, so rebuild the
+  // table once (same columns, same ids — child tables keep pointing at the right rows).
+  const phoneCol = (db.prepare("PRAGMA table_info(users)").all() as { name: string; notnull: number }[]).find((c) => c.name === "phone_number");
+  if (phoneCol?.notnull) {
+    const { sql } = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").get() as { sql: string };
+    db.exec("PRAGMA foreign_keys = OFF");
+    db.exec("BEGIN");
+    try {
+      db.exec(sql.replace(/CREATE TABLE (IF NOT EXISTS )?"?users"?/, "CREATE TABLE users_rebuild").replace(/phone_number\s+TEXT\s+NOT NULL\s+UNIQUE/, "phone_number TEXT UNIQUE"));
+      db.exec("INSERT INTO users_rebuild SELECT * FROM users; DROP TABLE users; ALTER TABLE users_rebuild RENAME TO users;");
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    } finally {
+      db.exec("PRAGMA foreign_keys = ON");
+    }
+  }
   const cols = new Set((db.prepare("PRAGMA table_info(users)").all() as { name: string }[]).map((c) => c.name));
+  // Set once the member proved they own the address with an emailed code (only then does it count for sign-in/admin).
+  if (!cols.has("email_verified")) db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0");
   if (!cols.has("is_banned")) db.exec("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0");
   if (!cols.has("last_seen_at")) db.exec("ALTER TABLE users ADD COLUMN last_seen_at TEXT");
   // Discovery preferences: who the member wants to see (NULL = no limit).

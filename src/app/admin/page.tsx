@@ -71,7 +71,7 @@ export default function AdminOverview() {
             <ul className="space-y-3">
               {signups.map((u) => (
                 <li key={u.id} className="flex items-center justify-between gap-2">
-                  <UserChip id={u.id} name={u.full_name} photo={u.photo} sub={u.location ?? u.phone_number} />
+                  <UserChip id={u.id} name={u.full_name} photo={u.photo} sub={u.location ?? u.email ?? u.phone_number ?? ""} />
                   <span className="shrink-0 text-[11px] text-mute-2">{when(u.created_at)}</span>
                 </li>
               ))}

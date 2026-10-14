@@ -7,7 +7,7 @@ type MatchPayload = {
   event: "match.created";
   match_id: number;
   matched_at: string;
-  users: { id: number; full_name: string | null; phone_number: string }[];
+  users: { id: number; full_name: string | null; phone_number: string | null; email: string | null }[];
 };
 
 function logDelivery(matchId: number, target: string, status: number | null, error: string | null) {
@@ -39,7 +39,7 @@ export async function triggerMatchWhatsApp(matchId: number, a: User, b: User) {
     event: "match.created",
     match_id: matchId,
     matched_at: new Date().toISOString(),
-    users: [a, b].map((u) => ({ id: u.id, full_name: u.full_name, phone_number: u.phone_number })),
+    users: [a, b].map((u) => ({ id: u.id, full_name: u.full_name, phone_number: u.phone_number, email: u.email })),
   };
   const jobs: Promise<void>[] = [];
 
@@ -65,6 +65,7 @@ export async function triggerMatchWhatsApp(matchId: number, a: User, b: User) {
       [a, b],
       [b, a],
     ]) {
+      if (!me.phone_number) continue; // members who signed up by email have no WhatsApp number on file
       jobs.push(
         post(matchId, `cloud_api:${me.id}`, `https://graph.facebook.com/v21.0/${phoneId}/messages`, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { ArrowRight, Check, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Loader2, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
 import { api, haptic } from "@/lib/client";
 import { normalizeIsraeliPhone } from "@/lib/phone";
@@ -26,15 +26,35 @@ function formatPhone(raw: string) {
 type Mode = "signup" | "login";
 
 const COPY = {
-  signup: { title: "מה המספר שלך?", sub: "נשלח קוד אימות ב־SMS. המספר נשאר פרטי ולא יוצג לאף אחד.", cta: "שלחו לי קוד" },
-  login: { title: "ברוך/ה השב/ה", sub: "הזינו את המספר שאיתו נרשמתם ונשלח קוד כניסה.", cta: "שלחו קוד כניסה" },
+  signup: {
+    title: "מה המייל שלך?",
+    sub: "נשלח אליו קוד אימות בן 6 ספרות. המייל נשאר פרטי ולא יוצג לאף אחד.",
+    cta: "שלחו לי קוד",
+  },
+  login: {
+    title: "ברוך/ה השב/ה",
+    sub: "הזינו את המייל שלכם ונשלח קוד כניסה.",
+    cta: "שלחו קוד כניסה",
+  },
+};
+const PHONE_COPY = {
+  title: "כניסה עם טלפון",
+  sub: "למי שנרשם עם מספר נייד — נשלח קוד כניסה ב־SMS.",
+  cta: "שלחו קוד כניסה",
 };
 
-/** Phone + OTP, shared by signup and login. The server never reveals whether a number is registered. */
+const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
+
+/**
+ * Email code sign-in (free — no SMS), shared by signup and login. Members who registered with a phone
+ * number can still sign in with it from the login screen. The server never reveals whether an address is registered.
+ */
 export function PhoneAuth({ mode }: { mode: Mode }) {
   const router = useRouter();
   const params = useSearchParams();
   const [notice, setNotice] = useState<string | null>(null);
+  const [usePhone, setUsePhone] = useState(false);
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -45,7 +65,8 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
   const [cooldown, setCooldown] = useState(0);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const shake = useAnimationControls();
-  const phoneValid = normalizeIsraeliPhone(phone) !== null;
+  const valid = usePhone ? normalizeIsraeliPhone(phone) !== null : emailOk(email);
+  const copy = usePhone ? PHONE_COPY : COPY[mode];
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -58,8 +79,15 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
     setBusy(true);
     setErr(null);
     try {
-      const res = await api<{ phone: string; devCode?: string }>("/api/auth/otp/request", { method: "POST", json: { phone } });
-      setSentTo(res.phone);
+      const res = await api<{
+        phone?: string;
+        email?: string;
+        devCode?: string;
+      }>("/api/auth/otp/request", {
+        method: "POST",
+        json: usePhone ? { phone } : { email: email.trim() },
+      });
+      setSentTo(res.email ?? res.phone ?? null);
       setDevCode(res.devCode ?? null);
       setDigits(Array(6).fill(""));
       setCooldown(30);
@@ -75,14 +103,17 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
     setBusy(true);
     setErr(null);
     try {
-      const res = await api<{ next: string; isNew: boolean }>("/api/auth/otp/verify", { method: "POST", json: { phone: sentTo, code } });
+      const res = await api<{ next: string; isNew: boolean }>("/api/auth/otp/verify", {
+        method: "POST",
+        json: usePhone ? { phone: sentTo, code } : { email: sentTo, code },
+      });
       setVerified(true);
       haptic([10, 40, 20]);
       const wanted = params.get("next");
       // Only same-site paths, and only once onboarding is done.
       const dest = wanted && wanted.startsWith("/") && !wanted.startsWith("//") && res.next === "/discover" ? wanted : res.next;
       if (mode === "login" && res.isNew) {
-        setNotice("לא מצאנו חשבון קיים עם המספר הזה — פתחנו לך חשבון חדש. נשלים פרופיל בכמה צעדים.");
+        setNotice(`לא מצאנו חשבון קיים עם ${usePhone ? "המספר" : "המייל"} הזה — פתחנו לך חשבון חדש. נשלים פרופיל בכמה צעדים.`);
         setTimeout(() => router.replace(dest), 2600);
       } else {
         if (mode === "signup" && !res.isNew) setNotice("כבר יש לך חשבון — מחברים אותך 👋");
@@ -91,7 +122,10 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
     } catch (e) {
       setErr((e as Error).message);
       haptic([30, 40, 30]);
-      void shake.start({ x: [0, -10, 10, -7, 7, -3, 0], transition: { duration: 0.45 } });
+      void shake.start({
+        x: [0, -10, 10, -7, 7, -3, 0],
+        transition: { duration: 0.45 },
+      });
       setDigits(Array(6).fill(""));
       inputs.current[0]?.focus();
       setBusy(false);
@@ -117,42 +151,70 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {mode === "signup" ? (
-        <OnboardingProgress step={sentTo ? 2 : 1} label={sentTo ? "אימות קוד" : "מספר טלפון"} />
-      ) : (
-        <p className="eyebrow text-center">כניסה לחשבון</p>
-      )}
+      {mode === "signup" ? <OnboardingProgress step={sentTo ? 2 : 1} label={sentTo ? "אימות קוד" : "אימייל"} /> : <p className="eyebrow text-center">כניסה לחשבון</p>}
 
       <AnimatePresence mode="wait" initial={false}>
         {!sentTo ? (
-          <motion.form key="phone" {...slide} onSubmit={requestCode} className="mt-10 flex flex-1 flex-col">
-            <h1 className="font-display text-[2.1rem] leading-tight font-bold">{COPY[mode].title}</h1>
-            <p className="mt-2 text-[15px] text-mute">{COPY[mode].sub}</p>
+          <motion.form key={usePhone ? "phone" : "email"} {...slide} onSubmit={requestCode} className="mt-10 flex flex-1 flex-col">
+            <h1 className="font-display text-[2.1rem] leading-tight font-bold">{copy.title}</h1>
+            <p className="mt-2 text-[15px] text-mute">{copy.sub}</p>
 
-            <div className="field mt-9 flex items-center gap-3 !py-0" dir="ltr">
-              <span className="flex shrink-0 items-center gap-1.5 border-r border-line-2 py-4 pr-3 text-mute">
-                <span aria-hidden>🇮🇱</span>
-                <span className="tabular">+972</span>
-              </span>
-              <input
-                id="phone"
-                aria-label="טלפון נייד"
-                className="tabular h-[58px] flex-1 bg-transparent text-xl tracking-wider outline-none placeholder:text-mute-2"
-                inputMode="tel"
-                autoComplete="tel-national"
-                placeholder="050-000-0000"
-                value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
-                autoFocus
-              />
-              <AnimatePresence>
-                {phoneValid && (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="grid h-6 w-6 place-items-center rounded-full bg-gold text-[#2a1c12]">
-                    <Check size={14} strokeWidth={3} />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </div>
+            {!usePhone ? (
+              <div className="field mt-9 flex items-center gap-3 !py-0" dir="ltr">
+                <Mail size={20} className="shrink-0 text-mute" />
+                <input
+                  id="email"
+                  type="email"
+                  aria-label="כתובת אימייל"
+                  className="h-[58px] min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-mute-2"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="name@gmail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.replace(/\s/g, ""))}
+                  autoFocus
+                />
+                <AnimatePresence>
+                  {valid && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gold text-[#2a1c12]"
+                    >
+                      <Check size={14} strokeWidth={3} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="field mt-9 flex items-center gap-3 !py-0" dir="ltr">
+                <span className="flex shrink-0 items-center gap-1.5 border-r border-line-2 py-4 pr-3 text-mute">
+                  <span aria-hidden>🇮🇱</span>
+                  <span className="tabular">+972</span>
+                </span>
+                <input
+                  id="phone"
+                  aria-label="טלפון נייד"
+                  className="tabular h-[58px] flex-1 bg-transparent text-xl tracking-wider outline-none placeholder:text-mute-2"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  placeholder="050-000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  autoFocus
+                />
+                <AnimatePresence>
+                  {valid && (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="grid h-6 w-6 place-items-center rounded-full bg-gold text-[#2a1c12]">
+                      <Check size={14} strokeWidth={3} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
             <AnimatePresence>
               {err && (
                 <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 text-sm text-danger">
@@ -162,13 +224,27 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
             </AnimatePresence>
 
             <div className="mt-6 flex items-center gap-2 text-xs text-mute">
-              <ShieldCheck size={14} className="text-gold" /> כל חבר/ה ב־MELA עובר/ת אימות טלפון
+              <ShieldCheck size={14} className="text-gold" /> {usePhone ? "הכניסה מאובטחת בקוד חד־פעמי" : "כל חבר/ה ב־MELA עובר/ת אימות בקוד חד־פעמי"}
             </div>
+            {!usePhone && <p className="mt-2 text-xs text-mute-2">לא רואים את המייל תוך דקה? כדאי לבדוק בתיקיית הספאם / קידומי מכירות.</p>}
 
             <div className="mt-auto pt-10">
-              <button className="btn-gold w-full text-[17px]" disabled={busy || !phoneValid}>
-                {busy ? <Loader2 className="animate-spin" size={18} /> : COPY[mode].cta}
+              <button className="btn-gold w-full text-[17px]" disabled={busy || !valid}>
+                {busy ? <Loader2 className="animate-spin" size={18} /> : copy.cta}
               </button>
+              {mode === "login" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsePhone((v) => !v);
+                    setErr(null);
+                  }}
+                  className="mx-auto mt-4 flex items-center gap-1.5 text-sm text-mute transition hover:text-gold-2"
+                >
+                  {usePhone ? <Mail size={15} /> : <Smartphone size={15} />}
+                  {usePhone ? "כניסה עם אימייל" : "נרשמתם עם מספר טלפון? כניסה עם טלפון"}
+                </button>
+              )}
               <p className="mt-5 text-center text-sm text-mute">
                 {mode === "signup" ? (
                   <>
@@ -186,19 +262,20 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                   </>
                 )}
               </p>
-              <p className="mt-4 text-center text-[11px] leading-relaxed text-mute-2">
-                בהמשך את/ה מאשר/ת את תנאי השימוש ומדיניות הפרטיות. הגיל המינימלי הוא 18.
-              </p>
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-mute-2">בהמשך את/ה מאשר/ת את תנאי השימוש ומדיניות הפרטיות. הגיל המינימלי הוא 18.</p>
             </div>
           </motion.form>
         ) : (
           <motion.div key="code" {...slide} className="mt-10 flex flex-1 flex-col">
             <button onClick={() => setSentTo(null)} className="mb-6 flex w-fit items-center gap-1 text-sm text-mute transition hover:text-cream">
-              <ArrowRight size={16} /> שינוי מספר
+              <ArrowRight size={16} /> {usePhone ? "שינוי מספר" : "שינוי כתובת"}
             </button>
             <h1 className="font-display text-[2.1rem] leading-tight font-bold">הקלד/י את הקוד</h1>
             <p className="mt-2 text-[15px] text-mute">
-              שלחנו קוד בן 6 ספרות ל־<span dir="ltr" className="tabular text-cream">{sentTo}</span>
+              שלחנו קוד בן 6 ספרות ל־
+              <span dir="ltr" className="tabular break-all text-cream">
+                {sentTo}
+              </span>
             </p>
             {devCode && (
               <button
@@ -206,7 +283,11 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                 onClick={() => setDigit(0, devCode)}
                 className="mt-5 w-fit rounded-xl border border-dashed border-gold/40 px-3 py-2 text-xs text-gold-2 transition hover:bg-gold/5"
               >
-                מצב הדגמה — הקוד שלך: <b dir="ltr" className="tabular">{devCode}</b> · הקש/י למילוי
+                מצב הדגמה — הקוד שלך:{" "}
+                <b dir="ltr" className="tabular">
+                  {devCode}
+                </b>{" "}
+                · הקש/י למילוי
               </button>
             )}
 
@@ -236,7 +317,12 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
             <div className="mt-5 flex min-h-6 items-center justify-center">
               <AnimatePresence mode="wait">
                 {verified ? (
-                  <motion.span key="ok" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-1.5 text-center text-sm font-medium text-gold-2">
+                  <motion.span
+                    key="ok"
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex items-center gap-1.5 text-center text-sm font-medium text-gold-2"
+                  >
                     <Check size={16} className="shrink-0" /> {notice ?? "אומת בהצלחה"}
                   </motion.span>
                 ) : busy ? (

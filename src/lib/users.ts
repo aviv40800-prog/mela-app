@@ -8,7 +8,10 @@ export type Seeking = Gender | "everyone";
 export type User = {
   id: number;
   email: string | null;
-  phone_number: string;
+  /** Legacy sign-in identifier; new members sign in by email and have none. */
+  phone_number: string | null;
+  /** The member proved they own `email` with an emailed code. */
+  email_verified: boolean;
   full_name: string | null;
   age: number | null;
   gender: Gender | null;
@@ -51,10 +54,16 @@ export type PublicProfile = {
   prompts: Prompt[];
 };
 
-type Row = Omit<User, "photos" | "is_verified" | "is_demo" | "is_banned"> & { photos: string; is_verified: number; is_demo: number; is_banned: number };
+type Row = Omit<User, "photos" | "is_verified" | "is_demo" | "is_banned" | "email_verified"> & {
+  photos: string;
+  is_verified: number;
+  is_demo: number;
+  is_banned: number;
+  email_verified: number;
+};
 
 function hydrate(row: Row): User {
-  return { ...row, photos: JSON.parse(row.photos), is_verified: !!row.is_verified, is_demo: !!row.is_demo, is_banned: !!row.is_banned };
+  return { ...row, photos: JSON.parse(row.photos), is_verified: !!row.is_verified, is_demo: !!row.is_demo, is_banned: !!row.is_banned, email_verified: !!row.email_verified };
 }
 
 export function getUser(id: number): User | null {
@@ -65,6 +74,23 @@ export function getUser(id: number): User | null {
 export function getUserByPhone(phone: string): User | null {
   const row = db.prepare("SELECT * FROM users WHERE phone_number = ?").get(phone) as Row | undefined;
   return row ? hydrate(row) : null;
+}
+
+export const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+export function getUserByEmail(email: string): User | null {
+  const row = db.prepare("SELECT * FROM users WHERE lower(email) = ?").get(normalizeEmail(email)) as Row | undefined;
+  return row ? hydrate(row) : null;
+}
+
+/** Called after a correct emailed code: the address is now proven to belong to this member. */
+export function markEmailVerified(userId: number, email: string) {
+  db.prepare("UPDATE users SET email = ?, email_verified = 1, is_verified = 1 WHERE id = ?").run(normalizeEmail(email), userId);
+}
+
+export function createEmailUser(email: string): User {
+  const { lastInsertRowid } = db.prepare("INSERT INTO users (email, email_verified, is_verified) VALUES (?, 1, 1)").run(normalizeEmail(email));
+  return getUser(Number(lastInsertRowid))!;
 }
 
 export function createVerifiedUser(phone: string): User {
@@ -129,9 +155,9 @@ export function updateProfile(userId: number, p: ProfileInput) {
   db.exec("BEGIN");
   try {
     db.prepare(
-      `UPDATE users SET full_name = ?, email = ?, age = ?, gender = ?, seeking = ?, location = ?, occupation = ?, bio = ?, photos = ?
+      `UPDATE users SET full_name = ?, email = CASE WHEN email_verified = 1 THEN email ELSE ? END, age = ?, gender = ?, seeking = ?, location = ?, occupation = ?, bio = ?, photos = ?
        WHERE id = ?`,
-    ).run(p.full_name, p.email || null, p.age, p.gender, p.seeking, p.location, p.occupation, p.bio, JSON.stringify(p.photos), userId);
+    ).run(p.full_name, p.email ? p.email.trim().toLowerCase() : null, p.age, p.gender, p.seeking, p.location, p.occupation, p.bio, JSON.stringify(p.photos), userId);
     if (p.pref_age_min !== undefined || p.pref_age_max !== undefined || p.pref_distance_km !== undefined) {
       db.prepare("UPDATE users SET pref_age_min = ?, pref_age_max = ?, pref_distance_km = ? WHERE id = ?").run(
         p.pref_age_min ?? null,

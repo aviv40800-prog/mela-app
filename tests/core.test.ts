@@ -28,6 +28,8 @@ function member(name: string, gender: Gender, seeking: Gender | "everyone" = gen
   return getUser(u.id)!;
 }
 
+const PROFILE_BASE = { full_name: "בדיקה", age: 30, gender: "male" as const, seeking: "female" as const, location: "חיפה", occupation: "x", bio: "ביו ארוכה מספיק כאן", photos: ["/api/photos/a.jpg"], prompts: [] };
+
 beforeEach(() => {
   db.exec("DELETE FROM users; DELETE FROM otp_codes;");
 });
@@ -181,7 +183,7 @@ describe("admin & moderation", () => {
   it("recognises admins from MELA_ADMIN_PHONES in any Israeli format", async () => {
     const { isAdmin } = await import("@/lib/admin");
     const u = member("מנהלת", "female");
-    process.env.MELA_ADMIN_PHONES = `052-111-2222, 0${u.phone_number.slice(4, 6)}-${u.phone_number.slice(6)}`; // e.g. "050-1000005"
+    process.env.MELA_ADMIN_PHONES = `052-111-2222, 0${u.phone_number!.slice(4, 6)}-${u.phone_number!.slice(6)}`; // e.g. "050-1000005"
     expect(isAdmin(getUser(u.id))).toBe(true);
     process.env.MELA_ADMIN_PHONES = "052-111-2222";
     expect(isAdmin(getUser(u.id))).toBe(false);
@@ -194,7 +196,7 @@ describe("admin & moderation", () => {
     member("דוד אברה", "male");
     startTrial(a.id, "monthly_49");
     expect(listUsers({ q: "תגסט" }).rows.map((r) => r.id)).toEqual([a.id]);
-    expect(listUsers({ q: a.phone_number.slice(-7) }).total).toBe(1);
+    expect(listUsers({ q: a.phone_number!.slice(-7) }).total).toBe(1);
     expect(listUsers({ filter: "trialing" }).rows.map((r) => r.id)).toEqual([a.id]);
     expect(overview()).toMatchObject({ users: 2, trialing: 1, active: 0 });
   });
@@ -421,5 +423,59 @@ describe("improve-your-profile check-ins", () => {
     expect(recordShare(u.id)).toMatchObject({ left: 5, limit: 10, share: { shares: 3, claimed: true } });
     // more shares the same day don't stack
     expect(recordShare(u.id)).toMatchObject({ left: 5, limit: 10 });
+  });
+
+  it("signs in by email: a code by mail, a new verified account, legacy phone members keep theirs", async () => {
+    const { getUserByEmail, createEmailUser, markEmailVerified } = await import("@/lib/users");
+    const { codeEmail } = await import("@/lib/email");
+    const { devCode } = await issueOtp("dana@example.com");
+    expect(devCode).toMatch(/^\d{6}$/);
+    expect(verifyOtp("dana@example.com", devCode!)).toBe("ok");
+    expect(codeEmail("123456").subject).toContain("123456");
+
+    const u = createEmailUser(" Dana@Example.com ");
+    expect(u).toMatchObject({ email: "dana@example.com", email_verified: true, is_verified: true, phone_number: null });
+    expect(getUserByEmail("DANA@example.com")?.id).toBe(u.id);
+
+    // A verified email can't be swapped out from the profile form.
+    updateProfile(u.id, { ...PROFILE_BASE, email: "other@example.com" });
+    expect(getUser(u.id)!.email).toBe("dana@example.com");
+
+    // A phone member who typed an email in their profile proves it on first email sign-in.
+    const legacy = member("ותיקה", "female");
+    updateProfile(legacy.id, { ...PROFILE_BASE, email: "Old@Example.com" });
+    expect(getUserByEmail("old@example.com")).toMatchObject({ id: legacy.id, email_verified: false });
+    markEmailVerified(legacy.id, "old@example.com");
+    expect(getUser(legacy.id)).toMatchObject({ email_verified: true, phone_number: legacy.phone_number });
+  });
+
+  it("datemela1@gmail.com is a super admin — only once the address is verified", async () => {
+    const { isAdmin, isSuperAdmin } = await import("@/lib/admin");
+    const { createEmailUser } = await import("@/lib/users");
+    const boss = createEmailUser("Datemela1@gmail.com");
+    expect(isAdmin(boss)).toBe(true);
+    expect(isSuperAdmin(boss)).toBe(true);
+    expect(isAdmin({ ...boss, email_verified: false })).toBe(false);
+  });
+
+  it("rebuilds an old users table so phone numbers become optional, keeping rows and links", async () => {
+    const { DatabaseSync } = await import("node:sqlite");
+    const { SCHEMA, migrate } = await import("@/lib/db");
+    const old = new DatabaseSync(":memory:");
+    old.exec(SCHEMA.replace(/phone_number\s+TEXT UNIQUE,[^\n]*/, "phone_number  TEXT NOT NULL UNIQUE,"));
+    old.exec("INSERT INTO users (phone_number, full_name) VALUES ('+972500000001', 'א'), ('+972500000002', 'ב')");
+    old.exec("INSERT INTO matches (user_1_id, user_2_id, status) VALUES (1, 2, 'matched')");
+    expect(() => old.exec("INSERT INTO users (email) VALUES ('x@y.com')")).toThrow();
+    migrate(old);
+    migrate(old); // idempotent
+    old.exec("INSERT INTO users (email, email_verified) VALUES ('x@y.com', 1)");
+    expect(old.prepare("SELECT id, full_name FROM users ORDER BY id").all().map((r) => ({ ...r }))).toEqual([
+      { id: 1, full_name: "א" },
+      { id: 2, full_name: "ב" },
+      { id: 3, full_name: null },
+    ]);
+    expect(old.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    old.exec("PRAGMA foreign_keys = ON; DELETE FROM users WHERE id = 1");
+    expect(old.prepare("SELECT COUNT(*) AS n FROM matches").get()).toMatchObject({ n: 0 }); // cascade still wired
   });
 });

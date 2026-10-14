@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, MapPin, MessageSquareQuote, Phone, Scale, UserRound } from "lucide-react";
+import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, Mail, MapPin, MessageSquareQuote, Phone, Scale, UserRound } from "lucide-react";
 import { requirePageUser } from "@/lib/guard";
 import { isAdmin } from "@/lib/admin";
 import { getSubscription, hasAccess } from "@/lib/billing";
@@ -218,12 +218,12 @@ export default async function ProfilePage() {
         <div className="surface overflow-hidden rounded-[24px]">
           <div className="flex items-center gap-3.5 px-4 py-4">
             <IconBox>
-              <Phone size={18} />
+              {user.email_verified ? <Mail size={18} /> : <Phone size={18} />}
             </IconBox>
-            <div className="flex-1">
-              <div className="text-[15px]">טלפון מאומת</div>
-              <div className="tabular text-[12.5px] text-mute" dir="ltr" style={{ textAlign: "right" }}>
-                {user.phone_number}
+            <div className="min-w-0 flex-1">
+              <div className="text-[15px]">{user.email_verified ? "אימייל מאומת" : "טלפון מאומת"}</div>
+              <div className="tabular truncate text-[12.5px] text-mute" dir="ltr" style={{ textAlign: "right" }}>
+                {user.email_verified ? user.email : user.phone_number}
               </div>
             </div>
             <BadgeCheck size={18} className="text-gold-2" />

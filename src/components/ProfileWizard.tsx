@@ -91,7 +91,18 @@ const STEP_FIELDS: Record<WizardStep, (keyof Errors)[]> = {
 };
 const stepValid = (e: Errors, s: WizardStep) => STEP_FIELDS[s].every((k) => !e[k]);
 
-export function ProfileWizard({ initial, editing, startStep }: { initial: ProfileDraft; editing: boolean; startStep?: WizardStep }) {
+export function ProfileWizard({
+  initial,
+  editing,
+  startStep,
+  emailLocked = false,
+}: {
+  initial: ProfileDraft;
+  editing: boolean;
+  startStep?: WizardStep;
+  /** The member signed in with this email (verified by code) — it's their login, not editable here. */
+  emailLocked?: boolean;
+}) {
   const router = useRouter();
   const [d, setD] = useState<ProfileDraft>(() => ({
     ...initial,
@@ -327,6 +338,7 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
               <div className="space-y-2">
                 <FloatingField label="עיסוק" hint="למשל: מהנדסת, עורך דין, סטודנטית לרפואה" value={d.occupation} onChange={(v) => set("occupation", v)} error={errs.occupation} valid={!errs.occupation} showErrors={showErrors} maxLength={80} />
                 <FloatingField as="textarea" label="קצת עליי" hint="מה חשוב לך? מה מצחיק אותך? מה את/ה מחפש/ת?" rows={5} maxLength={500} value={d.bio} onChange={(v) => set("bio", v)} error={errs.bio} valid={!errs.bio} showErrors={showErrors} />
+                {!emailLocked && (
                 <FloatingField
                   label="אימייל (לא חובה)"
                   hint="לקבלות ועדכונים בלבד"
@@ -339,6 +351,7 @@ export function ProfileWizard({ initial, editing, startStep }: { initial: Profil
                   valid={!!d.email && !errs.email}
                   showErrors={showErrors}
                 />
+                )}
               </div>
             )}
 

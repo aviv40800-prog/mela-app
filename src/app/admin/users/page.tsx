@@ -68,7 +68,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
                   {u.age ?? "—"} {u.gender === "female" ? "♀" : u.gender === "male" ? "♂" : ""}
                 </td>
                 <td className="tabular px-4 py-3 text-mute" dir="ltr" style={{ textAlign: "right" }}>
-                  {u.phone_number}
+                  {u.phone_number ?? "—"}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
@@ -96,7 +96,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
       <ul className="mt-5 space-y-2 md:hidden">
         {rows.map((u) => (
           <li key={u.id} className="surface flex items-center justify-between gap-3 rounded-2xl p-3">
-            <UserChip id={u.id} name={u.full_name} photo={u.photo} sub={`${u.age ?? "—"} · ${u.location ?? u.phone_number}`} />
+            <UserChip id={u.id} name={u.full_name} photo={u.photo} sub={`${u.age ?? "—"} · ${u.location ?? u.email ?? u.phone_number ?? ""}`} />
             <div className="flex shrink-0 flex-col items-end gap-1">
               {u.sub_status && <Badge tone={SUB_BADGE[u.sub_status].tone}>{SUB_BADGE[u.sub_status].label}</Badge>}
               {u.is_banned ? <Badge tone="red">מושעה</Badge> : u.is_demo ? <Badge>דמו</Badge> : null}

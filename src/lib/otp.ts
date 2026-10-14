@@ -1,6 +1,7 @@
 import "server-only";
 import crypto from "node:crypto";
 import { db } from "./db";
+import { codeEmail, emailProvider, sendEmail } from "./email";
 
 const TTL_MS = 5 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -9,19 +10,25 @@ function hash(phone: string, code: string) {
   return crypto.createHash("sha256").update(`${phone}:${code}`).digest("hex");
 }
 
-export async function issueOtp(phone: string): Promise<{ devCode?: string }> {
+/**
+ * Issue a 6-digit code for a sign-in identifier: a normalised email (sent by email — the default) or a
+ * legacy phone number (sent by SMS). Codes are stored hashed, expire after 5 minutes, 5 attempts max.
+ */
+export async function issueOtp(key: string): Promise<{ devCode?: string }> {
   const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
   db.prepare(
     `INSERT INTO otp_codes (phone_number, code_hash, expires_at, attempts) VALUES (?, ?, ?, 0)
      ON CONFLICT(phone_number) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0`,
-  ).run(phone, hash(phone, code), Date.now() + TTL_MS);
+  ).run(key, hash(key, code), Date.now() + TTL_MS);
 
-  await sendSms(phone, `קוד האימות שלך ל־MELA: ${code}`);
-  // With the console provider we hand the code back so the flow works without SMS: always in dev, and in
-  // production only when MELA_SHOW_OTP=1 (preview/demo deploys — anyone can then sign in as any number).
-  const consoleSms = (process.env.SMS_PROVIDER ?? "console") === "console";
+  const isEmail = key.includes("@");
+  if (isEmail) await sendEmail({ to: key, ...codeEmail(code) });
+  else await sendSms(key, `קוד האימות שלך ל־MELA: ${code}`);
+  // With a console provider we hand the code back so the flow works without a real sender: always in dev,
+  // and in production only when MELA_SHOW_OTP=1 (preview/demo deploys — anyone can then sign in as anyone).
+  const consoleProvider = isEmail ? emailProvider() === "console" : (process.env.SMS_PROVIDER ?? "console") === "console";
   const reveal = process.env.NODE_ENV !== "production" || process.env.MELA_SHOW_OTP === "1";
-  return consoleSms && reveal ? { devCode: code } : {};
+  return consoleProvider && reveal ? { devCode: code } : {};
 }
 
 export type OtpResult = "ok" | "invalid" | "expired" | "locked";

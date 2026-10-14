@@ -79,7 +79,7 @@ export function signupsByDay(days = 14): { day: string; n: number }[] {
 export type AdminUserRow = {
   id: number;
   full_name: string | null;
-  phone_number: string;
+  phone_number: string | null;
   email: string | null;
   age: number | null;
   gender: string | null;
