@@ -490,6 +490,10 @@ describe("improve-your-profile check-ins", () => {
     expect(emailProvider()).toBe("console");
     process.env.EMAIL_PROVIDER = "Brevo";
     expect(emailProvider()).toBe("brevo");
+    // A leftover EMAIL_PROVIDER without its credentials falls through to the provider that has them.
+    process.env.EMAIL_PROVIDER = "gmail";
+    delete process.env.GMAIL_APP_PASSWORD;
+    expect(emailProvider()).toBe("brevo");
     process.env = saved;
   });
 

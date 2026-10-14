@@ -13,16 +13,26 @@ import "server-only";
  */
 const brevoKey = () => (process.env.BREVO_API_KEY || process.env.BREVO_KEY || process.env.SENDINBLUE_API_KEY || "").trim();
 
+const hasCreds: Record<string, () => boolean> = {
+  brevo: () => !!brevoKey(),
+  resend: () => !!process.env.RESEND_API_KEY,
+  gmail: () => !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD),
+  smtp: () => !!process.env.SMTP_HOST,
+};
+
+/**
+ * The provider that will actually send. EMAIL_PROVIDER is honoured when that provider has its credentials;
+ * otherwise (e.g. EMAIL_PROVIDER=gmail left over but only a Brevo key set) the first provider that does is used.
+ */
 export function emailProvider(): string {
-  const set = (process.env.EMAIL_PROVIDER ?? "").trim().toLowerCase();
-  if (set && set !== "console") return set === "sendinblue" ? "brevo" : set;
+  const set = (process.env.EMAIL_PROVIDER ?? "").trim().toLowerCase().replace("sendinblue", "brevo");
   if (set === "console") return "console";
-  if (brevoKey()) return "brevo";
-  if (process.env.RESEND_API_KEY) return "resend";
-  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) return "gmail";
-  if (process.env.SMTP_HOST) return "smtp";
-  return "console";
+  if (set && hasCreds[set]?.()) return set;
+  return Object.keys(hasCreds).find((p) => hasCreds[p]()) ?? "console";
 }
+
+/** In production an email has to really go out (unless codes are deliberately shown on screen). */
+export const emailMisconfigured = () => emailProvider() === "console" && process.env.NODE_ENV === "production" && process.env.MELA_SHOW_OTP !== "1";
 
 /** Last delivery failure (no secrets) — shown by /api/health/email so a misconfiguration is easy to spot. */
 let lastEmailError: { at: string; provider: string; message: string } | null = null;
@@ -52,6 +62,8 @@ export async function sendEmail(mail: Mail): Promise<void> {
 
 async function deliver(provider: string, mail: Mail): Promise<void> {
   const from = emailFrom();
+  if (provider === "console" && emailMisconfigured())
+    throw new Error("no email provider configured — set BREVO_API_KEY (or GMAIL_USER + GMAIL_APP_PASSWORD) in the environment");
 
   if (provider === "brevo") {
     const key = brevoKey();
