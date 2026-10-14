@@ -1,32 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  /* "Ivory & gold": token names are historical — ink = ivory surfaces, cream = text, gold = gold accent. */
-  --color-ink: #faf6ef; /* page ivory */
-  --color-ink-2: #f3ece1; /* deeper ivory (sheets, bars) */
-  --color-ink-3: #ffffff; /* raised card */
-  --color-ink-4: #ebe2d3; /* pressed / track */
-  --color-line: rgb(70 42 24 / 0.1);
-  --color-line-2: rgb(70 42 24 / 0.17);
-  --color-fg: #46291a; /* translucent overlays: bg-fg/5 etc. */
-  --color-gold: #b8892b; /* gold */
-  --color-gold-2: #94690f; /* gold text — dark enough to read on ivory */
-  --color-gold-3: #e3c374;
-  --color-gold-dim: #d4b35f;
-  --color-gilt: #b8862e; /* real gold — logo, embossing */
-  --color-coffee: #4a2c1a; /* roasted bean */
-  --color-cream: #2a1c12; /* text */
-  --color-mute: #6b4f40;
-  --color-mute-2: #8f735f;
-  --color-danger: #e5675a;
-  --color-success: #8fcf9a;
+  /* "Wine night, glowing red & gold": token names are historical — ink = dark surfaces, cream = text,
+     gold = gold accent (logo, highlights), rose/crimson = the glowing red (primary actions, likes). */
+  --color-ink: #120407; /* page — deep wine night */
+  --color-ink-2: #1c060c; /* sheets, bars */
+  --color-ink-3: #26080f; /* raised card */
+  --color-ink-4: #36101a; /* pressed / track */
+  --color-line: rgb(255 205 195 / 0.09);
+  --color-line-2: rgb(255 205 195 / 0.16);
+  --color-fg: #ffffff; /* translucent overlays: bg-fg/5 etc. */
+  --color-gold: #e9b65c; /* gold */
+  --color-gold-2: #f5c46a; /* gold text — bright enough to read on wine */
+  --color-gold-3: #ffe2a6;
+  --color-gold-dim: #b9853a;
+  --color-gilt: #f5c46a; /* logo, embossing */
+  --color-coffee: #2a0a0c;
+  --color-rose: #ff4d5a; /* glowing red — light threads, likes */
+  --color-crimson: #c4152a;
+  --color-cream: #f7ece6; /* text */
+  --color-mute: #d6b9b6;
+  --color-mute-2: #a8898a;
+  --color-danger: #ff7a70;
+  --color-success: #8fdca0;
   --font-sans: "Heebo Variable", system-ui, sans-serif;
   --font-display: "Frank Ruhl Libre Variable", "Heebo Variable", serif;
+  --font-brand: "Cinzel", "Frank Ruhl Libre Variable", serif; /* the MELA wordmark */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --shadow-soft: 0 1px 0 rgb(70 42 24 / 0.5) inset, 0 12px 32px -18px rgb(90 52 26 / 0.3);
-  --shadow-float: 0 1px 0 rgb(70 42 24 / 0.6) inset, 0 24px 60px -28px rgb(90 52 26 / 0.35), 0 8px 18px -12px rgb(90 52 26 / 0.18);
-  --shadow-gold: 0 14px 34px -14px rgb(150 105 20 / 0.55);
+  --shadow-soft: 0 1px 0 rgb(255 220 210 / 0.05) inset, 0 12px 32px -18px rgb(0 0 0 / 0.6);
+  --shadow-float: 0 1px 0 rgb(255 220 210 / 0.06) inset, 0 24px 60px -28px rgb(0 0 0 / 0.75), 0 8px 18px -12px rgb(0 0 0 / 0.5);
+  --shadow-gold: 0 14px 34px -14px rgb(229 40 60 / 0.6);
 }
 
 @layer base {
@@ -41,9 +45,9 @@
   }
   body {
     background:
-      radial-gradient(90% 45% at 85% -5%, rgb(212 175 85 / 0.16), transparent 60%),
-      radial-gradient(70% 40% at 0% 10%, rgb(184 134 46 / 0.08), transparent 70%),
-      linear-gradient(180deg, #f7f0e3 0%, var(--color-ink) 40%);
+      radial-gradient(90% 45% at 85% -5%, rgb(229 56 59 / 0.2), transparent 60%),
+      radial-gradient(70% 40% at 0% 10%, rgb(245 196 106 / 0.07), transparent 70%),
+      linear-gradient(180deg, #1e060b 0%, var(--color-ink) 40%);
     background-attachment: fixed;
     min-height: 100dvh;
     overflow-x: clip;
@@ -83,7 +87,7 @@
     text-wrap: pretty;
   }
   ::selection {
-    background: rgb(184 137 43 / 0.35);
+    background: rgb(229 56 59 / 0.45);
   }
   input,
   textarea,
@@ -92,7 +96,7 @@
     font: inherit;
   }
   :focus-visible {
-    outline: 2px solid rgb(154 111 22 / 0.7);
+    outline: 2px solid rgb(245 196 106 / 0.8);
     outline-offset: 2px;
   }
   button:focus:not(:focus-visible) {
@@ -104,12 +108,12 @@
   /* ---------- surfaces ---------- */
   .glass {
     position: relative;
-    background: linear-gradient(180deg, rgb(70 42 24 / 0.065), rgb(70 42 24 / 0.018));
+    background: linear-gradient(180deg, rgb(255 225 215 / 0.065), rgb(255 225 215 / 0.02));
     border: 1px solid var(--color-line);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
-      inset 0 1px 0 rgb(70 42 24 / 0.07),
+      inset 0 1px 0 rgb(255 225 215 / 0.07),
       var(--shadow-soft);
   }
   /* Glass with a lit gold edge — the border fades from gold at the top to nothing, like light on metal. */
@@ -117,8 +121,8 @@
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(120% 80% at 100% 0%, rgb(184 137 43 / 0.1), transparent 55%),
-      linear-gradient(180deg, rgb(70 42 24 / 0.05), rgb(70 42 24 / 0.015));
+      radial-gradient(120% 80% at 100% 0%, rgb(229 56 59 / 0.14), transparent 55%),
+      linear-gradient(180deg, rgb(255 225 215 / 0.06), rgb(255 225 215 / 0.02));
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow: var(--shadow-float);
@@ -130,7 +134,7 @@
     z-index: -1;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(180deg, rgb(154 111 22 / 0.55), rgb(154 111 22 / 0.08) 45%, rgb(70 42 24 / 0.06));
+    background: linear-gradient(180deg, rgb(245 196 106 / 0.6), rgb(245 196 106 / 0.1) 45%, rgb(255 225 215 / 0.05));
     mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -152,7 +156,7 @@
   /* Opaque premium surface — for things that stack (swipe cards, sheets). */
   .surface {
     background:
-      radial-gradient(120% 60% at 100% 0%, rgb(184 137 43 / 0.05), transparent 60%),
+      radial-gradient(120% 60% at 100% 0%, rgb(229 56 59 / 0.08), transparent 60%),
       linear-gradient(180deg, var(--color-ink-3), var(--color-ink-2));
     border: 1px solid var(--color-line);
     box-shadow: var(--shadow-float);
@@ -163,22 +167,22 @@
   }
   .gold-hairline {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgb(184 137 43 / 0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgb(245 196 106 / 0.55), transparent);
   }
   .glow {
     box-shadow:
-      0 0 0 1px rgb(184 137 43 / 0.38),
-      0 0 30px -6px rgb(184 137 43 / 0.45);
+      0 0 0 1px rgb(255 77 90 / 0.45),
+      0 0 30px -6px rgb(255 77 90 / 0.55);
   }
   .ring-gold {
     box-shadow:
-      0 0 0 1.5px rgb(154 111 22 / 0.9),
-      0 0 0 5px rgb(184 137 43 / 0.14);
+      0 0 0 1.5px rgb(245 196 106 / 0.9),
+      0 0 0 5px rgb(245 196 106 / 0.16);
   }
 
   /* ---------- type ---------- */
   .gold-text {
-    background: linear-gradient(100deg, #7d5418 0%, #b8862e 30%, #e2b85e 48%, #b8862e 66%, #7d5418 100%);
+    background: linear-gradient(100deg, #b9822c 0%, #f5c46a 30%, #ffe7a8 48%, #f5c46a 66%, #b9822c 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -189,7 +193,7 @@
     font-weight: 600;
     letter-spacing: 0.06em;
     line-height: 1.3;
-    color: rgb(154 111 22 / 0.85);
+    color: rgb(245 196 106 / 0.9);
   }
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -207,11 +211,11 @@
     border-radius: 9999px;
     padding: 0.95rem 1.5rem;
     font-weight: 600;
-    color: #2a1c12;
-    background: linear-gradient(180deg, #ecd189, #cfa94c 55%, #b08627);
+    color: #fff7f2;
+    background: linear-gradient(180deg, #ff6670, #e5283b 50%, #b3122a);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.5),
-      inset 0 -1px 0 rgb(90 60 10 / 0.25),
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      inset 0 -1px 0 rgb(80 0 10 / 0.35),
       var(--shadow-gold);
     transition:
       transform 0.25s var(--ease-out-expo),
@@ -224,7 +228,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.45) 50%, transparent 70%);
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.3) 50%, transparent 70%);
     transform: translateX(-120%);
     transition: transform 0.9s var(--ease-out-expo);
   }
@@ -237,7 +241,7 @@
     transform: scale(0.97);
   }
   .btn-gold:disabled {
-    filter: grayscale(0.7) brightness(0.6);
+    filter: grayscale(0.6) brightness(0.55);
     box-shadow: none;
     pointer-events: none;
   }
@@ -250,16 +254,16 @@
     padding: 0.9rem 1.5rem;
     font-weight: 600;
     color: var(--color-cream);
-    border: 1.5px solid rgb(150 105 20 / 0.45);
-    background: rgb(255 255 255 / 0.7);
-    box-shadow: 0 6px 18px -12px rgb(90 52 26 / 0.35);
+    border: 1.5px solid rgb(245 196 106 / 0.4);
+    background: rgb(255 225 215 / 0.05);
+    box-shadow: 0 6px 18px -12px rgb(0 0 0 / 0.5);
     transition:
       background 0.2s,
       border-color 0.2s,
       transform 0.25s var(--ease-out-expo);
   }
   .btn-ghost:hover {
-    background: rgb(255 255 255 / 0.95);
+    background: rgb(255 225 215 / 0.1);
   }
   .btn-ghost:active {
     transform: scale(0.97);
@@ -270,7 +274,7 @@
     width: 100%;
     border-radius: 1rem;
     padding: 0.9rem 1rem;
-    background: rgb(70 42 24 / 0.035);
+    background: rgb(255 225 215 / 0.045);
     border: 1px solid var(--color-line-2);
     color: var(--color-cream);
     outline: none;
@@ -280,13 +284,13 @@
       background 0.25s;
   }
   .field::placeholder {
-    color: rgb(118 89 74 / 0.6);
+    color: rgb(214 185 182 / 0.55);
   }
   .field:focus,
   .field:focus-within {
-    border-color: rgb(154 111 22 / 0.75);
-    background: rgb(70 42 24 / 0.05);
-    box-shadow: 0 0 0 4px rgb(184 137 43 / 0.13);
+    border-color: rgb(245 196 106 / 0.75);
+    background: rgb(255 225 215 / 0.07);
+    box-shadow: 0 0 0 4px rgb(245 196 106 / 0.13);
   }
   .label {
     display: block;
@@ -299,14 +303,14 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background: rgb(70 42 24 / 0.045);
+    background: rgb(255 225 215 / 0.05);
   }
   .skeleton::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(100%);
-    background: linear-gradient(90deg, transparent, rgb(70 42 24 / 0.06) 40%, rgb(154 111 22 / 0.07) 50%, rgb(70 42 24 / 0.06) 60%, transparent);
+    background: linear-gradient(90deg, transparent, rgb(255 225 215 / 0.05) 40%, rgb(255 77 90 / 0.08) 50%, rgb(255 225 215 / 0.05) 60%, transparent);
     animation: skeleton 1.6s ease-in-out infinite;
   }
 
@@ -314,30 +318,28 @@
   .tilet {
     height: 6px;
     background:
-      repeating-linear-gradient(135deg, transparent 0 4px, rgb(184 134 46 / 0.9) 4px 6px, transparent 6px 10px),
-      repeating-linear-gradient(45deg, transparent 0 4px, rgb(184 137 43 / 0.6) 4px 6px, transparent 6px 10px);
+      repeating-linear-gradient(135deg, transparent 0 4px, rgb(245 196 106 / 0.85) 4px 6px, transparent 6px 10px),
+      repeating-linear-gradient(45deg, transparent 0 4px, rgb(255 77 90 / 0.6) 4px 6px, transparent 6px 10px);
     mask: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
   }
-  /* Text on photos and on leather keeps light colours. */
+  /* Text on photos and on the deepest surfaces keeps light colours (the whole theme is dark now). */
   .on-dark {
-    --color-cream: #fbf4ea;
-    --color-mute: #ddd0bd;
-    --color-mute-2: #b9aa94;
-    --color-gold: #e2b866;
-    --color-gold-2: #ecd08a;
+    --color-cream: #fff4ee;
+    --color-mute: #e6cfcb;
+    --color-mute-2: #bfa09f;
     --color-fg: #ffffff;
     color: var(--color-cream);
   }
-  /* Espresso surface (premium cards, final CTA): dark roasted brown with a fine grain, for gold embossing. */
+  /* Deep velvet surface (premium cards, final CTA): wine with a red glow and fine grain, for gold lettering. */
   .leather {
     background:
-      radial-gradient(120% 90% at 20% 0%, rgb(226 184 94 / 0.22), transparent 55%),
+      radial-gradient(120% 90% at 20% 0%, rgb(229 56 59 / 0.28), transparent 55%),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0 0.05 0 0 0 .35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)'/%3E%3C/svg%3E"),
-      linear-gradient(135deg, #3a2a1a, #231912 60%, #17100b);
+      linear-gradient(135deg, #3d0c16, #24060d 60%, #140307);
   }
   /* Embossed gold lettering, as on the leather in the brand vision. */
   .emboss {
-    background: linear-gradient(180deg, #f1d08a, #c99a45 45%, #8f6420);
+    background: linear-gradient(180deg, #ffe7a8, #f5c46a 45%, #b9822c);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -389,10 +391,10 @@
 }
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgb(184 137 43 / 0.45);
+    box-shadow: 0 0 0 0 rgb(255 77 90 / 0.5);
   }
   100% {
-    box-shadow: 0 0 0 22px rgb(184 137 43 / 0);
+    box-shadow: 0 0 0 22px rgb(255 77 90 / 0);
   }
 }
 @keyframes float {
@@ -452,7 +454,7 @@ html[data-reduce-motion] *::after {
   border-radius: 9999px;
   background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
   border: 3px solid var(--color-ink);
-  box-shadow: 0 0 0 1px rgb(184 137 43 / 0.6), 0 4px 12px rgb(90 52 26 / 0.24);
+  box-shadow: 0 0 0 1px rgb(245 196 106 / 0.6), 0 4px 12px rgb(0 0 0 / 0.5);
   cursor: grab;
 }
 .range-thumb::-moz-range-thumb {
@@ -462,28 +464,150 @@ html[data-reduce-motion] *::after {
   border-radius: 9999px;
   background: radial-gradient(circle at 35% 30%, #fff3c4, #e5c158 45%, #b8922a);
   border: 3px solid var(--color-ink);
-  box-shadow: 0 0 0 1px rgb(184 137 43 / 0.6), 0 4px 12px rgb(90 52 26 / 0.24);
+  box-shadow: 0 0 0 1px rgb(245 196 106 / 0.6), 0 4px 12px rgb(0 0 0 / 0.5);
   cursor: grab;
 }
 .range-thumb:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 4px rgb(184 137 43 / 0.35);
+  box-shadow: 0 0 0 4px rgb(245 196 106 / 0.35);
 }
 .range-thumb::-webkit-slider-runnable-track,
 .range-thumb::-moz-range-track {
   background: transparent;
 }
 
-/* Primary buttons on leather turn to sand so they still stand out. */
-.on-dark .btn-gold {
-  color: #2a1c12;
-  background: linear-gradient(180deg, #f0d68e, #d4af55 55%, #b08627);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.6),
-    0 14px 30px -14px rgb(0 0 0 / 0.6);
-}
+/* On photos the ghost button keeps a light outline. */
 .on-dark .btn-ghost {
-  color: #fbf4ea;
-  border-color: rgb(255 240 225 / 0.6);
-  background: rgb(255 240 225 / 0.1);
+  color: #fff4ee;
+  border-color: rgb(255 240 225 / 0.55);
+  background: rgb(255 240 225 / 0.08);
   box-shadow: none;
+}
+
+/* ---------- opening splash (see Splash.tsx) ---------- */
+html[data-splash="skip"] .mela-splash {
+  display: none;
+}
+.mela-splash {
+  transition:
+    opacity 0.55s ease,
+    filter 0.55s ease;
+}
+.mela-splash.splash-leave {
+  opacity: 0;
+  filter: blur(6px);
+  pointer-events: none;
+}
+.splash-heart {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation:
+    splash-heart-in 0.7s 0.3s var(--ease-out-expo) forwards,
+    splash-beat 1.8s 0.9s ease-in-out infinite;
+}
+.splash-outline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: splash-draw 0.8s 0.3s ease-out forwards;
+}
+.splash-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: splash-glow-in 0.6s 0.9s ease-out forwards;
+}
+.splash-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: splash-ring 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+}
+.splash-thread {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation:
+    splash-draw 0.5s ease-out forwards,
+    splash-flicker 2.6s 1.8s ease-in-out infinite;
+}
+.splash-node {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: splash-pop 0.45s var(--ease-spring) forwards;
+}
+.splash-rise {
+  opacity: 0;
+  animation: rise 0.8s var(--ease-out-expo) forwards;
+}
+@keyframes splash-heart-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes splash-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.06);
+  }
+  24% {
+    transform: scale(1);
+  }
+  36% {
+    transform: scale(1.035);
+  }
+}
+@keyframes splash-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes splash-glow-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes splash-ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+@keyframes splash-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes splash-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
