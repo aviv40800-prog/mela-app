@@ -54,14 +54,21 @@ export async function sendEmail(mail: Mail): Promise<void> {
   const provider = emailProvider();
   // Log every attempt (address masked) so delivery problems are visible in the hosting logs.
   const masked = mail.to.replace(/^(.).*?(@.*)$/, "$1***$2");
-  try {
-    const id = await deliver(provider, mail);
-    console.info(`[email] sent via ${provider} to ${masked}${id ? ` (id ${id})` : ""}`);
-  } catch (e) {
-    lastEmailError = { at: new Date().toISOString(), provider, message: String((e as Error).message ?? e).slice(0, 400) };
-    console.error(`[email] FAILED via ${provider} to ${masked}: ${lastEmailError.message}`);
-    throw e;
+  // The chosen provider first, then any other configured one as a backup (e.g. Gmail SMTP blocked by the host → Brevo).
+  const chain = [provider, ...Object.keys(hasCreds).filter((p) => p !== provider && hasCreds[p]())];
+  let lastErr: unknown;
+  for (const p of chain) {
+    try {
+      const id = await deliver(p, mail);
+      console.info(`[email] sent via ${p} to ${masked}${id ? ` (id ${id})` : ""}`);
+      return;
+    } catch (e) {
+      lastErr = e;
+      lastEmailError = { at: new Date().toISOString(), provider: p, message: String((e as Error).message ?? e).slice(0, 400) };
+      console.error(`[email] FAILED via ${p} to ${masked}: ${lastEmailError.message}`);
+    }
   }
+  throw lastErr;
 }
 
 async function deliver(provider: string, mail: Mail): Promise<string | void> {
@@ -100,14 +107,18 @@ async function deliver(provider: string, mail: Mail): Promise<string | void> {
       host: gmail ? "smtp.gmail.com" : process.env.SMTP_HOST,
       port: gmail ? 465 : Number(process.env.SMTP_PORT) || 587,
       secure: gmail ? true : Number(process.env.SMTP_PORT) === 465,
+      // Fail fast when the host blocks outbound SMTP, so the backup provider takes over within seconds.
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 15000,
       auth: {
         user: gmail ? process.env.GMAIL_USER : process.env.SMTP_USER,
         // Google shows App Passwords with spaces ("abcd efgh ijkl mnop"); they work either way.
         pass: (gmail ? process.env.GMAIL_APP_PASSWORD : process.env.SMTP_PASS)?.replace(/\s+/g, ""),
       },
     });
-    await transport.sendMail({ from, to: mail.to, subject: mail.subject, html: mail.html, text: mail.text });
-    return;
+    const info = await transport.sendMail({ from, to: mail.to, subject: mail.subject, html: mail.html, text: mail.text });
+    return info.messageId;
   }
 
   if (provider !== "console") throw new Error(`unknown EMAIL_PROVIDER "${provider}" (use brevo, gmail, smtp or resend)`);
