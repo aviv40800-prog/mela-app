@@ -52,15 +52,19 @@ type Mail = { to: string; subject: string; html: string; text: string };
 
 export async function sendEmail(mail: Mail): Promise<void> {
   const provider = emailProvider();
+  // Log every attempt (address masked) so delivery problems are visible in the hosting logs.
+  const masked = mail.to.replace(/^(.).*?(@.*)$/, "$1***$2");
   try {
-    await deliver(provider, mail);
+    const id = await deliver(provider, mail);
+    console.info(`[email] sent via ${provider} to ${masked}${id ? ` (id ${id})` : ""}`);
   } catch (e) {
     lastEmailError = { at: new Date().toISOString(), provider, message: String((e as Error).message ?? e).slice(0, 400) };
+    console.error(`[email] FAILED via ${provider} to ${masked}: ${lastEmailError.message}`);
     throw e;
   }
 }
 
-async function deliver(provider: string, mail: Mail): Promise<void> {
+async function deliver(provider: string, mail: Mail): Promise<string | void> {
   const from = emailFrom();
   if (provider === "console" && emailMisconfigured())
     throw new Error("no email provider configured — set BREVO_API_KEY (or GMAIL_USER + GMAIL_APP_PASSWORD) in the environment");
@@ -76,7 +80,7 @@ async function deliver(provider: string, mail: Mail): Promise<void> {
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) throw new Error(`brevo ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
-    return;
+    return ((await res.json().catch(() => ({}))) as { messageId?: string }).messageId;
   }
 
   if (provider === "resend") {
