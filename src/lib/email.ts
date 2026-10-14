@@ -44,8 +44,13 @@ function parseFrom(from: string): { name?: string; email: string } {
   return m ? { name: m[1].trim() || undefined, email: m[2].trim() } : { email: from.trim() };
 }
 
-export function emailFrom(): string {
-  return process.env.EMAIL_FROM || (process.env.GMAIL_USER ? `MELA <${process.env.GMAIL_USER}>` : "MELA <datemela1@gmail.com>");
+const DEFAULT_FROM = () => (process.env.GMAIL_USER ? `MELA <${process.env.GMAIL_USER}>` : "MELA <datemela1@gmail.com>");
+
+export function emailFrom(provider = emailProvider()): string {
+  const set = process.env.EMAIL_FROM?.trim();
+  // Resend's sandbox sender (onboarding@resend.dev) only works through Resend — every other provider rejects it.
+  if (set && /@resend\.dev>?$/i.test(set) && provider !== "resend") return DEFAULT_FROM();
+  return set || DEFAULT_FROM();
 }
 
 type Mail = { to: string; subject: string; html: string; text: string };
@@ -72,7 +77,7 @@ export async function sendEmail(mail: Mail): Promise<void> {
 }
 
 async function deliver(provider: string, mail: Mail): Promise<string | void> {
-  const from = emailFrom();
+  const from = emailFrom(provider);
   if (provider === "console" && emailMisconfigured())
     throw new Error("no email provider configured — set BREVO_API_KEY (or GMAIL_USER + GMAIL_APP_PASSWORD) in the environment");
 

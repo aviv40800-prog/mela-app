@@ -494,6 +494,11 @@ describe("improve-your-profile check-ins", () => {
     process.env.EMAIL_PROVIDER = "gmail";
     delete process.env.GMAIL_APP_PASSWORD;
     expect(emailProvider()).toBe("brevo");
+    // Resend's sandbox sender is ignored for other providers.
+    const { emailFrom } = await import("@/lib/email");
+    process.env.EMAIL_FROM = "onboarding@resend.dev";
+    expect(emailFrom("brevo")).toBe("MELA <datemela1@gmail.com>");
+    expect(emailFrom("resend")).toBe("onboarding@resend.dev");
     process.env = saved;
   });
 
