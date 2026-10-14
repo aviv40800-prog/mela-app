@@ -9,7 +9,7 @@ vi.mock("@anthropic-ai/sdk", () => ({
         parse: vi.fn(async () => {
           const t = turns.shift();
           if (t instanceof Error) throw t;
-          return { stop_reason: "end_turn", parsed_output: t };
+          return { stop_reason: "end_turn", parsed_output: t, model: "claude-haiku-5-5", usage: { input_tokens: 2000, output_tokens: 300 } };
         }),
       },
     };
@@ -22,7 +22,7 @@ import { createEmailUser, getUser } from "@/lib/users";
 const empty = { full_name: null, age: null, gender: null, seeking: null, location: null, occupation: null, religiosity: null, partner_religiosity: null, marital_status: null, looking_for: null, prompt_answers: [] };
 
 beforeEach(() => {
-  db.exec("DELETE FROM users; DELETE FROM onboarding_chats;");
+  db.exec("DELETE FROM users; DELETE FROM onboarding_chats; DELETE FROM ai_usage;");
   turns.length = 0;
   process.env.ANTHROPIC_API_KEY = "test";
 });
@@ -94,5 +94,21 @@ describe("AI onboarding chat", () => {
     const { nextOnboardingStep } = await import("@/lib/onboarding");
     delete process.env.ANTHROPIC_API_KEY;
     expect(nextOnboardingStep(getUser(createEmailUser("form@example.com").id)!)).toBe("/onboarding/profile");
+  });
+
+  it("logs cost per call and caps new AI chats per day", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    expect(ai.costUsd("claude-haiku-5-5", { input_tokens: 1_000_000, output_tokens: 1_000_000 })).toBeCloseTo(0.6);
+    process.env.MELA_AI_DAILY_LIMIT = "1";
+    const a = createEmailUser("a@example.com");
+    const b = createEmailUser("b@example.com");
+    expect(ai.aiOnboardingAvailable(a.id)).toBe(true);
+    turns.push({ reply: "היי", extracted: empty, bio_draft: null, ask: "full_name" });
+    await ai.chatTurn(a, { text: "היי" });
+    expect(ai.aiUsageStats().today).toMatchObject({ users: 1, turns: 1 });
+    expect(ai.aiUsageStats().today.cost).toBeCloseTo((2000 * 0.1 + 300 * 0.5) / 1e6);
+    expect(ai.aiOnboardingAvailable(a.id)).toBe(true); // already started — keeps going
+    expect(ai.aiOnboardingAvailable(b.id)).toBe(false); // cap reached — gets the form
+    delete process.env.MELA_AI_DAILY_LIMIT;
   });
 });

@@ -1,6 +1,6 @@
 import "server-only";
 import { isProfileComplete, type User } from "./users";
-import { aiOnboardingEnabled } from "./ai-onboarding";
+import { aiOnboardingAvailable } from "./ai-onboarding";
 
 /**
  * Where a signed-in member should land. Freemium: a complete profile is all it takes to use the app;
@@ -8,6 +8,6 @@ import { aiOnboardingEnabled } from "./ai-onboarding";
  */
 export function nextOnboardingStep(user: User): string {
   // New members get to know MELA's host in a short chat (when AI is configured); the form stays available.
-  if (!isProfileComplete(user)) return aiOnboardingEnabled() ? "/onboarding/chat" : "/onboarding/profile";
+  if (!isProfileComplete(user)) return aiOnboardingAvailable(user.id) ? "/onboarding/chat" : "/onboarding/profile";
   return "/discover";
 }

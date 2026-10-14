@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
-import { aiOnboardingEnabled, ChatError, chatTurn, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
+import { aiOnboardingAvailable, ChatError, chatTurn, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
 
 const Input = z.union([
   z.object({ text: z.string().min(1).max(1000) }),
@@ -11,13 +11,13 @@ const Input = z.union([
 
 export const GET = handle(async () => {
   const user = await requireUser();
-  if (!aiOnboardingEnabled()) return json({ enabled: false });
+  if (!aiOnboardingAvailable(user.id)) return json({ enabled: false });
   return json({ enabled: true, ...getChat(user) });
 });
 
 export const POST = handle(async (req: Request) => {
   const user = await requireUser();
-  if (!aiOnboardingEnabled()) return error("ההרשמה בשיחה לא זמינה כרגע", 404);
+  if (!aiOnboardingAvailable(user.id)) return error("ההרשמה בשיחה לא זמינה כרגע — אפשר להשלים בטופס", 404);
   const parsed = Input.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error("הודעה לא תקינה");
   try {

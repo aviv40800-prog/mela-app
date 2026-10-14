@@ -97,6 +97,20 @@ CREATE TABLE IF NOT EXISTS onboarding_chats (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- One row per AI call (sign-up chat): tokens and estimated cost, for the admin dashboard and the daily cap.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id            INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  model              TEXT NOT NULL,
+  input_tokens       INTEGER NOT NULL DEFAULT 0,
+  output_tokens      INTEGER NOT NULL DEFAULT 0,
+  cache_read_tokens  INTEGER NOT NULL DEFAULT 0,
+  cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+  cost_usd           REAL NOT NULL DEFAULT 0,
+  created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_day ON ai_usage(created_at);
+
 -- "What would you ask the other side?" — questions members suggest; approved ones become chat ideas.
 CREATE TABLE IF NOT EXISTS community_questions (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,

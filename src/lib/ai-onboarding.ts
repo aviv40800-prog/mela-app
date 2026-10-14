@@ -17,6 +17,53 @@ import type { User } from "./users";
  */
 export const aiOnboardingEnabled = () => !!process.env.ANTHROPIC_API_KEY && process.env.MELA_AI_ONBOARDING !== "off";
 const MODEL = () => process.env.MELA_AI_MODEL || "claude-opus-5-5";
+/** New AI sign-up chats per day (MELA_AI_DAILY_LIMIT, default 50); beyond it new members get the form. 0 = no limit. */
+export const dailyLimit = () => {
+  const v = Number(process.env.MELA_AI_DAILY_LIMIT ?? 50);
+  return Number.isFinite(v) && v >= 0 ? v : 50;
+};
+
+// $ per million tokens [input, output] — cache reads ~0.1x input, cache writes 1.25x input.
+const PRICES: Record<string, [number, number]> = {
+  "claude-opus-5-5": [4, 20],
+  "claude-sonnet-5-5": [2, 10],
+  "claude-haiku-5-5": [0.1, 0.5],
+};
+export function costUsd(model: string, u: { input_tokens?: number | null; output_tokens?: number | null; cache_read_input_tokens?: number | null; cache_creation_input_tokens?: number | null }): number {
+  const [i, o] = PRICES[model] ?? PRICES[Object.keys(PRICES).find((k) => model.startsWith(k.replace(/-\d+-\d+$/, ""))) ?? "claude-opus-5-5"];
+  return ((u.input_tokens ?? 0) * i + (u.cache_read_input_tokens ?? 0) * i * 0.1 + (u.cache_creation_input_tokens ?? 0) * i * 1.25 + (u.output_tokens ?? 0) * o) / 1e6;
+}
+
+/** Members who started an AI chat today (UTC) — the daily cap counts these. */
+function chatsStartedToday(): number {
+  return (db.prepare("SELECT COUNT(DISTINCT user_id) AS n FROM ai_usage WHERE created_at >= date('now')").get() as { n: number }).n;
+}
+
+/** AI chat for this member: on, and either they already started one or today's cap isn't reached. */
+export function aiOnboardingAvailable(userId: number): boolean {
+  if (!aiOnboardingEnabled()) return false;
+  const limit = dailyLimit();
+  if (!limit) return true;
+  if (db.prepare("SELECT 1 FROM onboarding_chats WHERE user_id = ? AND turns > 0").get(userId)) return true;
+  return chatsStartedToday() < limit;
+}
+
+export function aiUsageStats() {
+  const q = (where: string) =>
+    db.prepare(`SELECT COUNT(DISTINCT user_id) AS users, COALESCE(SUM(cost_usd), 0) AS cost, COUNT(*) AS turns FROM ai_usage WHERE ${where}`).get() as {
+      users: number;
+      cost: number;
+      turns: number;
+    };
+  const finished = db
+    .prepare(
+      `SELECT COUNT(*) AS n, COALESCE(AVG(c), 0) AS avg FROM (
+         SELECT a.user_id, SUM(a.cost_usd) AS c FROM ai_usage a JOIN users u ON u.id = a.user_id
+         WHERE u.full_name IS NOT NULL AND u.bio IS NOT NULL GROUP BY a.user_id)`,
+    )
+    .get() as { n: number; avg: number };
+  return { enabled: aiOnboardingEnabled(), model: MODEL(), limit: dailyLimit(), today: q("created_at >= date('now')"), month: q("created_at >= date('now', '-30 days')"), finished };
+}
 const MAX_TURNS = 40;
 const MAX_TEXT = 1000;
 
@@ -193,7 +240,7 @@ function stateBlock(d: Draft, missing: Field[]): string {
 let client: Anthropic | null = null;
 const anthropic = () => (client ??= new Anthropic());
 
-async function callModel(history: ChatMsg[], state: string): Promise<Turn | null> {
+async function callModel(userId: number, history: ChatMsg[], state: string): Promise<Turn | null> {
   // The API needs the first message from the user, so the greeting is presented as context.
   const msgs: Anthropic.Beta.BetaMessageParam[] = [];
   for (const m of history) {
@@ -205,15 +252,25 @@ async function callModel(history: ChatMsg[], state: string): Promise<Turn | null
   const lastUser = msgs[msgs.length - 1];
   lastUser.content = `${state}\n\n${lastUser.content as string}`;
 
+  const model = MODEL();
+  // Server-side refusal fallback exists for Opus / Sonnet / Fable; Haiku has none (sending it would fail).
+  const fallback = /haiku/.test(model) ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
   const res = await anthropic().beta.messages.parse({
-    model: MODEL(),
+    model,
     max_tokens: 4000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
+    ...fallback,
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
     output_config: { effort: "low", format: betaZodOutputFormat(TurnSchema) },
     messages: msgs,
   });
+  try {
+    const u = res.usage;
+    db.prepare(
+      "INSERT INTO ai_usage (user_id, model, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(userId, res.model ?? model, u.input_tokens ?? 0, u.output_tokens ?? 0, u.cache_read_input_tokens ?? 0, u.cache_creation_input_tokens ?? 0, costUsd(res.model ?? model, u));
+  } catch (e) {
+    console.error("[ai-onboarding] usage log failed", e);
+  }
   if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
   return res.parsed_output ?? null;
 }
@@ -324,7 +381,7 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
 
   let turn: Turn | null = null;
   try {
-    turn = await callModel(messages, stateBlock(draft, missingFields(draft)));
+    turn = await callModel(user.id, messages, stateBlock(draft, missingFields(draft)));
   } catch (e) {
     console.error("[ai-onboarding] model call failed", e);
   }

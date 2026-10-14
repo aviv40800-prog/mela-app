@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } from "@/lib/admin-data";
 import { SignupsChart } from "@/components/admin/SignupsChart";
+import { aiUsageStats } from "@/lib/ai-onboarding";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 
 const ils = (n: number) => `₪${n.toLocaleString("he-IL")}`;
@@ -12,6 +13,8 @@ export default function AdminOverview() {
   const signups = recentSignups(8);
   const matches = recentMatches(6);
   const hooks = recentWebhooks(6);
+  const ai = aiUsageStats();
+  const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
     <>
@@ -37,6 +40,39 @@ export default function AdminOverview() {
           <AlertTriangle size={16} /> {o.webhookFailures7d} שליחות וואטסאפ נכשלו השבוע — בדקו את הגדרות ה־webhook.
         </div>
       )}
+
+      <Card title="הרשמה בשיחה עם AI" className="mt-4">
+        {ai.enabled ? (
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
+            <div>
+              <div className="text-mute">שיחות היום</div>
+              <div className="tabular mt-0.5 text-lg font-semibold">
+                {ai.today.users}
+                {ai.limit ? <span className="text-sm font-normal text-mute"> / {ai.limit}</span> : null}
+              </div>
+            </div>
+            <div>
+              <div className="text-mute">עלות היום</div>
+              <div className="tabular mt-0.5 text-lg font-semibold">{usd(ai.today.cost)}</div>
+            </div>
+            <div>
+              <div className="text-mute">עלות ב־30 יום</div>
+              <div className="tabular mt-0.5 text-lg font-semibold">{usd(ai.month.cost)}</div>
+              <div className="text-[12px] text-mute-2">{ai.month.users} שיחות</div>
+            </div>
+            <div>
+              <div className="text-mute">ממוצע להרשמה שהושלמה</div>
+              <div className="tabular mt-0.5 text-lg font-semibold">{ai.finished.n ? usd(ai.finished.avg) : "—"}</div>
+              <div className="text-[12px] text-mute-2">{ai.finished.n} הושלמו</div>
+            </div>
+            <p className="col-span-full text-[12px] text-mute-2" dir="ltr" style={{ textAlign: "right" }}>
+              {ai.model}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-mute">כבוי — משתמשים חדשים נרשמים בטופס. כדי להפעיל: להגדיר ANTHROPIC_API_KEY ב־Railway.</p>
+        )}
+      </Card>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card title="הרשמות ב־14 הימים האחרונים" className="lg:col-span-2">
