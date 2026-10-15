@@ -611,3 +611,64 @@ html[data-splash="skip"] .mela-splash {
     transform: scale(1);
   }
 }
+
+/* ---------- landing hero network (see HeroNetwork.tsx) ---------- */
+.hn-heart {
+  transform-origin: 50% 55%;
+  animation: hn-beat 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgb(255 214 140 / 0.75)) drop-shadow(0 0 28px rgb(255 160 70 / 0.45));
+}
+.hn-threads {
+  filter: drop-shadow(0 0 3px rgb(255 214 140 / 0.7));
+}
+.hn-flow {
+  animation: hn-flow linear infinite;
+}
+.hn-node,
+.hn-dot {
+  animation: hn-twinkle 2.2s ease-in-out infinite;
+}
+.hn-card {
+  animation: hn-float ease-in-out infinite;
+}
+@keyframes hn-beat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.055);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.03);
+  }
+}
+@keyframes hn-flow {
+  to {
+    stroke-dashoffset: -280;
+  }
+}
+@keyframes hn-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes hn-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(1.5px, -5px, 0) rotate(0.6deg);
+  }
+  66% {
+    transform: translate3d(-1.5px, 3px, 0) rotate(-0.5deg);
+  }
+}

@@ -19,7 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { HeroVisual } from "@/components/HeroVisual";
+import { HeroNetwork } from "@/components/landing/HeroNetwork";
 import { PhoneMockup } from "@/components/landing/PhoneMockup";
 import { Reveal } from "@/components/landing/Reveal";
 import { StickyCta } from "@/components/landing/StickyCta";
@@ -130,8 +130,13 @@ export default async function Landing() {
       </header>
 
       {/* ---------- hero ---------- */}
-      <section className="mx-auto grid max-w-6xl items-center gap-6 px-5 pt-6 pb-16 md:grid-cols-2 md:gap-12 md:px-8 md:pt-16 md:pb-24">
-        <Reveal className="text-center md:text-right">
+      <section className="relative overflow-hidden bg-[radial-gradient(70%_60%_at_50%_22%,rgb(120_22_36/0.55),rgb(60_8_16/0.35)_45%,transparent_80%)] md:bg-[radial-gradient(60%_70%_at_50%_25%,rgb(128_24_38/0.6),rgb(64_8_18/0.4)_45%,transparent_85%)]">
+        {/* desktop: the matchmaking network fills the hero behind the text */}
+        <div className="absolute inset-0 hidden md:block">
+          <HeroNetwork variant="wide" heartTop={36} />
+        </div>
+        <div className="pointer-events-none absolute inset-0 hidden md:block" style={{ background: "radial-gradient(30% 48% at 50% 70%, rgb(18 4 7 / 0.88), rgb(18 4 7 / 0.55) 60%, transparent 85%)" }} />
+        <Reveal className="relative mx-auto max-w-xl px-5 pt-6 pb-6 text-center md:pt-[380px] md:pb-24">
           <p className="eyebrow inline-flex items-center gap-2">
             <CoffeeBean size={10} rotate={-20} /> אהבה עם שורשים
           </p>
@@ -140,10 +145,10 @@ export default async function Landing() {
             <br />
             <span className="gold-text animate-shimmer">הסיפור שלכם</span> מתחיל
           </h1>
-          <p className="mx-auto mt-5 max-w-md text-[16px] leading-relaxed text-mute md:mx-0 md:text-lg">
+          <p className="mx-auto mt-5 max-w-md text-[16px] leading-relaxed text-mute md:text-lg">
             אפליקציית ההיכרויות הראשונה שנבנתה במיוחד לצעירות וצעירים מהקהילה האתיופית־ישראלית — לאנשים שמחפשים קשר אמיתי, עם מישהו שמבין מאיפה הם באים.
           </p>
-          <div className="mx-auto mt-5 flex max-w-md items-start gap-3 rounded-2xl border border-rose/30 bg-gradient-to-l from-rose/[0.10] to-gold/[0.05] px-4 py-3 text-right md:mx-0">
+          <div className="mx-auto mt-5 flex max-w-md items-start gap-3 rounded-2xl border border-rose/30 bg-gradient-to-l from-rose/[0.10] to-gold/[0.05] px-4 py-3 text-right">
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-rose/15 text-rose">
               <Sparkles size={17} />
             </span>
@@ -151,7 +156,7 @@ export default async function Landing() {
               <b className="font-semibold text-cream">בלי טפסים משעממים.</b> שדכנית AI חכמה מכירה אותך בשיחה קצרה, כותבת לך פרופיל שנשמע בדיוק כמוך — ומציעה התאמות שבאמת מתאימות.
             </p>
           </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/signup" data-cta className="btn-gold px-8 text-[17px]">
               הצטרפות חינם
             </Link>
@@ -159,7 +164,7 @@ export default async function Landing() {
               כבר רשום/ה? כניסה
             </Link>
           </div>
-          <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-mute md:justify-start">
+          <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[13px] text-mute">
             {["הרשמה חינם", "בלי כרטיס אשראי", "כל פרופיל מאומת"].map((t) => (
               <li key={t} className="flex items-center gap-1.5">
                 <Check size={14} className="text-gold" /> {t}
@@ -167,9 +172,10 @@ export default async function Landing() {
             ))}
           </ul>
         </Reveal>
-        <Reveal delay={0.15}>
-          <HeroVisual />
-        </Reveal>
+        {/* phones: the network below the buttons */}
+        <div className="relative mx-auto h-[480px] max-w-md md:hidden">
+          <HeroNetwork variant="compact" />
+        </div>
       </section>
 
       {/* ---------- cultural band ---------- */}
