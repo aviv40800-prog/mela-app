@@ -143,6 +143,14 @@ export default async function Landing() {
           <p className="mx-auto mt-5 max-w-md text-[16px] leading-relaxed text-mute md:mx-0 md:text-lg">
             אפליקציית ההיכרויות הראשונה שנבנתה במיוחד לצעירות וצעירים מהקהילה האתיופית־ישראלית — לאנשים שמחפשים קשר אמיתי, עם מישהו שמבין מאיפה הם באים.
           </p>
+          <div className="mx-auto mt-5 flex max-w-md items-start gap-3 rounded-2xl border border-rose/30 bg-gradient-to-l from-rose/[0.10] to-gold/[0.05] px-4 py-3 text-right md:mx-0">
+            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-rose/15 text-rose">
+              <Sparkles size={17} />
+            </span>
+            <p className="text-[14.5px] leading-relaxed text-cream/85">
+              <b className="font-semibold text-cream">בלי טפסים משעממים.</b> שדכנית AI חכמה מכירה אותך בשיחה קצרה, כותבת לך פרופיל שנשמע בדיוק כמוך — ומציעה התאמות שבאמת מתאימות.
+            </p>
+          </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center md:justify-start">
             <Link href="/signup" data-cta className="btn-gold px-8 text-[17px]">
               הצטרפות חינם
