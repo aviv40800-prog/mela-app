@@ -29,7 +29,10 @@ export default async function AdminPayments() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={e.accepted ? "font-semibold text-[#7fd89a]" : "font-semibold text-danger"}>{e.accepted ? "התקבל" : "נדחה"}</span>
                   <span className="text-cream/85">{e.note}</span>
-                  <span className="ms-auto text-mute">{when(e.received_at)}</span>
+                  <span className="ms-auto text-mute">
+                    {e.source_ip && <span dir="ltr">IP {e.source_ip} · </span>}
+                    {when(e.received_at)}
+                  </span>
                 </div>
                 <pre dir="ltr" className="mt-2 overflow-x-auto rounded-lg bg-ink-2/70 p-2 text-[11.5px] text-mute">
                   {JSON.stringify(JSON.parse(e.payload), null, 1)}

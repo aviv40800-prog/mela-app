@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { api } from "@/lib/client";
 
-type Row = { id: number; user_id: number | null; label: string; plan: string; last4: string | null; reason: "canceled" | "deleted"; when: string };
+type Row = { id: number; user_id: number | null; label: string; plan: string; last4: string | null; txn_ref: string | null; reason: "canceled" | "deleted"; when: string };
 
 export function ProviderCancelList({ initial }: { initial: Row[] }) {
   const [rows, setRows] = useState(initial);
@@ -35,7 +35,8 @@ export function ProviderCancelList({ initial }: { initial: Row[] }) {
               )}
               <div className="text-[12.5px] text-mute">
                 {r.plan}
-                {r.last4 && <> · כרטיס שמסתיים ב־<span dir="ltr">{r.last4}</span></>} · {r.reason === "deleted" ? "מחק/ה את החשבון" : "ביטל/ה את המנוי"} · {r.when}
+                {r.last4 && <> · כרטיס שמסתיים ב־<span dir="ltr">{r.last4}</span></>}
+                {r.txn_ref && <> · עסקה מס׳ <span dir="ltr">{r.txn_ref}</span></>} · {r.reason === "deleted" ? "מחק/ה את החשבון" : "ביטל/ה את המנוי"} · {r.when}
               </div>
             </div>
             <button onClick={() => done(r.id)} className="flex items-center gap-1 rounded-full border border-line-2 px-3 py-1.5 text-[13px] text-mute hover:text-cream">

@@ -272,6 +272,11 @@ export function migrate(db: DatabaseSync) {
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   // Provider-billed subscriptions: the date the recurring charges start from.
+  // Tranzila notify: the caller's IP (to learn and then pin Tranzila's servers), and the transaction a cancel refers to.
+  const evCols = new Set((db.prepare("PRAGMA table_info(payment_events)").all() as { name: string }[]).map((c) => c.name));
+  if (!evCols.has("source_ip")) db.exec("ALTER TABLE payment_events ADD COLUMN source_ip TEXT");
+  const pcCols = new Set((db.prepare("PRAGMA table_info(provider_cancels)").all() as { name: string }[]).map((c) => c.name));
+  if (!pcCols.has("txn_ref")) db.exec("ALTER TABLE provider_cancels ADD COLUMN txn_ref TEXT");
   if (!subCols.has("billing_anchor")) db.exec("ALTER TABLE subscriptions ADD COLUMN billing_anchor TEXT");
   if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");
   if (!subCols.has("payment_last4")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_last4 TEXT");

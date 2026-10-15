@@ -15,15 +15,20 @@ export async function POST(req: Request) {
   } catch {
     payload = {};
   }
-  const result = handleNotify(key, payload);
+  const result = handleNotify(key, payload, clientIp(req));
   console.log(`[tranzila] notify ${result.ok ? "accepted" : "rejected"}: ${result.note}`);
   return new Response("OK", { status: 200 });
+}
+
+/** The caller's IP as Railway's proxy reports it. */
+function clientIp(req: Request) {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
 }
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const payload = Object.fromEntries([...url.searchParams].filter(([k]) => k !== "key"));
-  const result = handleNotify(url.searchParams.get("key"), payload);
+  const result = handleNotify(url.searchParams.get("key"), payload, clientIp(req));
   console.log(`[tranzila] notify (GET) ${result.ok ? "accepted" : "rejected"}: ${result.note}`);
   return new Response("OK", { status: 200 });
 }

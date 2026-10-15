@@ -99,25 +99,45 @@ function sameKey(given: string | null) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-function logEvent(orderId: string | null, accepted: boolean, note: string, payload: Record<string, string>) {
-  // never keep anything that looks like a full card number
-  // (and show only the end of the card token)
-  const safe = Object.fromEntries(
-    Object.entries(payload).map(([k, v]) => [k, /^\d{12,19}$/.test(v) ? "[redacted]" : k === "TranzilaTK" ? `…${v.slice(-4)}` : v]),
+/** What the log keeps of a notification: no full card number, ID number or token, and not our notify key (Tranzila echoes it back). */
+function redact(payload: Record<string, string>): Record<string, string> {
+  const key = process.env.TRANZILA_NOTIFY_KEY;
+  return Object.fromEntries(
+    Object.entries(payload).map(([k, v]) => {
+      if (k === "TranzilaTK") return [k, `…${v.slice(-4)}`];
+      if (k === "myid" || /^\d{12,19}$/.test(v)) return [k, "[redacted]"];
+      return [k, key ? v.split(key).join("***") : v];
+    }),
   );
-  db.prepare("INSERT INTO payment_events (order_id, accepted, note, payload) VALUES (?, ?, ?, ?)").run(orderId, accepted ? 1 : 0, note, JSON.stringify(safe));
+}
+
+function logEvent(orderId: string | null, accepted: boolean, note: string, payload: Record<string, string>, ip: string | null) {
+  db.prepare("INSERT INTO payment_events (order_id, accepted, note, payload, source_ip) VALUES (?, ?, ?, ?, ?)").run(
+    orderId,
+    accepted ? 1 : 0,
+    note,
+    JSON.stringify(redact(payload)),
+    ip,
+  );
+}
+
+/** TRANZILA_NOTIFY_IPS (comma separated) pins the notify to Tranzila's servers; unset = any IP (the key still applies). */
+function ipAllowed(ip: string | null) {
+  const list = (process.env.TRANZILA_NOTIFY_IPS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return list.length === 0 || (!!ip && list.includes(ip));
 }
 
 export type NotifyResult = { ok: boolean; note: string };
 
 /** Handles one notification from Tranzila. Safe to receive more than once for the same order. */
-export function handleNotify(key: string | null, payload: Record<string, string>): NotifyResult {
+export function handleNotify(key: string | null, payload: Record<string, string>, ip: string | null = null): NotifyResult {
   const orderId = payload.mela_order ?? null;
   const done = (ok: boolean, note: string): NotifyResult => {
-    logEvent(orderId, ok, note, payload);
+    logEvent(orderId, ok, note, payload, ip);
     return { ok, note };
   };
   if (!sameKey(key)) return done(false, "bad key");
+  if (!ipAllowed(ip)) return done(false, `ip not allowed: ${ip ?? "?"}`);
   const order = orderId ? getOrder(orderId) : null;
   if (!order) return done(false, "unknown order");
   if (order.status === "paid") return done(true, "already paid");
@@ -129,11 +149,11 @@ export function handleNotify(key: string | null, payload: Record<string, string>
     return done(false, `declined: Response ${payload.Response ?? "?"}`);
   }
   if (Math.abs(Number(payload.sum) - order.first_sum) > 0.001) return done(false, `sum mismatch: ${payload.sum} ≠ ${order.first_sum}`);
-  if (payload.currency && payload.currency !== "1") return done(false, `currency mismatch: ${payload.currency}`);
+  if (payload.currency && payload.currency !== "1" && payload.currency.toUpperCase() !== "ILS") return done(false, `currency mismatch: ${payload.currency}`);
 
   tx(() => {
     db.prepare("UPDATE payment_orders SET status = 'paid', paid_at = datetime('now'), confirmation = ? WHERE id = ?").run(
-      payload.ConfirmationCode ?? payload.index ?? null,
+      payload.index ?? payload.ConfirmationCode ?? null, // Tranzila's transaction number, to find it in their system
       order.id,
     );
     if (order.user_id) activate(order, payload);
@@ -143,7 +163,7 @@ export function handleNotify(key: string | null, payload: Record<string, string>
 
 /** Opens (or renews) the member's subscription after a paid order. */
 function activate(order: PaymentOrder, payload: Record<string, string>) {
-  const last4 = /^\d{4}$/.test(payload.ccno ?? "") ? payload.ccno : null;
+  const last4 = /(\d{4})$/.exec(payload.ccno ?? "")?.[1] ?? null; // ccno comes masked, e.g. 547707******3257
   const status = order.trial ? "trialing" : "active";
   const ref = `tranzila:${order.id}`;
   db.prepare(
@@ -169,12 +189,18 @@ export function accessUntil(anchor: string, plan: PlanType, now = new Date()): s
 }
 
 export function recentPaymentEvents(limit = 100) {
+  // rows logged before redaction was tightened are cleaned the first time the admin looks
+  for (const r of db.prepare("SELECT id, payload FROM payment_events ORDER BY id DESC LIMIT ?").all(limit) as { id: number; payload: string }[]) {
+    const clean = JSON.stringify(redact(JSON.parse(r.payload)));
+    if (clean !== r.payload) db.prepare("UPDATE payment_events SET payload = ? WHERE id = ?").run(clean, r.id);
+  }
   return db.prepare("SELECT * FROM payment_events ORDER BY id DESC LIMIT ?").all(limit) as {
     id: number;
     order_id: string | null;
     accepted: number;
     note: string;
     payload: string;
+    source_ip: string | null;
     received_at: string;
   }[];
 }
@@ -188,12 +214,16 @@ export function queueProviderCancel(userId: number, reason: "canceled" | "delete
     .get(userId) as { plan_type: PlanType; payment_last4: string | null; provider_ref: string | null; full_name: string | null; email: string | null } | undefined;
   if (!row || !isProviderBilled(row.provider_ref)) return;
   if (db.prepare("SELECT 1 FROM provider_cancels WHERE user_id = ? AND done_at IS NULL").get(userId)) return;
-  db.prepare("INSERT INTO provider_cancels (user_id, label, plan_type, last4, reason) VALUES (?, ?, ?, ?, ?)").run(
+  const ref = (db.prepare("SELECT confirmation FROM payment_orders WHERE user_id = ? AND status = 'paid' ORDER BY paid_at DESC LIMIT 1").get(userId) as
+    | { confirmation: string | null }
+    | undefined)?.confirmation ?? null;
+  db.prepare("INSERT INTO provider_cancels (user_id, label, plan_type, last4, reason, txn_ref) VALUES (?, ?, ?, ?, ?, ?)").run(
     reason === "deleted" ? null : userId,
     [row.full_name, row.email].filter(Boolean).join(" · ") || `#${userId}`,
     row.plan_type,
     row.payment_last4,
     reason,
+    ref,
   );
 }
 
@@ -209,6 +239,7 @@ export type ProviderCancel = {
   plan_type: PlanType;
   last4: string | null;
   reason: "canceled" | "deleted";
+  txn_ref: string | null;
   created_at: string;
   done_at: string | null;
 };

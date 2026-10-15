@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { createVerifiedUser, updateProfile, getUser } from "@/lib/users";
-import { accessUntil, createCheckout, getOrder, handleNotify, listProviderCancels } from "@/lib/payments";
+import { accessUntil, createCheckout, getOrder, handleNotify, listProviderCancels, recentPaymentEvents } from "@/lib/payments";
 import { cancelSubscription, getSubscription, hasAccess, resumeSubscription } from "@/lib/billing";
 import { deleteOwnAccount } from "@/lib/safety";
 
@@ -68,6 +68,34 @@ describe("tranzila checkout", () => {
     const { payload } = db.prepare("SELECT payload FROM payment_events").get() as { payload: string };
     expect(payload).not.toContain("4580123412341234");
     expect(payload).not.toContain("tok123");
+  });
+});
+
+describe("tranzila notify, as Tranzila really sends it", () => {
+  it("reads the masked card number, accepts ILS, keeps the transaction number, hides the key and ID number", () => {
+    const u = member();
+    const { order } = createCheckout(u, "monthly_49");
+    const r = handleNotify(KEY, paid(order.id, "1", { ccno: "547707******3257", currency: "ILS", index: "513306", myid: "123456789", notify_url: `https://x/api/tranzila/notify?key=${KEY}` }));
+    expect(r.ok).toBe(true);
+    expect(getSubscription(u.id)!.payment_last4).toBe("3257");
+    expect(getOrder(order.id)!.confirmation).toBe("513306");
+    const [e] = recentPaymentEvents(1);
+    expect(e.payload).not.toContain(KEY);
+    expect(e.payload).not.toContain("123456789");
+    cancelSubscription(u.id);
+    expect(listProviderCancels(false)[0].txn_ref).toBe("513306");
+  });
+
+  it("pins the notify to Tranzila's IPs once they are configured", () => {
+    const { order } = createCheckout(member(), "monthly_49");
+    process.env.TRANZILA_NOTIFY_IPS = "1.2.3.4, 5.6.7.8";
+    try {
+      expect(handleNotify(KEY, paid(order.id, "1.00"), "9.9.9.9").note).toMatch(/ip not allowed/);
+      expect(handleNotify(KEY, paid(order.id, "1.00"), null).ok).toBe(false);
+      expect(handleNotify(KEY, paid(order.id, "1.00"), "5.6.7.8").note).toBe("paid");
+    } finally {
+      delete process.env.TRANZILA_NOTIFY_IPS;
+    }
   });
 });
 
