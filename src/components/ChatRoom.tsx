@@ -2,9 +2,11 @@
 
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, MapPin, MessageCircleQuestion, RefreshCw, SendHorizontal, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, MapPin, MessageCircleQuestion, MoreVertical, RefreshCw, SendHorizontal, X } from "lucide-react";
 import { DatePlannerSheet } from "./DatePlanner";
+import { SafetySheet } from "./SafetySheet";
 import { Photo } from "./Photo";
 import { useRealtime } from "./Realtime";
 import { api, haptic } from "@/lib/client";
@@ -54,6 +56,8 @@ export function ChatRoom({
   const [typing, setTyping] = useState(false);
   const [sending, setSending] = useState(false);
   const [tray, setTray] = useState(false);
+  const [safety, setSafety] = useState(false);
+  const router = useRouter();
   const [round, setRound] = useState(() => Math.floor(Math.random() * 1000));
   // Questions the community suggested (and an admin approved) join the "idea for a question" pool.
   const [community, setCommunity] = useState<string[]>([]);
@@ -206,7 +210,17 @@ export function ChatRoom({
           <CalendarHeart size={16} strokeWidth={1.75} /> דייט
         </motion.button>
         )}
+        <button
+          onClick={() => setSafety(true)}
+          className="grid h-10 w-9 place-items-center rounded-full text-mute transition hover:bg-fg/5 hover:text-cream"
+          aria-label={`דיווח או חסימה של ${first}`}
+        >
+          <MoreVertical size={19} />
+        </button>
       </header>
+      <AnimatePresence>
+        {safety && <SafetySheet userId={partner.id} name={partner.full_name} onClose={() => setSafety(false)} onBlocked={() => router.replace("/matches")} />}
+      </AnimatePresence>
 
       <div ref={scroller} className="no-scrollbar flex-1 overflow-y-auto px-4 pt-4 pb-3">
         {messages.length === 0 && (

@@ -5,6 +5,9 @@ import { getSubscription } from "@/lib/billing";
 import { ProfileSchema as Profile } from "@/lib/profile-schema";
 import { seedDemoLikes } from "@/lib/demo";
 import { nextOnboardingStep } from "@/lib/onboarding";
+import { isAdmin } from "@/lib/admin";
+import { deleteOwnAccount } from "@/lib/safety";
+import { destroySession } from "@/lib/session";
 
 export const GET = handle(async () => {
   const user = await requireUser();
@@ -24,4 +27,16 @@ export const PUT = handle(async (req: Request) => {
   const updated = getUser(user.id)!;
   seedDemoLikes(updated);
   return json({ ok: true, next: nextOnboardingStep(updated) });
+});
+
+const DeleteBody = z.object({ confirm: z.literal("מחיקה") });
+
+/** The member deletes their own account and everything in it. Asks for the word "מחיקה" typed in, as a safeguard. */
+export const DELETE = handle(async (req: Request) => {
+  const user = await requireUser();
+  if (isAdmin(user)) return error("חשבון מנהל לא נמחק מכאן", 403);
+  if (!DeleteBody.safeParse(await req.json().catch(() => null)).success) return error("כדי למחוק, הקלד/י ״מחיקה״");
+  deleteOwnAccount(user.id);
+  await destroySession();
+  return json({ ok: true });
 });

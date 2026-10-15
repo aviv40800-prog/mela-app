@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, LayoutDashboard, LogOut, MessageCircleQuestion, Users } from "lucide-react";
+import { ArrowRight, LayoutDashboard, LogOut, Flag, MessageCircleQuestion, Users } from "lucide-react";
 import { api } from "@/lib/client";
 import { Logo } from "../Logo";
 
@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin", label: "סקירה", Icon: LayoutDashboard },
   { href: "/admin/users", label: "משתמשים", Icon: Users },
   { href: "/admin/questions", label: "שאלות", Icon: MessageCircleQuestion },
+  { href: "/admin/reports", label: "דיווחים", Icon: Flag },
 ];
 
 export function AdminNav({ name, superAdmin = false }: { name: string; superAdmin?: boolean }) {

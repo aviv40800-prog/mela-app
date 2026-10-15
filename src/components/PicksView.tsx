@@ -163,7 +163,14 @@ export function PicksView({ me }: { me: MiniProfile }) {
             <button onClick={() => setOpen(null)} className="mb-3 flex h-12 items-center gap-1 px-2 text-sm text-mute transition hover:text-cream">
               <ArrowRight size={18} /> חזרה לבחירות
             </button>
-            <ProfileCard c={open} onPromptLike={setSheet} />
+            <ProfileCard
+              c={open}
+              onPromptLike={setSheet}
+              onBlocked={() => {
+                setPicks((p) => p?.filter((c) => c.id !== open.id) ?? p);
+                setOpen(null);
+              }}
+            />
             {/* Above the bottom nav (z-40); ✕ left and red ♥ right, like Discover */}
             <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto h-40 max-w-md bg-gradient-to-t from-ink via-ink/85 to-transparent" />
             <div dir="ltr" className="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),28px)] z-50 mx-auto flex max-w-md items-center justify-center gap-7">

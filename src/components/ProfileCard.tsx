@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { SafetyLink } from "@/components/SafetySheet";
 import { BadgeCheck, Briefcase, ChevronDown, Heart, MapPin, MessageCircle } from "lucide-react";
 import { CompatRing } from "./ui/CompatRing";
 import { Photo } from "./Photo";
@@ -12,7 +13,18 @@ import type { Candidate, Prompt } from "@/lib/types";
  * "comment & like" action) and the remaining photos interleaved.
  * variant "deck": hero fills the swipe card; "page": hero is a 3:4 card (picks overlay, own preview).
  */
-export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidate; onPromptLike?: (p: Prompt) => void; variant?: "deck" | "page" }) {
+/** `onBlocked`, when given, adds a "report or block" link at the end (someone else's profile) and runs after a block. */
+export function ProfileCard({
+  c,
+  onPromptLike,
+  variant = "page",
+  onBlocked,
+}: {
+  c: Candidate;
+  onPromptLike?: (p: Prompt) => void;
+  variant?: "deck" | "page";
+  onBlocked?: () => void;
+}) {
   const [hero, ...rest] = c.photos;
   const first = c.full_name.split(" ")[0];
   const deck = variant === "deck";
@@ -130,6 +142,7 @@ export function ProfileCard({ c, onPromptLike, variant = "page" }: { c: Candidat
             <Photo src={src} name={c.full_name} className="h-full w-full" rounded="rounded-[26px]" />
           </div>
         ))}
+        {onBlocked && <SafetyLink userId={c.id} name={c.full_name} onBlocked={onBlocked} />}
       </div>
     </div>
   );

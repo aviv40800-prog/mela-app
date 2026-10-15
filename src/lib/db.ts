@@ -138,6 +138,28 @@ CREATE TABLE IF NOT EXISTS daily_usage (
   PRIMARY KEY (user_id, day)
 );
 
+-- A member blocked another: they never see each other again and any match/chat between them is closed.
+CREATE TABLE IF NOT EXISTS blocks (
+  blocker_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+
+-- Member reports for the admin to review. The chat between them is copied in, so it survives a block.
+CREATE TABLE IF NOT EXISTS reports (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reported_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reason      TEXT NOT NULL,
+  details     TEXT,
+  chat        TEXT NOT NULL DEFAULT '[]',
+  status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'handled')),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+  handled_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, id);
+
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   event       TEXT NOT NULL,

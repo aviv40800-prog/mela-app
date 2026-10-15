@@ -72,3 +72,64 @@ export function LogoutRow() {
     </button>
   );
 }
+
+/** Delete my account: a quiet link that opens a confirmation where the member types "מחיקה". */
+export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [word, setWord] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function remove() {
+    setBusy(true);
+    setErr(null);
+    try {
+      await api("/api/me", { method: "DELETE", json: { confirm: word.trim() } });
+      router.replace("/");
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "משהו השתבש, נסו שוב");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 text-center">
+      <AnimatePresence mode="wait" initial={false}>
+        {open ? (
+          <motion.div key="confirm" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="surface rounded-2xl p-4 text-right">
+            <p className="text-[14px] font-semibold text-danger">מחיקת החשבון לצמיתות</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-mute">
+              הפרופיל, התמונות, ההתאמות וכל השיחות יימחקו, ואי אפשר יהיה לשחזר אותם.
+              {hasActivePlan && " המנוי שלך יבוטל, ולא יבוצעו חיובים נוספים."}
+            </p>
+            <label htmlFor="delete-confirm" className="mt-3 block text-[13px]">
+              כדי לאשר, הקלד/י <b>מחיקה</b>
+            </label>
+            <input
+              id="delete-confirm"
+              value={word}
+              onChange={(e) => setWord(e.target.value)}
+              autoComplete="off"
+              className="field mt-1.5 w-full text-[15px]"
+            />
+            {err && <p className="mt-2 text-[13px] text-danger">{err}</p>}
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setOpen(false)} className="btn-gold flex-1 py-2.5 text-sm">
+                ביטול
+              </button>
+              <button onClick={remove} disabled={busy || word.trim() !== "מחיקה"} className="btn-ghost flex-1 py-2.5 text-sm text-danger">
+                {busy ? <Loader2 size={16} className="animate-spin" /> : "למחוק את החשבון"}
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.button key="ask" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(true)} className="py-2 text-[12.5px] text-mute-2 transition hover:text-danger">
+            מחיקת החשבון
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

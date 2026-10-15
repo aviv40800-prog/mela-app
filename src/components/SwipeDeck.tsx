@@ -209,7 +209,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
           )}
         </AnimatePresence>
         {deck[1] && <BackCard key={deck[1].id} c={deck[1]} x={x} />}
-        <TopCard key={top.id} c={top} x={x} onDragEnd={onDragEnd} onPromptLike={setSheet} />
+        <TopCard key={top.id} c={top} x={x} onDragEnd={onDragEnd} onPromptLike={setSheet} onBlocked={() => setDeck((d) => d?.filter((c) => c.id !== top.id) ?? d)} />
       </motion.div>
 
       <ActionBar x={x} burst={burst} quota={quota} onPass={() => decide("pass")} onLike={() => decide("like")} />
@@ -246,11 +246,13 @@ function TopCard({
   x,
   onDragEnd,
   onPromptLike,
+  onBlocked,
 }: {
   c: Candidate;
   x: MotionValue<number>;
   onDragEnd: (e: unknown, info: PanInfo) => void;
   onPromptLike: (p: Prompt) => void;
+  onBlocked: () => void;
 }) {
   const rotate = useTransform(x, [-300, 0, 300], [-13, 0, 13]);
   const likeGlow = useTransform(x, [15, DISTANCE], [0, 1]);
@@ -271,7 +273,7 @@ function TopCard({
       initial={false}
     >
       <div className="surface no-scrollbar relative h-full overflow-y-auto overscroll-contain rounded-[32px] pb-28">
-        <ProfileCard c={c} onPromptLike={onPromptLike} variant="deck" />
+        <ProfileCard c={c} onPromptLike={onPromptLike} variant="deck" onBlocked={onBlocked} />
       </div>
 
       {/* reactive edge glows */}

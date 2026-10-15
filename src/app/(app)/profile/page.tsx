@@ -7,7 +7,8 @@ import { getQuota } from "@/lib/quota";
 import { toPublic } from "@/lib/users";
 import { LOOKING_FOR, MARITAL_STATUS, PARTNER_RELIGIOSITY, PLANS, RELIGIOSITY, promptQuestion } from "@/lib/content";
 import { Photo } from "@/components/Photo";
-import { MembershipActions, LogoutRow } from "@/components/AccountActions";
+import { MembershipActions, LogoutRow, DeleteAccount } from "@/components/AccountActions";
+import { LEGAL_LINKS } from "@/lib/site";
 import { PreferencesCard } from "@/components/PreferencesCard";
 import { SearchPrefsRow } from "@/components/SearchPrefsRow";
 import { ImproveProfile } from "@/components/ImproveProfile";
@@ -237,11 +238,19 @@ export default async function ProfilePage() {
           <Divider />
           <LogoutRow />
         </div>
+        <DeleteAccount hasActivePlan={!!sub && sub.status !== "canceled"} />
       </section>
 
       <footer className="mt-10 mb-4 text-center text-[11px] text-mute-2">
         <div className="gold-hairline mx-auto mb-4 w-24" />
         MELA · אהבה עם שורשים · {first ? `נעים שאת/ה כאן, ${first}` : ""}
+        <nav aria-label="מידע משפטי" className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1">
+          {LEGAL_LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className="hover:text-mute">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
       </footer>
     </main>
   );

@@ -7,6 +7,7 @@ import { swipe, discoveryDeck, dailyPicks, listMatches, likesReceived, matchPart
 import { getSubscription, hasAccess, startTrial, cancelSubscription } from "@/lib/billing";
 import { subscribe } from "@/lib/events";
 import { sendMessage, listMessages } from "@/lib/chat";
+import { blockUser, deleteOwnAccount, listReports, reportUser } from "@/lib/safety";
 
 let phoneSeq = 1000000;
 function member(name: string, gender: Gender, seeking: Gender | "everyone" = gender === "male" ? "female" : "male") {
@@ -529,5 +530,61 @@ describe("improve-your-profile check-ins", () => {
     const after = nextQuestions(u.id, 3);
     expect(after.questions.map((q) => q.key)).not.toContain(before.questions[0].key);
     expect(after.remaining).toBe(before.remaining - 1);
+  });
+});
+
+describe("block, report, delete account", () => {
+  it("block closes the chat and hides both from each other for good", () => {
+    const a = member("אבי", "male");
+    const b = member("בתיה", "female");
+    swipe(a.id, b.id, "like");
+    const { matchId } = swipe(b.id, a.id, "like");
+    sendMessage(matchId, a.id, b.id, "היי");
+    expect(listMatches(a.id)).toHaveLength(1);
+
+    blockUser(b.id, a.id);
+    expect(listMatches(a.id)).toHaveLength(0);
+    expect(listMatches(b.id)).toHaveLength(0);
+    expect(matchPartner(matchId, a.id)).toBeNull();
+    expect(discoveryDeck(getUser(a.id)!).map((c) => c.id)).not.toContain(b.id);
+    expect(discoveryDeck(getUser(b.id)!).map((c) => c.id)).not.toContain(a.id);
+  });
+
+  it("block works with no history between them, from either side's deck", () => {
+    const a = member("אבי", "male");
+    const b = member("בתיה", "female");
+    expect(discoveryDeck(getUser(a.id)!).map((c) => c.id)).toContain(b.id);
+    blockUser(a.id, b.id);
+    expect(discoveryDeck(getUser(a.id)!).map((c) => c.id)).not.toContain(b.id);
+    expect(discoveryDeck(getUser(b.id)!).map((c) => c.id)).not.toContain(a.id);
+  });
+
+  it("a report keeps a copy of the chat, even after a block", () => {
+    db.exec("DELETE FROM reports");
+    const a = member("אבי", "male");
+    const b = member("בתיה", "female");
+    swipe(a.id, b.id, "like");
+    const { matchId } = swipe(b.id, a.id, "like");
+    sendMessage(matchId, a.id, b.id, "הודעה לא נעימה");
+    reportUser(b.id, a.id, "harassment", "שלח הודעות פוגעניות");
+    blockUser(b.id, a.id);
+    const [r] = listReports("open");
+    expect(r.reported_id).toBe(a.id);
+    expect(r.chat.map((m) => m.text_content)).toEqual(["הודעה לא נעימה"]);
+  });
+
+  it("deleting my account removes me, my matches and messages, but keeps reports about me", () => {
+    db.exec("DELETE FROM reports");
+    const a = member("אבי", "male");
+    const b = member("בתיה", "female");
+    swipe(a.id, b.id, "like");
+    const { matchId } = swipe(b.id, a.id, "like");
+    sendMessage(matchId, a.id, b.id, "היי");
+    reportUser(b.id, a.id, "fake", null);
+    deleteOwnAccount(a.id);
+    expect(getUser(a.id)).toBeNull();
+    expect(listMatches(b.id)).toHaveLength(0);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM messages WHERE match_id = ?").get(matchId)).toEqual({ n: 0 });
+    expect(listReports("open")[0].reported_id).toBeNull();
   });
 });
