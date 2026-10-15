@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { PLANS, TRIAL_DAYS, type PlanType } from "./content";
+import { accessUntil, isProviderBilled, queueProviderCancel, withdrawProviderCancel } from "./payments";
 
 export type SubscriptionStatus = "trialing" | "active" | "canceled" | "past_due";
 export type Subscription = {
@@ -13,6 +14,8 @@ export type Subscription = {
   payment_brand: string | null;
   payment_last4: string | null;
   payment_exp: string | null;
+  provider_ref: string | null;
+  billing_anchor: string | null;
 };
 
 /** What the checkout keeps about a card. The full number and CVV never leave the browser. */
@@ -62,12 +65,28 @@ export function startTrial(userId: number, plan: PlanType, card?: CardMeta): Sub
   return getSubscription(userId)!;
 }
 
+/**
+ * Cancel: no further charges; access stays until the end of what was already paid. A Tranzila subscription
+ * also goes on the admin's list of standing orders to stop in Tranzila.
+ */
 export function cancelSubscription(userId: number) {
-  db.prepare("UPDATE subscriptions SET status = 'canceled' WHERE user_id = ?").run(userId);
+  const sub = getSubscription(userId);
+  if (!sub || sub.status === "canceled") return;
+  if (isProviderBilled(sub.provider_ref) && sub.billing_anchor) {
+    db.prepare("UPDATE subscriptions SET status = 'canceled', current_period_end = ? WHERE user_id = ?").run(accessUntil(sub.billing_anchor, sub.plan_type), userId);
+    queueProviderCancel(userId, "canceled");
+  } else {
+    db.prepare("UPDATE subscriptions SET status = 'canceled' WHERE user_id = ?").run(userId);
+  }
 }
 
-export function resumeSubscription(userId: number) {
+/** Undo a cancel. Returns false when that is no longer possible (the standing order was already stopped: pay again). */
+export function resumeSubscription(userId: number): boolean {
+  const sub = getSubscription(userId);
+  if (!sub || sub.status !== "canceled") return !!sub;
+  if (isProviderBilled(sub.provider_ref) && !withdrawProviderCancel(userId)) return false;
   db.prepare(
     "UPDATE subscriptions SET status = CASE WHEN trial_ends_at > datetime('now') THEN 'trialing' ELSE 'active' END WHERE user_id = ? AND status = 'canceled'",
   ).run(userId);
+  return true;
 }

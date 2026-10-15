@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Loader2, Lock } from "lucide-react";
 import { haptic } from "@/lib/client";
-import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
+import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "@/lib/content";
 
 const PERKS = ["לייקים ללא הגבלה", "כל 3 הבחירות האישיות בכל יום", "לראות מי אהב/ה אותך", "צ'אט בזמן אמת + פתיחים מהבית", "התראת וואטסאפ על כל התאמה"];
 
@@ -33,7 +33,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
       <div className="text-center">
         {!returning && (
           <div className="glow mx-auto mb-4 w-fit rounded-full bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold-2">
-            🎁 {TRIAL_DAYS} ימים חינם · ₪0 היום
+            🎁 {TRIAL_DAYS} ימי ניסיון · ₪{TRIAL_FEE} היום
           </div>
         )}
         <h1 className="font-display text-[2rem] leading-tight font-bold">
@@ -128,7 +128,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
         <div className="surface mt-8 rounded-2xl p-4 text-sm">
           <div className="flex justify-between">
             <span className="text-mute">לתשלום היום</span>
-            <span className="font-bold text-gold-2">₪0.00</span>
+            <span className="font-bold text-gold-2" dir="ltr">₪{TRIAL_FEE}</span>
           </div>
           <div className="mt-2 flex justify-between">
             <span className="text-mute">החל מ־{chargeDate()}</span>
@@ -144,7 +144,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
       <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md bg-gradient-to-t from-ink via-ink/95 to-transparent px-6 pt-8 pb-[max(env(safe-area-inset-bottom),20px)]">
         {err && <p className="mb-2 text-center text-sm text-danger">{err}</p>}
         <button className="btn-gold w-full text-lg" onClick={start} disabled={busy}>
-          {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "המשך לתשלום" : `המשך · ${TRIAL_DAYS} ימי ניסיון חינם`}
+          {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "המשך לתשלום" : `המשך · ${TRIAL_DAYS} ימי ניסיון`}
         </button>
         <button
           onClick={() => router.replace("/discover")}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalUpdated } from "@/components/LegalUpdated";
-import { PLANS, TRIAL_DAYS } from "@/lib/content";
+import { PLANS, TRIAL_DAYS, TRIAL_FEE } from "@/lib/content";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "תקנון ותנאי שימוש · MELA" };
@@ -67,7 +67,7 @@ export default function TermsPage() {
           המסלולים: {PLANS.monthly_49.priceLabel} {PLANS.monthly_49.period}, או {PLANS.quarterly_119.priceLabel} {PLANS.quarterly_119.period}. המחירים כוללים מע״מ ככל שהוא חל.
         </li>
         <li>
-          כל מנוי מתחיל ב־{TRIAL_DAYS} ימי ניסיון בחינם. אם לא תבטל/י לפני סוף תקופת הניסיון, המנוי יתחדש ויחויב אוטומטית בסוף כל תקופה, עד לביטול.
+          כל מנוי מתחיל ב־{TRIAL_DAYS} ימי ניסיון, עם חיוב סמלי של ₪{TRIAL_FEE} ביום הראשון לאימות הכרטיס. אם לא תבטל/י לפני סוף תקופת הניסיון, המנוי יחויב במחיר המסלול ויתחדש אוטומטית בסוף כל תקופה, עד לביטול.
         </li>
         <li>
           ביטול מנוי והחזרים מוסברים ב<Link href="/cancellation">מדיניות הביטול</Link>.

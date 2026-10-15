@@ -160,6 +160,44 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, id);
 
+-- A checkout started on the payment provider's page. The id travels to the provider and back; the
+-- amounts are fixed here, so a notify that doesn't match them is rejected.
+CREATE TABLE IF NOT EXISTS payment_orders (
+  id           TEXT PRIMARY KEY,
+  user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  plan_type    TEXT NOT NULL,
+  first_sum    REAL NOT NULL,
+  recur_sum    REAL NOT NULL,
+  trial        INTEGER NOT NULL DEFAULT 0,
+  recur_start  TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed')),
+  confirmation TEXT,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at      TEXT
+);
+
+-- Standing orders the admin still has to stop in Tranzila (member canceled, or deleted the account).
+CREATE TABLE IF NOT EXISTS provider_cancels (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  label      TEXT NOT NULL,
+  plan_type  TEXT NOT NULL,
+  last4      TEXT,
+  reason     TEXT NOT NULL CHECK (reason IN ('canceled', 'deleted')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  done_at    TEXT
+);
+
+-- Every notification the payment provider sends, kept as received, for the admin and for auditing.
+CREATE TABLE IF NOT EXISTS payment_events (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id    TEXT,
+  accepted    INTEGER NOT NULL DEFAULT 0,
+  note        TEXT NOT NULL,
+  payload     TEXT NOT NULL,
+  received_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   event       TEXT NOT NULL,
@@ -233,6 +271,8 @@ export function migrate(db: DatabaseSync) {
   if (!cols.has("looking_for")) db.exec("ALTER TABLE users ADD COLUMN looking_for TEXT");
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
+  // Provider-billed subscriptions: the date the recurring charges start from.
+  if (!subCols.has("billing_anchor")) db.exec("ALTER TABLE subscriptions ADD COLUMN billing_anchor TEXT");
   if (!subCols.has("payment_brand")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_brand TEXT");
   if (!subCols.has("payment_last4")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_last4 TEXT");
   if (!subCols.has("payment_exp")) db.exec("ALTER TABLE subscriptions ADD COLUMN payment_exp TEXT");

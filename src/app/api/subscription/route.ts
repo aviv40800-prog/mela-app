@@ -36,6 +36,6 @@ export const PATCH = handle(async (req: Request) => {
   const parsed = Patch.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error("פעולה לא תקינה");
   if (parsed.data.action === "cancel") cancelSubscription(user.id);
-  else resumeSubscription(user.id);
+  else if (!resumeSubscription(user.id)) return error("המנוי כבר הסתיים. אפשר לחדש אותו דרך עמוד התשלום.", 402, { code: "renew" });
   return json({ subscription: getSubscription(user.id) });
 });

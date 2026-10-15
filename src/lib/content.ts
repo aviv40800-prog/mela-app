@@ -133,6 +133,8 @@ export const PLANS = {
 
 export type PlanType = keyof typeof PLANS;
 export const TRIAL_DAYS = 7;
+/** Charged on the first day of the trial to verify the card (the plan price follows after TRIAL_DAYS). */
+export const TRIAL_FEE = 1;
 
 export const LOCATIONS = [
   "תל אביב",

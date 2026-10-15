@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Info, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { api, haptic } from "@/lib/client";
-import { PLANS, TRIAL_DAYS, type PlanType } from "@/lib/content";
+import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "@/lib/content";
 
 type Brand = "visa" | "mastercard" | "amex" | "isracard" | "diners" | "card";
 
@@ -96,7 +96,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
         <ArrowRight size={16} /> שינוי מסלול
       </Link>
       <h1 className="font-display text-[1.9rem] leading-tight font-bold">פרטי תשלום</h1>
-      <p className="mt-1.5 text-[14.5px] text-mute">{trial ? `${TRIAL_DAYS} ימים חינם, ביטול בכל רגע מהפרופיל.` : "חידוש מנוי Premium."}</p>
+      <p className="mt-1.5 text-[14.5px] text-mute">{trial ? `${TRIAL_DAYS} ימי ניסיון, ביטול בכל רגע מהפרופיל.` : "חידוש מנוי Premium."}</p>
 
       {demo && (
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-dashed border-gold/40 bg-gold/[0.05] px-4 py-3 text-[12.5px] text-gold-2">
@@ -177,7 +177,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
           <>
             <div className="flex justify-between">
               <span className="text-mute">לתשלום היום</span>
-              <span className="font-bold text-gold-2">₪0.00</span>
+              <span className="font-bold text-gold-2" dir="ltr">₪{TRIAL_FEE}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-mute">החיוב הראשון</span>
@@ -204,7 +204,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
               <Loader2 size={18} className="animate-spin" /> מאמת את הכרטיס…
             </>
           ) : trial ? (
-            `התחלת ${TRIAL_DAYS} ימי ניסיון חינם`
+            `התחלת ${TRIAL_DAYS} ימי ניסיון`
           ) : (
             "אישור ותשלום"
           )}
@@ -228,7 +228,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
               </motion.div>
               <h2 className="font-display mt-6 text-3xl font-bold">ברוכים הבאים ל־Premium</h2>
               <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-mute">
-                <ShieldCheck size={15} className="text-gold" /> {trial ? `${TRIAL_DAYS} ימים חינם התחילו עכשיו` : "המנוי חודש"}
+                <ShieldCheck size={15} className="text-gold" /> {trial ? `${TRIAL_DAYS} ימי הניסיון התחילו עכשיו` : "המנוי חודש"}
               </p>
             </div>
           </motion.div>

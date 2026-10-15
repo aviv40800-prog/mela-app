@@ -4,6 +4,8 @@ import path from "node:path";
 import { db, tx } from "./db";
 import { UPLOAD_DIR } from "./paths";
 import { getUser } from "./users";
+import { getSubscription } from "./billing";
+import { queueProviderCancel } from "./payments";
 
 /** Why a member can report someone. Keys are stored; labels are shown. */
 export const REPORT_REASONS = {
@@ -104,6 +106,9 @@ export function setReportStatus(id: number, status: "open" | "handled") {
 export function deleteOwnAccount(userId: number) {
   const user = getUser(userId);
   if (!user) return;
+  // a live Tranzila standing order must still be stopped there, even though the account is gone
+  const sub = getSubscription(userId);
+  if (sub && sub.status !== "canceled") queueProviderCancel(userId, "deleted");
   db.prepare("DELETE FROM users WHERE id = ?").run(userId);
   for (const url of user.photos) {
     const name = /^\/api\/photos\/([\w-]+\.(?:jpg|png|webp))$/.exec(url)?.[1];

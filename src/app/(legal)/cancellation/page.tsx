@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalUpdated } from "@/components/LegalUpdated";
-import { PLANS, TRIAL_DAYS } from "@/lib/content";
+import { PLANS, TRIAL_DAYS, TRIAL_FEE } from "@/lib/content";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "ביטול מנוי והחזרים · MELA" };
@@ -16,7 +16,7 @@ export default function CancellationPage() {
       <p>רצינו שהביטול יהיה פשוט כמו ההרשמה. בקצרה:</p>
       <ul>
         <li>
-          <b>{TRIAL_DAYS} ימי ניסיון בחינם.</b> ביטול בתוך תקופת הניסיון: לא מחויבים בכלל.
+          <b>{TRIAL_DAYS} ימי ניסיון ב־₪{TRIAL_FEE}.</b> ביטול בתוך תקופת הניסיון: לא מחויבים במחיר המסלול. (ה־₪{TRIAL_FEE} הוא חיוב סמלי לאימות הכרטיס.)
         </li>
         <li>
           <b>ביטול אחרי תקופת הניסיון:</b> לא יהיו חיובים נוספים, והמנוי ממשיך לעבוד עד סוף התקופה ששולמה.
@@ -37,7 +37,7 @@ export default function CancellationPage() {
 
       <h2>תקופת הניסיון</h2>
       <p>
-        כל מנוי מתחיל ב־{TRIAL_DAYS} ימי ניסיון. במהלכם לא מתבצע חיוב. אם לא ביטלת עד סוף תקופת הניסיון, החיוב הראשון יתבצע ביום שאחריה, והמנוי יתחדש מאז אוטומטית.
+        כל מנוי מתחיל ב־{TRIAL_DAYS} ימי ניסיון. ביום הראשון מתבצע חיוב סמלי של ₪{TRIAL_FEE} לאימות הכרטיס, ומעבר לזה אין חיוב בתקופת הניסיון. אם לא ביטלת עד סוף תקופת הניסיון, החיוב במחיר המסלול יתבצע בסופה, והמנוי יתחדש מאז אוטומטית.
       </p>
 
       <h2>ביטול באמצע תקופה</h2>

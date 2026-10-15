@@ -14,7 +14,10 @@ export function MembershipActions({ canceled }: { canceled: boolean }) {
   async function toggle() {
     setBusy(true);
     haptic(12);
-    await api("/api/subscription", { method: "PATCH", json: { action: canceled ? "resume" : "cancel" } }).catch(() => {});
+    const renew = await api("/api/subscription", { method: "PATCH", json: { action: canceled ? "resume" : "cancel" } })
+      .then(() => false)
+      .catch((e) => (e as { code?: string }).code === "renew");
+    if (renew) return router.push("/onboarding/plan");
     setConfirm(false);
     setBusy(false);
     router.refresh();

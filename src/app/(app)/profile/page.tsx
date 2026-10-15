@@ -156,7 +156,7 @@ export default async function ProfilePage() {
               <p className="mt-3 text-[12.5px] text-mute">מתאפס כל לילה בחצות. עם Premium — ללא הגבלה, כל 3 הבחירות היומיות, ולראות מי אהב/ה אותך.</p>
             </div>
             <Link href="/onboarding/plan" className="btn-gold mt-5 w-full py-3 text-sm">
-              <Crown size={15} /> {sub ? "חידוש Premium" : "שדרוג ל־Premium · 7 ימים חינם"}
+              <Crown size={15} /> {sub ? "חידוש Premium" : "שדרוג ל־Premium · 7 ימי ניסיון"}
             </Link>
           </div>
         )}
