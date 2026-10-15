@@ -6,6 +6,7 @@ import { createEmailUser, createVerifiedUser, getUserByEmail, getUserByPhone, ge
 import { createSession } from "@/lib/session";
 import { nextOnboardingStep } from "@/lib/onboarding";
 import { isAdmin } from "@/lib/admin";
+import { SITE } from "@/lib/site";
 
 const Code = z.string().regex(/^\d{6}$/);
 const Body = z.union([z.object({ email: z.email().max(200), code: Code }), z.object({ phone: z.string(), code: Code })]);
@@ -23,7 +24,7 @@ export const POST = handle(async (req: Request) => {
   if (result !== "ok") return error(MESSAGES[result], result === "locked" ? 429 : 400);
 
   const existing = email ? getUserByEmail(email) : getUserByPhone(key);
-  if (existing?.is_banned) return error("החשבון הושעה. לפרטים: support@mela.app", 403);
+  if (existing?.is_banned) return error(`החשבון הושעה. לפרטים: ${SITE.email}`, 403);
   let user = existing ?? (email ? createEmailUser(email) : createVerifiedUser(key));
   // A member who registered by phone and later added this email now signs in with it — mark it proven.
   if (email && existing && !existing.email_verified) {

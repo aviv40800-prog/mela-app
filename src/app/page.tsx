@@ -20,6 +20,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { HeroNetwork } from "@/components/landing/HeroNetwork";
 import { PhoneMockup } from "@/components/landing/PhoneMockup";
 import { Reveal } from "@/components/landing/Reveal";
@@ -470,26 +471,7 @@ export default async function Landing() {
       </section>
 
       {/* ---------- footer ---------- */}
-      <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 pt-10 pb-32 text-[13px] text-mute md:flex-row md:px-8 md:pb-10">
-          <div className="flex items-center gap-3">
-            <Logo size="sm" />
-            <span>אהבה עם שורשים</span>
-          </div>
-          <div className="flex gap-6">
-            <a href="mailto:support@mela.app" className="hover:text-cream">
-              צור קשר
-            </a>
-            <Link href="/login" className="hover:text-cream">
-              כניסה
-            </Link>
-            <Link href="/signup" className="hover:text-cream">
-              הרשמה
-            </Link>
-          </div>
-          <span className="text-mute-2">© {new Date().getFullYear()} MELA</span>
-        </div>
-      </footer>
+      <SiteFooter className="pb-24 md:pb-0" />
 
       <StickyCta />
     </div>

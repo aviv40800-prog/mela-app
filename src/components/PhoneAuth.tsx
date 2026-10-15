@@ -262,7 +262,17 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                   </>
                 )}
               </p>
-              <p className="mt-4 text-center text-[11px] leading-relaxed text-mute-2">בהמשך את/ה מאשר/ת את תנאי השימוש ומדיניות הפרטיות. הגיל המינימלי הוא 18.</p>
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-mute-2">
+                בהמשך את/ה מאשר/ת את{" "}
+                <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-cream">
+                  התקנון
+                </a>{" "}
+                ואת{" "}
+                <a href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-cream">
+                  מדיניות הפרטיות
+                </a>
+                . הגיל המינימלי הוא 18.
+              </p>
             </div>
           </motion.form>
         ) : (
