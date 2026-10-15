@@ -33,7 +33,7 @@ export function SiteFooter({ className = "" }: { className?: string }) {
             <span>אהבה עם שורשים</span>
           </div>
           <p className="max-w-sm leading-relaxed">פלטפורמת ההיכרויות הראשונה שנבנתה במיוחד עבור בני העדה.</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 md:justify-start">
             <a href={SITE.instagram} target="_blank" rel="noopener noreferrer" aria-label="MELA באינסטגרם" className={social}>
               <InstagramIcon />
             </a>
