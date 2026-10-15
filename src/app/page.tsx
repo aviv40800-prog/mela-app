@@ -8,7 +8,11 @@ import {
   Crown,
   EyeOff,
   HeartHandshake,
+  House,
   MessageCircleHeart,
+  MessagesSquare,
+  Sparkles,
+  Target,
   ShieldCheck,
   Gem,
   UserRoundCheck,
@@ -62,7 +66,19 @@ const FEATURES = [
   { Icon: Gem, t: "3 בחירות ביום", d: "פחות החלקות אינסופיות, יותר אנשים שבאמת מתאימים לכם." },
   { Icon: HeartHandshake, t: "״זה או זה?״", d: "אינג׳רה או פיתה? חתונה של 800 או אינטימית? כל תשובה מחדדת את ההתאמות." },
   { Icon: MessageCircleHeart, t: "תגובה ישירה על תשובה", d: "ראיתם תשובה שנגעה בכם? שלחו לייק עם תגובה עליה — הדרך הכי טבעית להתחיל." },
-  { Icon: Bell, t: "התראה בוואטסאפ", d: "יש התאמה? תדעו מיד, ישר לוואטסאפ, בלי לפספס אף אחד." },
+  { Icon: Bell, t: "התראה בוואטסאפ", d: "יש התאמה? תדעו מיד, ישר לוואטסאפ, בלי לפספס אף אחד.", soon: true },
+];
+
+// "על MELA" — about the product, alongside the founders' story.
+const ABOUT_INTRO = [
+  "כמה פעמים מצאת את עצמך גולל/ת וגולל/ת באפליקציות היכרויות, עובר/ת על מאות פרופילים שטחיים ומבזבז/ת ערבים שלמים — בלי שנוצרה אפילו שיחה אחת אמיתית? כמה פעמים זה נתקע שוב ב״היי, מה נשמע?״ שנגמר בכלום? נמאס מראיונות עבודה ומסרט נע של סווייפים? בדיוק בשביל זה הקמנו את MELA.",
+  "MELA היא אפליקציית היכרויות שנבנתה כדי לשנות את כל מה שידעת על דייטינג דיגיטלי. במקום להשאיר אותך לבד מול מסך ריק, אנחנו רותמים את הטכנולוגיה החכמה ביותר כדי שתעבוד בשבילך מאחורי הקלעים — ואת הזמן שלך נשאיר לאנשים.",
+];
+const ABOUT_POINTS = [
+  { Icon: Sparkles, t: "שדכנית חכמה בגובה העיניים", d: "בלי טפסים משעממים ופרופילים יבשים. ה־AI של MELA מנהל איתך שיחת היכרות קלילה וטבעית, לומד מי את/ה באמת — ומבין מי יקבל אותך בלב פתוח." },
+  { Icon: Target, t: "איכות במקום כמות", d: "במקום להציף אותך במאות כרטיסים אקראיים, MELA מציעה התאמות מדויקות וממוקדות מראש — כאלה שיש להן סיכוי אמיתי להפוך לחיבור עמוק." },
+  { Icon: MessagesSquare, t: "שוברים את הקרח בטבעיות", d: "אנחנו לא עוצרים בשידוך: רעיונות לשאלות קלילות עוזרים לעבור את המבוכה של ההתחלה ולנהל שיחה אמיתית — כזו שמובילה לדייט בעולם האמיתי." },
+  { Icon: House, t: "בית חם עם שורשים", d: "MELA נבנתה במיוחד לקהילה, מתוך הבנה עמוקה של הערכים, התרבות והרצון לקשר אמיתי, יציב ומרגש." },
 ];
 
 const PROMISES = [
@@ -76,7 +92,7 @@ const FAQ = [
   { q: "זה באמת חינם?", a: `כן. ההרשמה והשימוש הבסיסי חינמיים לגמרי, בלי כרטיס אשראי: ${FREE_DAILY_LIKES} לייקים ביום, בחירה יומית אחת וצ׳אט מלא עם ההתאמות שלכם.` },
   { q: "מה מקבלים ב־Premium ובכמה?", a: `לייקים ללא הגבלה, כל 3 הבחירות היומיות, ולראות מי כבר אהב/ה אתכם. ₪49 לחודש או ₪119 לשלושה חודשים (כ־₪40 לחודש), עם ${TRIAL_DAYS} ימי ניסיון חינם וביטול בכל עת.` },
   { q: "למה צריך מייל?", a: "כדי לוודא שכל פרופיל שייך לאדם אמיתי. המייל משמש רק לאימות ולעדכונים — הוא לא מוצג לאף אחד." },
-  { q: "איך עובדות ההתאמות?", a: "כשלשניכם יש לייק הדדי — נפתח צ׳אט ונשלחת התראה בוואטסאפ. ההמלצות היומיות מחושבות לפי תשובות ״זה או זה?״, עיר מגורים וגיל." },
+  { q: "איך עובדות ההתאמות?", a: "כשלשניכם יש לייק הדדי — נפתח ביניכם צ׳אט (ובקרוב תגיע גם התראה בוואטסאפ). ההמלצות היומיות מחושבות לפי תשובות ״זה או זה?״, עיר מגורים וגיל." },
   { q: "אפשר להשתמש מהמחשב?", a: "כן. MELA עובדת בכל דפדפן, ובטלפון אפשר להוסיף אותה למסך הבית ולהשתמש בה כמו באפליקציה." },
   { q: "כבר נרשמתי — איך נכנסים?", a: "לוחצים ״כניסה״, מזינים את אותו מייל ומקבלים קוד. ההתחברות נשמרת במכשיר ל־30 יום." },
 ];
@@ -97,6 +113,7 @@ export default async function Landing() {
           </Link>
           <nav className="hidden items-center gap-8 text-sm text-mute md:flex">
             <a href="#story" className="hover:text-cream">הסיפור</a>
+            <a href="#about" className="hover:text-cream">על MELA</a>
             <a href="#how" className="hover:text-cream">איך זה עובד</a>
             <a href="#pricing" className="hover:text-cream">מחירים</a>
             <a href="#faq" className="hover:text-cream">שאלות</a>
@@ -224,6 +241,47 @@ export default async function Landing() {
         </div>
       </section>
 
+      {/* ---------- about ---------- */}
+      <section id="about" className="relative scroll-mt-20 overflow-hidden border-t border-line px-5 py-20 md:px-8 md:py-28">
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[380px] max-w-3xl bg-[radial-gradient(60%_60%_at_50%_0%,rgba(229,56,59,0.12),transparent_70%)]" />
+        <div className="relative mx-auto max-w-6xl">
+          <Reveal className="mx-auto max-w-2xl text-center">
+            <p className="eyebrow">על MELA</p>
+            <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">
+              החיבור החכם שלך <span className="gold-text">לאהבה אמיתית</span>
+            </h2>
+            <div className="gold-hairline mx-auto mt-7 w-24" />
+          </Reveal>
+          <div className="mx-auto mt-9 max-w-[40rem] space-y-5 text-center text-[17px] leading-[1.9] text-cream/80 md:text-[18px]">
+            {ABOUT_INTRO.map((t) => (
+              <Reveal key={t}>
+                <p>{t}</p>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal className="mt-14 text-center">
+            <h3 className="font-display text-[1.5rem] font-bold md:text-[1.8rem]">מה עושה את MELA אחרת</h3>
+          </Reveal>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {ABOUT_POINTS.map(({ Icon, t, d }, i) => (
+              <Reveal key={t} delay={i * 0.08}>
+                <li className="surface h-full rounded-[26px] p-6 text-center">
+                  <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-rose/30 bg-rose/[0.08] text-rose">
+                    <Icon size={22} />
+                  </span>
+                  <h4 className="mt-5 text-lg font-semibold">{t}</h4>
+                  <p className="mt-2 text-[14.5px] leading-relaxed text-mute">{d}</p>
+                </li>
+              </Reveal>
+            ))}
+          </ul>
+          <Reveal className="mx-auto mt-14 max-w-2xl text-center">
+            <p className="text-[17px] leading-relaxed text-cream/80 md:text-[18px]">בסוף, אנחנו לא כאן כדי שתעבירו את הזמן בגלילה אינסופית.</p>
+            <p className="font-display mt-2 text-[1.9rem] leading-snug font-bold text-gold-2 md:text-[2.4rem]">אנחנו כאן כדי שתמצאו אהבה.</p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ---------- how it works ---------- */}
       <section id="how" className="scroll-mt-20 border-t border-line bg-gradient-to-b from-fg/[0.02] to-transparent">
         <div className="mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
@@ -264,14 +322,17 @@ export default async function Landing() {
               </h2>
             </Reveal>
             <div className="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2">
-              {FEATURES.map(({ Icon, t, d }, i) => (
+              {FEATURES.map(({ Icon, t, d, soon }, i) => (
                 <Reveal key={t} delay={i * 0.05}>
                   <div className="flex gap-4">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-gold/25 bg-gold/[0.07] text-gold-2">
+                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-gold/25 bg-gold/[0.07] text-gold-2 ${soon ? "opacity-60" : ""}`}>
                       <Icon size={20} />
                     </span>
                     <div>
-                      <h3 className="font-semibold">{t}</h3>
+                      <h3 className="flex flex-wrap items-center gap-2 font-semibold">
+                        {t}
+                        {soon && <SoonBadge />}
+                      </h3>
                       <p className="mt-1 text-[14.5px] leading-relaxed text-mute">{d}</p>
                     </div>
                   </div>
@@ -317,6 +378,7 @@ export default async function Landing() {
                 {[`${FREE_DAILY_LIKES} לייקים ביום`, "בחירה אישית אחת ביום", "צ׳אט מלא עם ההתאמות", "התראת וואטסאפ על התאמה"].map((f) => (
                   <li key={f} className="flex items-center gap-2.5">
                     <Check size={15} className="text-gold" /> {f}
+                    {f.includes("וואטסאפ") && <SoonBadge />}
                   </li>
                 ))}
               </ul>
@@ -415,5 +477,14 @@ export default async function Landing() {
 
       <StickyCta />
     </div>
+  );
+}
+
+/** "Coming soon" sticker for features that aren't live yet. */
+function SoonBadge() {
+  return (
+    <span className="inline-flex -rotate-3 items-center rounded-full border border-rose/50 bg-rose/15 px-2 py-0.5 text-[11px] leading-none font-bold tracking-wide text-[#ffb3b8] shadow-[0_0_14px_rgb(255_77_90/0.25)]">
+      בקרוב
+    </span>
   );
 }
