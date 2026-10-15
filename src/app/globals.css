@@ -616,39 +616,112 @@ html[data-splash="skip"] .mela-splash {
 .hn-heart {
   transform-origin: 50% 55%;
   animation: hn-beat 2.4s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgb(255 214 140 / 0.75)) drop-shadow(0 0 28px rgb(255 160 70 / 0.45));
+  filter: drop-shadow(0 0 10px rgb(255 90 90 / 0.8)) drop-shadow(0 0 30px rgb(229 40 59 / 0.55));
+}
+.hn-ripple {
+  opacity: 0;
+  box-shadow: 0 0 18px rgb(255 77 90 / 0.5), inset 0 0 14px rgb(255 77 90 / 0.35);
+  animation: hn-ripple 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
 }
 .hn-threads {
-  filter: drop-shadow(0 0 3px rgb(255 214 140 / 0.7));
+  filter: drop-shadow(0 0 3px rgb(255 110 110 / 0.75));
 }
 .hn-flow {
   animation: hn-flow linear infinite;
 }
-.hn-node,
+.hn-spark {
+  stroke-dasharray: 0.07 1.2;
+  stroke-dashoffset: 0.07;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px rgb(255 90 100 / 0.9));
+  animation: hn-spark linear infinite;
+}
+.hn-match {
+  animation: hn-match linear infinite;
+}
 .hn-dot {
   animation: hn-twinkle 2.2s ease-in-out infinite;
 }
 .hn-card {
   animation: hn-float ease-in-out infinite;
 }
+.hn-orbit {
+  animation: hn-spin 140s linear infinite;
+}
+.hn-counter {
+  animation: hn-spin 140s linear infinite reverse;
+}
 @keyframes hn-beat {
   0%,
   100% {
     transform: scale(1);
   }
-  14% {
-    transform: scale(1.055);
+  12% {
+    transform: scale(1.07);
   }
-  28% {
+  24% {
+    transform: scale(0.99);
+  }
+  36% {
+    transform: scale(1.04);
+  }
+  50% {
     transform: scale(1);
   }
-  42% {
-    transform: scale(1.03);
+}
+@keyframes hn-ripple {
+  0% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
   }
 }
 @keyframes hn-flow {
   to {
     stroke-dashoffset: -280;
+  }
+}
+/* Each member's spark: travels heart → card in the first ~6% of the cycle, then rests until its next turn. */
+@keyframes hn-spark {
+  0% {
+    stroke-dashoffset: 0.07;
+    opacity: 1;
+  }
+  6% {
+    stroke-dashoffset: -1;
+    opacity: 1;
+  }
+  6.1%,
+  100% {
+    stroke-dashoffset: -1;
+    opacity: 0;
+  }
+}
+/* …and the card lights up as the spark arrives. */
+@keyframes hn-match {
+  0%,
+  4% {
+    box-shadow: 0 0 10px rgb(255 90 100 / 0.3), 0 6px 16px rgb(0 0 0 / 0.45);
+    transform: scale(1);
+    border-color: rgb(255 138 138 / 0.6);
+  }
+  7% {
+    box-shadow: 0 0 0 2px rgb(255 110 120 / 0.9), 0 0 26px rgb(255 77 90 / 0.95), 0 6px 16px rgb(0 0 0 / 0.45);
+    transform: scale(1.12);
+    border-color: #ffd0d0;
+  }
+  16%,
+  100% {
+    box-shadow: 0 0 10px rgb(255 90 100 / 0.3), 0 6px 16px rgb(0 0 0 / 0.45);
+    transform: scale(1);
+    border-color: rgb(255 138 138 / 0.6);
   }
 }
 @keyframes hn-twinkle {
@@ -670,5 +743,10 @@ html[data-splash="skip"] .mela-splash {
   }
   66% {
     transform: translate3d(-1.5px, 3px, 0) rotate(-0.5deg);
+  }
+}
+@keyframes hn-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

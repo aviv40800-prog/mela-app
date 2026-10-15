@@ -173,7 +173,7 @@ export default async function Landing() {
           </ul>
         </Reveal>
         {/* phones: the network below the buttons */}
-        <div className="relative mx-auto h-[480px] max-w-md md:hidden">
+        <div className="relative mx-auto h-[420px] max-w-md md:hidden">
           <HeroNetwork variant="compact" />
         </div>
       </section>
