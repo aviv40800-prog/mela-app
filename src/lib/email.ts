@@ -145,7 +145,7 @@ export function codeEmail(code: string): { subject: string; html: string; text: 
     </td></tr>
     <tr><td align="center" style="padding:24px 28px 0;color:#2a1c12">
       <div style="font-size:20px;font-weight:bold">קוד הכניסה שלך</div>
-      <div style="font-size:15px;color:#6b5848;margin-top:8px">הקלד/י את הקוד באפליקציה כדי להמשיך</div>
+      <div style="font-size:15px;color:#6b5848;margin-top:8px">הקלד/י את הקוד באתר כדי להמשיך</div>
     </td></tr>
     <tr><td align="center" style="padding:22px 28px">
       <div dir="ltr" style="display:inline-block;background:#ffffff;border:2px solid #d4b35f;border-radius:16px;padding:16px 26px;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:4px;color:#2a1c12">${digits}</div>
@@ -154,7 +154,7 @@ export function codeEmail(code: string): { subject: string; html: string; text: 
       הקוד תקף ל־5 דקות.<br>אם לא ביקשת קוד, אפשר פשוט להתעלם מהמייל הזה.
     </td></tr>
   </table>
-  <div style="font-size:12px;color:#a3917c;margin-top:16px">MELA · אפליקציית ההיכרויות של הקהילה</div>
+  <div style="font-size:12px;color:#a3917c;margin-top:16px">MELA · פלטפורמת ההיכרויות של הקהילה</div>
 </td></tr></table></body></html>`,
   };
 }

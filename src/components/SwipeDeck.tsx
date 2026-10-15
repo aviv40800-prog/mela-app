@@ -144,7 +144,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
     const fresh = source === "discover" && swipes === 0;
     const invite = async () => {
       const url = window.location.origin;
-      const text = "הצטרפו אליי ל־MELA — אפליקציית ההיכרויות של הקהילה. אהבה עם שורשים 🤎";
+      const text = "הצטרפו אליי ל־MELA — פלטפורמת ההיכרויות של הקהילה. אהבה עם שורשים 🤎";
       try {
         if (navigator.share) return void (await navigator.share({ title: "MELA", text, url }));
       } catch {

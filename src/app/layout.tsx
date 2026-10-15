@@ -7,14 +7,14 @@ import { MotionProvider } from "@/components/MotionProvider";
 import { Splash } from "@/components/Splash";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://mela-production-e3fb.up.railway.app";
-const DESCRIPTION = "אפליקציית ההיכרויות לצעירים וצעירות מהקהילה האתיופית־ישראלית שמחפשים קשר אמיתי — עם מישהו שמבין מאיפה הם באים.";
+const DESCRIPTION = "פלטפורמת ההיכרויות של בני העדה — לצעירים וצעירות מהקהילה האתיופית־ישראלית שמחפשים קשר אמיתי — עם מישהו שמבין מאיפה הם באים.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "MELA — אהבה עם שורשים", template: "%s · MELA" },
   description: DESCRIPTION,
   applicationName: "MELA",
-  keywords: ["היכרויות", "אתיופים", "יוצאי אתיופיה", "אפליקציית היכרויות", "MELA", "בני העדה", "זוגיות"],
+  keywords: ["היכרויות", "אתיופים", "יוצאי אתיופיה", "אפליקציית היכרויות", "אתר היכרויות", "MELA", "בני העדה", "זוגיות"],
   openGraph: {
     type: "website",
     locale: "he_IL",

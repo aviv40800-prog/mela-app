@@ -15,7 +15,7 @@ export type Quota = {
   share?: { shares: number; needed: number; bonus: number; claimed: boolean };
 };
 
-const INVITE_TEXT = "מצאתי אפליקציית היכרויות של הקהילה — MELA, אהבה עם שורשים. בואו להצטרף, זה בחינם 🤎";
+const INVITE_TEXT = "מצאתי פלטפורמת היכרויות של הקהילה — MELA, אהבה עם שורשים. בואו להצטרף, זה בחינם 🤎";
 
 /** Opens the native share sheet (or WhatsApp). Resolves false if the member cancelled. */
 async function shareInvite(): Promise<boolean> {

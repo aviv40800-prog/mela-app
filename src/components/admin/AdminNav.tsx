@@ -56,7 +56,7 @@ export function AdminNav({ name, superAdmin = false }: { name: string; superAdmi
             <ArrowRight size={13} /> לדף הבית
           </Link>
           <Link href="/discover" className="mt-2 flex items-center gap-1 text-gold-2 hover:underline">
-            <ArrowRight size={13} /> לאפליקציה
+            <ArrowRight size={13} /> לאתר
           </Link>
           <button onClick={logout} className="mt-3 flex items-center gap-1.5 rounded-full border border-rose/40 px-3 py-1.5 text-cream transition hover:bg-rose/10">
             <LogOut size={13} /> התנתקות

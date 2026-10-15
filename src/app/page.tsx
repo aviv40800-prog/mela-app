@@ -17,6 +17,7 @@ import {
   Gem,
   UserRoundCheck,
   Users,
+  Smartphone,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { HeroNetwork } from "@/components/landing/HeroNetwork";
@@ -67,12 +68,13 @@ const FEATURES = [
   { Icon: HeartHandshake, t: "״זה או זה?״", d: "אינג׳רה או פיתה? חתונה של 800 או אינטימית? כל תשובה מחדדת את ההתאמות." },
   { Icon: MessageCircleHeart, t: "תגובה ישירה על תשובה", d: "ראיתם תשובה שנגעה בכם? שלחו לייק עם תגובה עליה — הדרך הכי טבעית להתחיל." },
   { Icon: Bell, t: "התראה בוואטסאפ", d: "יש התאמה? תדעו מיד, ישר לוואטסאפ, בלי לפספס אף אחד.", soon: true },
+  { Icon: Smartphone, t: "אפליקציה לנייד", d: "אפליקציית MELA לאנדרואיד ול־iPhone בדרך. עד אז — מוסיפים את האתר למסך הבית ומשתמשים בו בדיוק כמו באפליקציה.", soon: true },
 ];
 
 // "על MELA" — about the product, alongside the founders' story.
 const ABOUT_INTRO = [
   "כמה פעמים מצאת את עצמך גולל/ת וגולל/ת באפליקציות היכרויות, עובר/ת על מאות פרופילים שטחיים ומבזבז/ת ערבים שלמים — בלי שנוצרה אפילו שיחה אחת אמיתית? כמה פעמים זה נתקע שוב ב״היי, מה נשמע?״ שנגמר בכלום? נמאס מראיונות עבודה ומסרט נע של סווייפים? בדיוק בשביל זה הקמנו את MELA.",
-  "MELA היא אפליקציית היכרויות שנבנתה כדי לשנות את כל מה שידעת על דייטינג דיגיטלי. במקום להשאיר אותך לבד מול מסך ריק, אנחנו רותמים את הטכנולוגיה החכמה ביותר כדי שתעבוד בשבילך מאחורי הקלעים — ואת הזמן שלך נשאיר לאנשים.",
+  "MELA היא פלטפורמת היכרויות שנבנתה כדי לשנות את כל מה שידעת על דייטינג דיגיטלי. במקום להשאיר אותך לבד מול מסך ריק, אנחנו רותמים את הטכנולוגיה החכמה ביותר כדי שתעבוד בשבילך מאחורי הקלעים — ואת הזמן שלך נשאיר לאנשים.",
 ];
 const ABOUT_POINTS = [
   { Icon: Sparkles, t: "שדכנית חכמה בגובה העיניים", d: "בלי טפסים משעממים ופרופילים יבשים. ה־AI של MELA מנהל איתך שיחת היכרות קלילה וטבעית, לומד מי את/ה באמת — ומבין מי יקבל אותך בלב פתוח." },
@@ -93,7 +95,7 @@ const FAQ = [
   { q: "מה מקבלים ב־Premium ובכמה?", a: `לייקים ללא הגבלה, כל 3 הבחירות היומיות, ולראות מי כבר אהב/ה אתכם. ₪49 לחודש או ₪119 לשלושה חודשים (כ־₪40 לחודש), עם ${TRIAL_DAYS} ימי ניסיון חינם וביטול בכל עת.` },
   { q: "למה צריך מייל?", a: "כדי לוודא שכל פרופיל שייך לאדם אמיתי. המייל משמש רק לאימות ולעדכונים — הוא לא מוצג לאף אחד." },
   { q: "איך עובדות ההתאמות?", a: "כשלשניכם יש לייק הדדי — נפתח ביניכם צ׳אט (ובקרוב תגיע גם התראה בוואטסאפ). ההמלצות היומיות מחושבות לפי תשובות ״זה או זה?״, עיר מגורים וגיל." },
-  { q: "אפשר להשתמש מהמחשב?", a: "כן. MELA עובדת בכל דפדפן, ובטלפון אפשר להוסיף אותה למסך הבית ולהשתמש בה כמו באפליקציה." },
+  { q: "אפשר להשתמש מהמחשב?", a: "כן. MELA עובדת בכל דפדפן, במחשב ובטלפון. בטלפון אפשר גם להוסיף אותה למסך הבית ולהשתמש בה כמו באפליקציה, ואפליקציה ייעודית לנייד כבר בדרך." },
   { q: "כבר נרשמתי — איך נכנסים?", a: "לוחצים ״כניסה״, מזינים את אותו מייל ומקבלים קוד. ההתחברות נשמרת במכשיר ל־30 יום." },
 ];
 
@@ -146,7 +148,7 @@ export default async function Landing() {
             <span className="gold-text animate-shimmer">הסיפור שלכם</span> מתחיל
           </h1>
           <p className="mx-auto mt-5 max-w-md text-[16px] leading-relaxed text-mute md:text-lg">
-            אפליקציית ההיכרויות הראשונה שנבנתה במיוחד לצעירות וצעירים מהקהילה האתיופית־ישראלית — לאנשים שמחפשים קשר אמיתי, עם מישהו שמבין מאיפה הם באים.
+            פלטפורמת ההיכרויות הראשונה שנבנתה במיוחד עבור בני העדה — צעירות וצעירים מהקהילה האתיופית־ישראלית שמחפשים קשר אמיתי, עם מישהו שמבין מאיפה הם באים.
           </p>
           <div className="mx-auto mt-5 flex max-w-md items-start gap-3 rounded-2xl border border-rose/30 bg-gradient-to-l from-rose/[0.10] to-gold/[0.05] px-4 py-3 text-right">
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-rose/15 text-rose">
@@ -330,9 +332,9 @@ export default async function Landing() {
             <Reveal>
               <p className="eyebrow">מה מחכה לכם בפנים</p>
               <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">
-                לא עוד אפליקציה.
+                לא עוד אתר היכרויות.
                 <br />
-                <span className="gold-text">אפליקציה שמבינה אתכם.</span>
+                <span className="gold-text">פלטפורמה שמבינה אתכם.</span>
               </h2>
             </Reveal>
             <div className="mt-10 grid gap-x-8 gap-y-7 sm:grid-cols-2">
@@ -375,7 +377,7 @@ export default async function Landing() {
         <Reveal className="text-center">
           <p className="eyebrow">מחירים פשוטים</p>
           <h2 className="font-display mt-3 text-[2.1rem] leading-tight font-bold md:text-[2.8rem]">מתחילים בחינם. משדרגים כשמתאים.</h2>
-          <p className="mx-auto mt-4 max-w-lg text-mute">נרשמים בחינם ובלי כרטיס אשראי. רוצים יותר? משדרגים ל־Premium מתוך האפליקציה, מתי שמתאים לכם.</p>
+          <p className="mx-auto mt-4 max-w-lg text-mute">נרשמים בחינם ובלי כרטיס אשראי. רוצים יותר? משדרגים ל־Premium מתוך החשבון, מתי שמתאים לכם.</p>
         </Reveal>
         <div className="mt-12 grid gap-4 md:grid-cols-3">
           <Reveal>
@@ -427,7 +429,7 @@ export default async function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-8 rounded-2xl border border-line-2 px-4 py-3 text-center text-[13px] text-mute">שדרוג מתוך האפליקציה, בכל רגע</p>
+                  <p className="mt-8 rounded-2xl border border-line-2 px-4 py-3 text-center text-[13px] text-mute">שדרוג מתוך החשבון, בכל רגע</p>
                 </div>
               </Reveal>
             );
