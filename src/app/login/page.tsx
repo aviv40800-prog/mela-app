@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/AuthShell";
-import { PhoneAuth } from "@/components/PhoneAuth";
+import { LoginForm } from "@/components/LoginForm";
 import { getSessionUserId } from "@/lib/session";
 import { getUser } from "@/lib/users";
 import { nextOnboardingStep } from "@/lib/onboarding";
@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <AuthShell>
       <Suspense>
-        <PhoneAuth mode="login" />
+        <LoginForm />
       </Suspense>
     </AuthShell>
   );

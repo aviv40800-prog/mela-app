@@ -31,6 +31,10 @@ export type User = {
   partner_religiosity: PartnerReligiosity | null;
   marital_status: MaritalStatus | null;
   looking_for: LookingFor | null;
+  /** Sign-in name (unique, case-insensitive); null until the member sets one. */
+  username: string | null;
+  /** Whether a password is set. The hash itself never leaves lib/auth. */
+  has_password: boolean;
   created_at: string;
 };
 
@@ -54,16 +58,31 @@ export type PublicProfile = {
   prompts: Prompt[];
 };
 
-type Row = Omit<User, "photos" | "is_verified" | "is_demo" | "is_banned" | "email_verified"> & {
+type Row = Omit<User, "photos" | "is_verified" | "is_demo" | "is_banned" | "email_verified" | "has_password"> & {
   photos: string;
   is_verified: number;
   is_demo: number;
   is_banned: number;
   email_verified: number;
+  password_hash: string | null;
+  failed_logins: number;
+  locked_until: number | null;
+  code_verified_at: number | null;
 };
 
 function hydrate(row: Row): User {
-  return { ...row, photos: JSON.parse(row.photos), is_verified: !!row.is_verified, is_demo: !!row.is_demo, is_banned: !!row.is_banned, email_verified: !!row.email_verified };
+  // credentials stay in the database: User objects reach pages and API responses
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password_hash, failed_logins, locked_until, code_verified_at, ...rest } = row;
+  return {
+    ...rest,
+    has_password: !!password_hash,
+    photos: JSON.parse(row.photos),
+    is_verified: !!row.is_verified,
+    is_demo: !!row.is_demo,
+    is_banned: !!row.is_banned,
+    email_verified: !!row.email_verified,
+  };
 }
 
 export function getUser(id: number): User | null {

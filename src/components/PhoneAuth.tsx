@@ -23,7 +23,7 @@ function formatPhone(raw: string) {
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
-type Mode = "signup" | "login";
+type Mode = "signup" | "reset";
 
 const COPY = {
   signup: {
@@ -31,15 +31,15 @@ const COPY = {
     sub: "נשלח אליו קוד אימות בן 6 ספרות. המייל נשאר פרטי ולא יוצג לאף אחד.",
     cta: "שלחו לי קוד",
   },
-  login: {
-    title: "ברוך/ה השב/ה",
-    sub: "הזינו את המייל שלכם ונשלח קוד כניסה.",
-    cta: "שלחו קוד כניסה",
+  reset: {
+    title: "שכחת סיסמה?",
+    sub: "הזינו את המייל שאיתו נרשמתם, ונשלח קוד לבחירת סיסמה חדשה.",
+    cta: "שלחו לי קוד",
   },
 };
 const PHONE_COPY = {
   title: "כניסה עם טלפון",
-  sub: "למי שנרשם עם מספר נייד — נשלח קוד כניסה ב־SMS.",
+  sub: "למי שנרשם עם מספר נייד: נשלח קוד ב־SMS.",
   cta: "שלחו קוד כניסה",
 };
 
@@ -54,7 +54,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
   const params = useSearchParams();
   const [notice, setNotice] = useState<string | null>(null);
   const [usePhone, setUsePhone] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(params.get("email") ?? "");
   const [phone, setPhone] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -105,20 +105,15 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
     try {
       const res = await api<{ next: string; isNew: boolean }>("/api/auth/otp/verify", {
         method: "POST",
-        json: usePhone ? { phone: sentTo, code } : { email: sentTo, code },
+        json: usePhone ? { phone: sentTo, code, purpose: mode } : { email: sentTo, code, purpose: mode },
       });
       setVerified(true);
       haptic([10, 40, 20]);
       const wanted = params.get("next");
       // Only same-site paths, and only once onboarding is done.
       const dest = wanted && wanted.startsWith("/") && !wanted.startsWith("//") && res.next === "/discover" ? wanted : res.next;
-      if (mode === "login" && res.isNew) {
-        setNotice(`לא מצאנו חשבון קיים עם ${usePhone ? "המספר" : "המייל"} הזה — פתחנו לך חשבון חדש. נשלים פרופיל בכמה צעדים.`);
-        setTimeout(() => router.replace(dest), 2600);
-      } else {
-        if (mode === "signup" && !res.isNew) setNotice("כבר יש לך חשבון — מחברים אותך 👋");
-        setTimeout(() => router.replace(dest), mode === "signup" && !res.isNew ? 1400 : 650);
-      }
+      if (mode === "signup" && !res.isNew) setNotice("כבר יש לך חשבון — מחברים אותך 👋");
+      setTimeout(() => router.replace(dest), mode === "signup" && !res.isNew ? 1400 : 650);
     } catch (e) {
       setErr((e as Error).message);
       haptic([30, 40, 30]);
@@ -151,7 +146,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {mode === "signup" ? <OnboardingProgress step={sentTo ? 2 : 1} label={sentTo ? "אימות קוד" : "אימייל"} /> : <p className="eyebrow text-center">כניסה לחשבון</p>}
+      {mode === "signup" ? <OnboardingProgress step={1} label={sentTo ? "אימות קוד" : "אימייל"} /> : <p className="eyebrow text-center">איפוס סיסמה</p>}
 
       <AnimatePresence mode="wait" initial={false}>
         {!sentTo ? (
@@ -232,7 +227,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
               <button className="btn-gold w-full text-[17px]" disabled={busy || !valid}>
                 {busy ? <Loader2 className="animate-spin" size={18} /> : copy.cta}
               </button>
-              {mode === "login" && (
+              {mode === "reset" && (
                 <button
                   type="button"
                   onClick={() => {
@@ -242,7 +237,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                   className="mx-auto mt-4 flex items-center gap-1.5 text-sm text-mute transition hover:text-gold-2"
                 >
                   {usePhone ? <Mail size={15} /> : <Smartphone size={15} />}
-                  {usePhone ? "כניסה עם אימייל" : "נרשמתם עם מספר טלפון? כניסה עם טלפון"}
+                  {usePhone ? "איפוס עם אימייל" : "נרשמתם עם מספר טלפון? איפוס עם טלפון"}
                 </button>
               )}
               <p className="mt-5 text-center text-sm text-mute">
@@ -255,13 +250,14 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                   </>
                 ) : (
                   <>
-                    חדשים ב־MELA?{" "}
-                    <Link href="/signup" className="font-semibold text-gold-2 underline-offset-4 hover:underline">
-                      הרשמה חינם
+                    נזכרת?{" "}
+                    <Link href="/login" className="font-semibold text-gold-2 underline-offset-4 hover:underline">
+                      חזרה לכניסה
                     </Link>
                   </>
                 )}
               </p>
+              {mode === "signup" && (
               <p className="mt-4 text-center text-[11px] leading-relaxed text-mute-2">
                 בהמשך את/ה מאשר/ת את{" "}
                 <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-cream">
@@ -273,6 +269,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
                 </a>
                 . הגיל המינימלי הוא 18.
               </p>
+              )}
             </div>
           </motion.form>
         ) : (

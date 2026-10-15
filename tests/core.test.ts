@@ -232,9 +232,12 @@ describe("demo seed", () => {
 describe("freemium", () => {
   it("lets a complete profile in without a subscription", async () => {
     const { nextOnboardingStep } = await import("@/lib/onboarding");
+    const { setCredentials } = await import("@/lib/auth");
     const u = member("חינמי", "male");
     expect(getSubscription(u.id)).toBeNull();
-    expect(nextOnboardingStep(u)).toBe("/discover");
+    expect(nextOnboardingStep(u)).toBe("/onboarding/account"); // first: a username + password
+    setCredentials(u.id, { username: "chinami", password: "Abcdef12" });
+    expect(nextOnboardingStep(getUser(u.id)!)).toBe("/discover");
   });
 
   it("caps free likes per day; premium is unlimited", async () => {

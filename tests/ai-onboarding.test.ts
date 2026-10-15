@@ -17,7 +17,15 @@ vi.mock("@anthropic-ai/sdk", () => ({
 }));
 
 import { db } from "@/lib/db";
-import { createEmailUser, getUser } from "@/lib/users";
+import { createEmailUser, getUser, type User } from "@/lib/users";
+import { setCredentials } from "@/lib/auth";
+
+/** Members choose a username + password right after the email code, before the chat. */
+let seq = 0;
+function withPassword(u: User): User {
+  setCredentials(u.id, { username: `tester${++seq}`, password: "Abcdef12" });
+  return getUser(u.id)!;
+}
 
 const empty = { full_name: null, age: null, gender: null, seeking: null, location: null, occupation: null, religiosity: null, partner_religiosity: null, marital_status: null, looking_for: null, prompt_answers: [] };
 
@@ -31,7 +39,7 @@ describe("AI onboarding chat", () => {
   it("builds a validated profile from the conversation, chips, bio approval and photos", async () => {
     const ai = await import("@/lib/ai-onboarding");
     const { nextOnboardingStep } = await import("@/lib/onboarding");
-    const u = createEmailUser("chat@example.com");
+    const u = withPassword(createEmailUser("chat@example.com"));
     expect(nextOnboardingStep(u)).toBe("/onboarding/chat");
     expect(ai.getChat(u).messages).toHaveLength(2); // greeting
 
@@ -98,7 +106,7 @@ describe("AI onboarding chat", () => {
   it("falls back to the form without an API key", async () => {
     const { nextOnboardingStep } = await import("@/lib/onboarding");
     delete process.env.ANTHROPIC_API_KEY;
-    expect(nextOnboardingStep(getUser(createEmailUser("form@example.com").id)!)).toBe("/onboarding/profile");
+    expect(nextOnboardingStep(withPassword(createEmailUser("form@example.com")))).toBe("/onboarding/profile");
   });
 
   it("logs cost per call and caps new AI chats per day", async () => {

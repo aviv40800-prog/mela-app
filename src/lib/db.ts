@@ -268,6 +268,14 @@ export function migrate(db: DatabaseSync) {
   if (!cols.has("religiosity")) db.exec("ALTER TABLE users ADD COLUMN religiosity TEXT");
   if (!cols.has("partner_religiosity")) db.exec("ALTER TABLE users ADD COLUMN partner_religiosity TEXT");
   if (!cols.has("marital_status")) db.exec("ALTER TABLE users ADD COLUMN marital_status TEXT");
+  // Username + password sign-in (the emailed code is only for sign-up and "forgot password").
+  if (!cols.has("username")) db.exec("ALTER TABLE users ADD COLUMN username TEXT");
+  if (!cols.has("password_hash")) db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+  if (!cols.has("failed_logins")) db.exec("ALTER TABLE users ADD COLUMN failed_logins INTEGER NOT NULL DEFAULT 0");
+  if (!cols.has("locked_until")) db.exec("ALTER TABLE users ADD COLUMN locked_until INTEGER");
+  // When the member last proved their email with a code: allows setting a new password for a short while.
+  if (!cols.has("code_verified_at")) db.exec("ALTER TABLE users ADD COLUMN code_verified_at INTEGER");
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username COLLATE NOCASE)");
   if (!cols.has("looking_for")) db.exec("ALTER TABLE users ADD COLUMN looking_for TEXT");
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));

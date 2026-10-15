@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, LayoutDashboard, Mail, MapPin, MessageSquareQuote, Phone, Scale, UserRound } from "lucide-react";
+import { BadgeCheck, Crown, Camera, ChevronLeft, Feather, KeyRound, LayoutDashboard, Mail, MapPin, MessageSquareQuote, Phone, Scale, UserRound } from "lucide-react";
 import { requirePageUser } from "@/lib/guard";
 import { isAdmin } from "@/lib/admin";
 import { getSubscription, hasAccess } from "@/lib/billing";
@@ -229,6 +229,13 @@ export default async function ProfilePage() {
             </div>
             <BadgeCheck size={18} className="text-gold-2" />
           </div>
+          <Divider />
+          <Row
+            href={`/login/forgot${user.email ? `?email=${encodeURIComponent(user.email)}` : ""}`}
+            icon={<KeyRound size={18} />}
+            title="שם משתמש וסיסמה"
+            subtitle={user.username ? `${user.username} · שינוי סיסמה` : "שינוי סיסמה"}
+          />
           {isAdmin(user) && (
             <>
               <Divider />
