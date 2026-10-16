@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { ArrowLeft, Camera, Loader2, PenLine, RefreshCw } from "lucide-react";
+import { ArrowLeft, Camera, Check, Loader2, PenLine, RefreshCw } from "lucide-react";
 import { api, haptic } from "@/lib/client";
 import { compressImage, uploadPhoto } from "@/lib/upload";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY } from "@/lib/content";
 import type { ChatView, Draft } from "@/lib/ai-onboarding";
 
-const TOTAL = 12;
+const TOTAL = 13; // FIELD_ORDER.length
 const HEART = "M120 212 C48 160 4 116 4 66 C4 30 32 4 66 4 C92 4 110 18 120 38 C130 18 148 4 174 4 C208 4 236 30 236 66 C236 116 192 160 120 212 Z";
 const bubbleIn = { initial: { opacity: 0, y: 10, scale: 0.94 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: "spring" as const, stiffness: 420, damping: 32 } };
 
@@ -156,6 +156,7 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
           {/* inline widgets */}
           {!busy && chat.ask === "bio" && chat.draft.bio_draft && <BioCard draft={chat.draft.bio_draft} onAnswer={(b) => send(b)} />}
           {!busy && chat.ask === "photos" && <PhotoPicker onDone={(photos) => send({ photos })} />}
+          {!busy && chat.ask === "details" && chat.details.length > 0 && <DetailsCard rows={chat.details} onDone={(details, summary) => send({ details }, summary)} />}
           {chat.done && (
             <motion.button {...bubbleIn} onClick={() => setRevealed(true)} className="btn-gold mt-3 w-full">
               לראות את הפרופיל שלי
@@ -173,7 +174,7 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
       </main>
 
       {/* composer — anchored to the bottom of the visible screen, above the home indicator / keyboard */}
-      {!chat.done && chat.ask !== "photos" && !(chat.ask === "bio" && chat.draft.bio_draft) && (
+      {!chat.done && chat.ask !== "photos" && chat.ask !== "details" && !(chat.ask === "bio" && chat.draft.bio_draft) && (
         <footer className="shrink-0 border-t border-line bg-ink/95 px-4 pt-2.5 pb-[max(env(safe-area-inset-bottom),12px)] backdrop-blur-xl">
           <AnimatePresence>
             {!busy && chat.choices.length > 0 && (
@@ -233,6 +234,47 @@ function useVisualViewport() {
     };
   }, []);
   return vp;
+}
+
+/** Quick details in one card: a row of chips per question, then one tap to continue. */
+function DetailsCard({ rows, onDone }: { rows: ChatView["details"]; onDone: (details: Record<string, string>, summary: string) => void }) {
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const complete = rows.every((r) => picked[r.field]);
+  const summary = rows.map((r) => r.options.find((o) => o.value === picked[r.field])?.label).filter(Boolean).join(" · ");
+  return (
+    <motion.div {...bubbleIn} className="flex flex-col gap-3.5 rounded-[20px] border border-gold/30 bg-fg/[0.04] p-3.5" role="group" aria-label="פרטים בלחיצה">
+      {rows.map((r, ri) => (
+        <motion.fieldset key={r.field} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0, transition: { delay: ri * 0.06 } }}>
+          <legend className="mb-1.5 text-[12.5px] text-gold-3">{r.label}</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {r.options.map((o) => {
+              const on = picked[r.field] === o.value;
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    haptic(4);
+                    setPicked((p) => ({ ...p, [r.field]: o.value }));
+                  }}
+                  className={`flex min-h-10 items-center gap-1 rounded-full border px-3.5 py-1.5 text-[14px] transition ${
+                    on ? "border-gold bg-gold/25 text-cream" : "border-gold/30 bg-gold/[0.06] text-gold-3 hover:border-gold/60"
+                  }`}
+                >
+                  {on && <Check size={14} strokeWidth={2.6} />}
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        </motion.fieldset>
+      ))}
+      <button onClick={() => complete && onDone(picked, summary)} disabled={!complete} className="btn-gold w-full !py-3 text-[15px] disabled:opacity-40">
+        המשך
+      </button>
+    </motion.div>
+  );
 }
 
 function BioCard({ draft, onAnswer }: { draft: string; onAnswer: (b: { bio: "accept" | "other"; text?: string }) => void }) {

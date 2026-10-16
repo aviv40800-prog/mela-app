@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
-import { aiOnboardingAvailable, ChatError, chatTurn, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
+import { aiOnboardingAvailable, ChatError, chatTurn, DETAILS_FIELDS, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
 
 const Input = z.union([
   z.object({ text: z.string().min(1).max(1000) }),
   z.object({ choice: z.object({ field: z.enum(FIELD_ORDER), value: z.string().max(40), label: z.string().max(80) }) }),
+  z.object({ details: z.partialRecord(z.enum(DETAILS_FIELDS), z.string().max(40)) }),
   z.object({ photos: z.array(z.string().max(120)).min(1).max(6) }),
   z.object({ bio: z.enum(["accept", "other"]), text: z.string().max(500).optional() }),
 ]);

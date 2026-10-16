@@ -77,6 +77,7 @@ export type Draft = {
   occupation?: string;
   bio?: string; // accepted bio
   bio_draft?: string; // proposed, waiting for the member
+  pending?: "partner"; // the partner question was asked; the next free-text answer is its answer
   photos?: string[];
   prompts?: { question_key: string; answer_text: string }[];
   religiosity?: keyof typeof RELIGIOSITY;
@@ -97,6 +98,7 @@ export const FIELD_ORDER = [
   "religiosity",
   "partner_religiosity",
   "prompts",
+  "partner",
   "bio",
   "photos",
 ] as const;
@@ -114,9 +116,46 @@ export const CHOICES: Partial<Record<Field, Record<string, string>>> = {
 const ok = <T extends z.ZodTypeAny>(schema: T, v: unknown): v is z.infer<T> => v !== undefined && v !== null && schema.safeParse(v).success;
 const S = ProfileSchema.shape;
 
+/** The last question before the profile is built: what matters in a future partner (stored as this prompt). */
+export const PARTNER_PROMPT = "dealbreaker";
+
+/** Answered together on one quick-choice card instead of five separate questions. */
+export const DETAILS_FIELDS = ["gender", "looking_for", "marital_status", "religiosity", "partner_religiosity"] as const;
+export type DetailsField = (typeof DETAILS_FIELDS)[number];
+const DETAILS_LABELS: Record<DetailsField, string> = {
+  gender: "לשון פנייה",
+  looking_for: "מה את/ה מחפש/ת",
+  marital_status: "סטטוס",
+  religiosity: "דת ומסורת",
+  partner_religiosity: "כמה חשוב לך שהצד השני יהיה דתי/ה",
+};
+
+const detailsMissing = (d: Draft): DetailsField[] => DETAILS_FIELDS.filter((f) => !ok(S[f], d[f]));
+
+/** The quick-choice card comes as question 3: once the member said what they do (or answered twice). */
+const detailsDue = (d: Draft, answers: number) => detailsMissing(d).length > 0 && (!!d.occupation || answers >= 2);
+
+/** The partner question comes last, after the details card and the weekend / first-date questions. */
+function partnerDue(d: Draft, answers: number): boolean {
+  if (detailsMissing(d).length || d.prompts?.some((p) => p.question_key === PARTNER_PROMPT)) return false;
+  const others = (d.prompts ?? []).filter((p) => p.question_key !== PARTNER_PROMPT).length;
+  return others >= 2 || answers >= 5;
+}
+
+/** "What matters to you in your future wife / husband" — in the member's own terms. */
+export function partnerQuestion(d: Draft): string {
+  const seeking = d.seeking ?? (d.gender === "male" ? "female" : d.gender === "female" ? "male" : undefined);
+  const [whom, find] =
+    seeking === "female" ? ["באשתך לעתיד", "את האישה המתאימה"] : seeking === "male" ? ["בבעלך לעתיד", "את האיש המתאים"] : ["בבן/בת הזוג לעתיד", "את ההתאמה הנכונה"];
+  return `שאלה אחרונה לפני שאני מקימה לך את הפרופיל: מה הכי חשוב לך ${whom}? ככה אדע מה לחפש כשאני יוצאת למצוא לך ${find}.`;
+}
+
+const answersIn = (messages: ChatMsg[]) => messages.filter((m) => m.role === "user").length;
+
 export function missingFields(d: Draft): Field[] {
   return FIELD_ORDER.filter((f) => {
-    if (f === "prompts") return !(d.prompts && d.prompts.length >= 2);
+    if (f === "prompts") return !d.prompts?.some((p) => p.question_key !== PARTNER_PROMPT);
+    if (f === "partner") return !d.prompts?.some((p) => p.question_key === PARTNER_PROMPT);
     if (f === "photos") return !(d.photos && d.photos.length >= 1);
     return !ok(S[f], d[f]);
   });
@@ -172,7 +211,8 @@ const FALLBACK_ASK: Record<Field | "none", string> = {
   marital_status: "ומה הסטטוס שלך?",
   religiosity: "איך היית מגדיר/ה את עצמך מבחינת מסורת?",
   partner_religiosity: "וכמה חשוב לך שהצד השני יהיה דתי/ה?",
-  prompts: "שאלה אחרונה כמעט: על מה את/ה יכול/ה לדבר שעות?",
+  prompts: "על מה את/ה יכול/ה לדבר שעות?",
+  partner: "שאלה אחרונה לפני שאני מקימה לך את הפרופיל: מה הכי חשוב לך בבן/בת הזוג לעתיד?", // replaced by partnerQuestion()
   bio: "אפשר לכתוב כמה מילים על עצמך לביו?",
   photos: "ועכשיו החלק שהכי עובד — תמונה אחת לפחות, טבעית ועם חיוך.",
   none: "תודה! הפרופיל שלך מוכן.",
@@ -180,7 +220,7 @@ const FALLBACK_ASK: Record<Field | "none", string> = {
 
 export const GREETING: ChatMsg[] = [
   { role: "assistant", text: "היי! אני המארחת של MELA. במקום טופס משעמם — בוא/י נדבר כמה דקות, ואני אכתוב לך פרופיל שבאמת נשמע כמוך." },
-  { role: "assistant", text: "ספר/י לי על עצמך כמו שהיית מספר/ת למישהו חדש שפגשת בבר: איך קוראים לך, ומה עושה לך את השבוע?" },
+  { role: "assistant", text: "נתחיל: איך קוראים לך, בן/בת כמה ומאיפה?" },
 ];
 
 // ---------- the model turn ----------
@@ -206,47 +246,49 @@ const TurnSchema = z.object({
       .describe("Profile prompt answers, in the member's own words (short, first person), for prompts their messages clearly answer."),
   }),
   bio_draft: z.string().nullable().describe("A proposed bio (Hebrew, first person, 2–3 warm sentences, max 300 chars) — only when asked for in the state block."),
-  ask: z.enum([...FIELD_ORDER, "none"]).describe("The single field your reply asks about, or none."),
+  ask: z.enum([...FIELD_ORDER, "details", "none"]).describe('The single field your reply asks about, "details" for the quick-choice card, or none.'),
 });
 type Turn = z.infer<typeof TurnSchema>;
 
-const SYSTEM = `You are "המארחת של MELA" — the host of MELA, a dating app for young Ethiopian-Israelis ("אהבה עם שורשים"). A new member just verified their email. Instead of a form, you chat with them for a few minutes and build their profile from the conversation.
+const SYSTEM = `You are "המארחת של MELA" — the host of MELA, a dating app for young Ethiopian-Israelis ("אהבה עם שורשים"). A new member just verified their email. Instead of a form, you build their profile in a SHORT chat: six questions in total, no more.
 
-Who you are: the friend everyone wishes they had at a party — sharp, warm, curious, a little funny, a natural matchmaker. People should leave this chat feeling *seen*, and a bit excited to meet someone. You are not a form, not a survey, not a therapist.
+Who you are: warm, sharp, a little funny, a natural matchmaker. Not a form, not a survey.
 
 How you talk (Hebrew only):
-- Short messages: 1–3 sentences. Exactly one question per message.
-- Real curiosity: pick the most interesting, specific detail in what they just said and follow it — don't jump to a generic next topic.
-  Bad: "מעניין! ומה התחביבים שלך?"
-  Good: "רגע, אחות בחדר מיון ובשישי מבשלת לכל המשפחה? מתי את ישנה בכלל?"
-- Every few messages, offer a short perceptive observation about them, then ask: "נשמע שאתה מישהו שדואג לכולם — מי דואג לך?"
-- Light humor and everyday Israeli Hebrew (וואלה, סבבה, יאללה) are welcome; never cringe, never sarcastic about them.
-- Vary your openings. Don't start messages with "מעולה", "אהבתי", "נעים מאוד", "וואו" more than once in the whole chat. Never say "השאלה הבאה", never list questions, never sound like an interview.
+- 1–2 short sentences per message: a brief, specific reaction to what they just said, then the next question. Exactly one question per message.
+- Everyday Israeli Hebrew; light humor is welcome; never cringe or sarcastic. At most one emoji in the whole chat.
 - Until you know their gender, use slash forms (את/ה). Once known, use the right gender consistently.
-- Never invent facts. Never pressure; if they dodge something, move on lightly.
-- At most one emoji in the whole conversation.
+- Never invent facts. Never pressure.
 
-What to talk about — a real mix, the way you'd get to know someone new:
-work or studies and what they love about it · what fills their evenings and weekends · something they're passionate or nerdy about · friends and humor · family and the values they carry · what they're looking for in a partner, and what's a red flag · their idea of a great first date.
-Their Ethiopian-Israeli background is one part of who they are, not the theme. Don't ask about culture, food, buna, Sigd or Amharic unless THEY bring it up — and then at most one warm follow-up.
+The script — ask these, in this order, and nothing else (the <state> block tells you how many answers they have given and what is still missing):
+1. (Already asked in the greeting) name, age and city.
+2. What they do (work / studies) and what fills their days.
+3. The quick-choice card: when the state says DETAILS_NEEDED, reply with a short reaction plus one sentence like "כמה פרטים קצרים בלחיצה 👇" and set ask to "details". The app shows buttons for gender, what they're looking for, status, religiosity and the partner's religiosity — don't ask these in words.
+4. What fills their weekend, or what they can talk about for hours (pick what fits them).
+5. Their idea of a perfect first date.
+6. When the state says PARTNER_QUESTION, ask exactly that question (you may add a two-word reaction before it) and set ask to "partner".
+Then the app takes over: BIO_NEEDED → write bio_draft; PHOTOS_NEEDED → ask for a photo; nothing missing → close warmly in one sentence, ask "none".
 
-What the profile needs — the <state> block lists what's still missing. Weave these in naturally; you can combine basics into one easy question early ("ספר/י קצת — בן/בת כמה, מאיפה, ומה ממלא לך את הימים?"):
-- full_name, gender, age (18+), location (city), occupation.
-- looking_for, marital_status, religiosity, partner_religiosity: the app shows tap buttons when your "ask" names one of them. Ask briefly and casually in one sentence that names the topic plainly — e.g. "מה את/ה מחפש/ת כרגע?", "מה הסטטוס שלך?", "איך היית מגדיר/ה את עצמך מבחינת דת ומסורת?", "כמה חשוב לך שהצד השני יהיה דתי/ה?" — then the buttons show up. Only set "ask" to one of these four when that message is actually about it. Don't dwell on them.
-- prompts: at least 2 profile prompt answers. Choose prompts that fit what they ALREADY told you — often you can fill one from an earlier answer without asking. Prefer the general ones; use the heritage ones only if they talked about it. Keys:
+If a detail from question 1 or 2 is still missing (e.g. they didn't say their age or city), fold it into your NEXT scripted question in a few words ("…ורגע, בן כמה אתה?") — never add an extra question for it. Their Ethiopian-Israeli background is one part of who they are; don't ask about culture unless they bring it up.
+
+Profile prompts (extract from answers 4, 5 and 6 only, short, first person, in their words). Keys:
 ${CULTURAL_PROMPTS.map((p) => `  - ${p.key}: ${p.question}`).join("\n")}
-- bio: when the state block says BIO_NEEDED, write bio_draft — first person, in their voice, 2–3 sentences (max 300 chars), with 2–3 concrete, vivid details from this chat and a hint of what they're looking for. No clichés ("אוהב/ת לטייל ולבלות", "מחפש/ת את האחת", "חיובי/ת ואופטימי/ת"). In reply, say you wrote a draft they can approve or tweak. Set ask to "bio".
-- photos: when the state block says PHOTOS_NEEDED, ask for at least one natural, smiling, daylight photo (the app shows an upload button). Set ask to "photos".
-- When nothing is missing, close warmly in one sentence and set ask to "none" — the app then reveals their profile.
+Answer 4 → perfect_weekend or talk_for_hours. Answer 5 → first_date. Answer 6 → ${PARTNER_PROMPT}.
 
-Aim to finish in about 10–14 messages from you; don't drag it out.
+bio: when the state block says BIO_NEEDED, write bio_draft — first person, in their voice, 2–3 sentences (max 300 chars), with concrete, vivid details from this chat and a hint of what they're looking for. No clichés ("אוהב/ת לטייל ולבלות", "מחפש/ת את האחת"). In reply, say you wrote a draft they can approve or tweak. Set ask to "bio".
+photos: when the state block says PHOTOS_NEEDED, ask for one natural, smiling, daylight photo. Set ask to "photos".
 
-Extraction: fill "extracted" only with what they clearly said (in this message or earlier); otherwise null / empty list. Ages are numbers. Prompt answers: short, first person, in their words.`;
+Extraction: fill "extracted" only with what they clearly said (in this message or earlier); otherwise null / empty list. Ages are numbers. Infer gender from how they write about themselves in Hebrew when it's clear.`;
 
-function stateBlock(d: Draft, missing: Field[]): string {
-  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "bio_draft"));
-  const flags = [missing.includes("bio") && missing.filter((f) => f !== "photos" && f !== "bio").length === 0 && !d.bio_draft ? "BIO_NEEDED" : null, missing.length === 1 && missing[0] === "photos" ? "PHOTOS_NEEDED" : null].filter(Boolean);
-  return `<state>\nknown: ${JSON.stringify(known)}\nmissing (in order): ${missing.join(", ") || "nothing"}\n${flags.join("\n")}\n</state>`;
+function stateBlock(d: Draft, missing: Field[], answers: number): string {
+  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "bio_draft" && k !== "pending"));
+  const flags = [
+    detailsDue(d, answers) ? "DETAILS_NEEDED" : null,
+    partnerDue(d, answers) ? `PARTNER_QUESTION: "${partnerQuestion(d)}"` : null,
+    missing.includes("bio") && missing.filter((f) => f !== "photos" && f !== "bio").length === 0 && !d.bio_draft ? "BIO_NEEDED" : null,
+    missing.length === 1 && missing[0] === "photos" ? "PHOTOS_NEEDED" : null,
+  ].filter(Boolean);
+  return `<state>\nanswers so far: ${answers}\nknown: ${JSON.stringify(known)}\nmissing (in order): ${missing.join(", ") || "nothing"}\n${flags.join("\n")}\n</state>`;
 }
 
 let client: Anthropic | null = null;
@@ -288,6 +330,24 @@ async function callModel(userId: number, history: ChatMsg[], state: string): Pro
   return res.parsed_output ?? null;
 }
 
+/** Up to two answers to the conversation prompts, plus the partner answer — at most 3, partner last. */
+function mergePrompts(current: NonNullable<Draft["prompts"]>, incoming: NonNullable<Draft["prompts"]>): NonNullable<Draft["prompts"]> {
+  const others = current.filter((p) => p.question_key !== PARTNER_PROMPT);
+  let partner = current.find((p) => p.question_key === PARTNER_PROMPT);
+  for (const p of incoming) {
+    const text = p.answer_text.trim().slice(0, 200);
+    if (text.length < 2 || !promptKeys.includes(p.question_key)) continue;
+    if (p.question_key === PARTNER_PROMPT) {
+      partner = { question_key: p.question_key, answer_text: text };
+      continue;
+    }
+    const i = others.findIndex((q) => q.question_key === p.question_key);
+    if (i >= 0) others[i] = { question_key: p.question_key, answer_text: text };
+    else if (others.length < 2) others.push({ question_key: p.question_key, answer_text: text });
+  }
+  return partner ? [...others, partner] : others;
+}
+
 /** Merge model-extracted values into the draft — each one only if it validates. */
 function merge(d: Draft, x: Turn["extracted"]): Draft {
   const out: Draft = { ...d };
@@ -304,15 +364,7 @@ function merge(d: Draft, x: Turn["extracted"]): Draft {
   set("partner_religiosity", x.partner_religiosity, S.partner_religiosity);
   set("marital_status", x.marital_status, S.marital_status);
   set("looking_for", x.looking_for, S.looking_for);
-  const prompts = [...(out.prompts ?? [])];
-  for (const p of x.prompt_answers ?? []) {
-    const text = p.answer_text.trim().slice(0, 200);
-    if (text.length < 2 || !promptKeys.includes(p.question_key)) continue;
-    const i = prompts.findIndex((q) => q.question_key === p.question_key);
-    if (i >= 0) prompts[i] = { question_key: p.question_key, answer_text: text };
-    else if (prompts.length < 3) prompts.push({ question_key: p.question_key, answer_text: text });
-  }
-  out.prompts = prompts;
+  out.prompts = mergePrompts(out.prompts ?? [], x.prompt_answers ?? []);
   return out;
 }
 
@@ -320,8 +372,10 @@ export type ChatView = {
   messages: ChatMsg[];
   draft: Draft;
   missing: Field[];
-  ask: Field | "none";
+  ask: Field | "details" | "none";
   choices: { value: string; label: string }[];
+  /** The quick-choice card: one row of options per detail still missing. */
+  details: { field: DetailsField; label: string; options: { value: string; label: string }[] }[];
   done: boolean;
 };
 
@@ -347,18 +401,37 @@ function asksAbout(messages: ChatMsg[], field: Field): boolean {
   return true;
 }
 
-function view(messages: ChatMsg[], draft: Draft, ask: Field | "none"): ChatView {
+function view(messages: ChatMsg[], draft: Draft, ask: Field | "details" | "none"): ChatView {
   const missing = missingFields(draft);
-  // Show the photo / bio widgets whenever they're the next thing needed, whatever the model said.
-  const effective: Field | "none" = missing.length === 0 ? "none" : draft.bio_draft && !draft.bio ? "bio" : missing[0] === "photos" ? "photos" : ask;
-  const opts = effective !== "none" ? CHOICES[effective] : undefined;
+  // Show the widgets whenever they're the next thing needed, whatever the model said.
+  const effective: Field | "details" | "none" =
+    missing.length === 0
+      ? "none"
+      : draft.bio_draft && !draft.bio
+        ? "bio"
+        : missing[0] === "photos"
+          ? "photos"
+          : detailsDue(draft, answersIn(messages))
+            ? "details"
+            : draft.pending === "partner"
+              ? "partner"
+              : ask === "details"
+                ? (missing[0] ?? "none")
+                : ask;
+  const opts = effective !== "none" && effective !== "details" ? CHOICES[effective] : undefined;
   return {
     messages,
     draft,
     missing,
     ask: effective,
     choices:
-      opts && effective !== "none" && missing.includes(effective) && asksAbout(messages, effective) ? Object.entries(opts).map(([value, label]) => ({ value, label })) : [],
+      opts && effective !== "none" && effective !== "details" && missing.includes(effective) && asksAbout(messages, effective)
+        ? Object.entries(opts).map(([value, label]) => ({ value, label }))
+        : [],
+    details:
+      effective === "details"
+        ? detailsMissing(draft).map((f) => ({ field: f, label: DETAILS_LABELS[f], options: Object.entries(CHOICES[f]!).map(([value, label]) => ({ value, label })) }))
+        : [],
     done: missing.length === 0,
   };
 }
@@ -375,6 +448,7 @@ export function getChat(user: User): ChatView {
 export type ChatInput =
   | { text: string }
   | { choice: { field: Field; value: string; label: string } }
+  | { details: Partial<Record<DetailsField, string>> }
   | { photos: string[] }
   | { bio: "accept" | "other"; text?: string };
 
@@ -393,6 +467,20 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
     if (!opts || !(input.choice.value in opts)) throw new ChatError("בחירה לא תקינה");
     draft = { ...draft, [input.choice.field]: input.choice.value };
     userText = opts[input.choice.value];
+  } else if ("details" in input) {
+    const need = detailsMissing(draft);
+    if (!need.length) throw new ChatError("הפרטים כבר נשמרו");
+    const picked: Partial<Draft> = {};
+    const labels: string[] = [];
+    for (const f of need) {
+      const v = input.details[f];
+      const opts = CHOICES[f]!;
+      if (!v || !(v in opts)) throw new ChatError("נא לבחור תשובה בכל שורה");
+      Object.assign(picked, { [f]: v });
+      labels.push(opts[v]);
+    }
+    draft = { ...draft, ...picked };
+    userText = labels.join(" · ");
   } else if ("photos" in input) {
     const photos = input.photos.filter((u) => /^\/api\/photos\/[\w-]+\.(jpg|png|webp)$/.test(u)).slice(0, 6);
     if (!photos.length) throw new ChatError("לא התקבלה תמונה");
@@ -412,29 +500,46 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
   } else {
     userText = input.text.trim().slice(0, MAX_TEXT);
     if (!userText) throw new ChatError("ההודעה ריקה");
+    // The answer to the partner question is kept in the member's words, even if the model misses it.
+    if (draft.pending === "partner") {
+      draft = { ...draft, pending: undefined, prompts: mergePrompts(draft.prompts ?? [], [{ question_key: PARTNER_PROMPT, answer_text: userText }]) };
+    }
   }
   messages.push({ role: "user", text: userText });
 
   let turn: Turn | null = null;
   try {
-    turn = await callModel(user.id, messages, stateBlock(draft, missingFields(draft)));
+    turn = await callModel(user.id, messages, stateBlock(draft, missingFields(draft), answersIn(messages)));
   } catch (e) {
     console.error("[ai-onboarding] model call failed", e);
   }
   if (!turn) {
     // Keep what the member said (and any direct input) even when the model is unavailable.
-    const next = (missingFields(draft)[0] ?? "none") as Field | "none";
-    if ("text" in input && next !== "none") {
+    const next = view(messages, draft, missingFields(draft)[0] ?? "none").ask;
+    if ("text" in input && next !== "none" && next !== "details") {
       saveChat(user.id, messages, draft, c.turns + 1);
       throw new ChatError("משהו השתבש אצלי לרגע — אפשר לנסות שוב, או להשלים בטופס");
     }
-    messages.push({ role: "assistant", text: FALLBACK_ASK[next] });
-    saveChat(user.id, messages, draft, c.turns + 1);
-    return view(messages, draft, next);
+    return finishTurn(user.id, messages, draft, c.turns + 1, null, next);
   }
   draft = merge(draft, turn.extracted);
   if (turn.bio_draft && !draft.bio) draft.bio_draft = turn.bio_draft.trim().slice(0, 500);
-  messages.push({ role: "assistant", text: turn.reply.trim() });
-  saveChat(user.id, messages, draft, c.turns + 1);
-  return view(messages, draft, turn.ask === "none" ? (missingFields(draft)[0] ?? "none") : turn.ask);
+  return finishTurn(user.id, messages, draft, c.turns + 1, turn.reply.trim(), turn.ask === "none" ? (missingFields(draft)[0] ?? "none") : turn.ask);
+}
+
+/** Adds the host's message (the model's, or a fixed one), and makes sure the partner question is asked word for word. */
+function finishTurn(userId: number, messages: ChatMsg[], draft: Draft, turns: number, reply: string | null, ask: Field | "details" | "none"): ChatView {
+  const answers = answersIn(messages);
+  let text = reply;
+  if (partnerDue(draft, answers)) {
+    const q = partnerQuestion(draft);
+    if (!text?.includes("שאלה אחרונה")) text = q;
+    draft = { ...draft, pending: "partner" };
+  } else if (!text) {
+    const next = view(messages, draft, ask).ask;
+    text = next === "details" ? "כמה פרטים קצרים בלחיצה 👇" : FALLBACK_ASK[next];
+  }
+  messages.push({ role: "assistant", text });
+  saveChat(userId, messages, draft, turns);
+  return view(messages, draft, ask);
 }
