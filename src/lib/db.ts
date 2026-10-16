@@ -217,7 +217,8 @@ function open(): DatabaseSync {
   if (file !== ":memory:") db.exec("PRAGMA journal_mode = WAL;");
   db.exec(SCHEMA);
   migrate(db);
-  if (!process.env.MELA_SKIP_SEED) {
+  // Demo members stop being created once the admin removed them (or with MELA_DEMO_MODE=off).
+  if (!process.env.MELA_SKIP_SEED && process.env.MELA_DEMO_MODE !== "off" && !demoRemoved(db)) {
     seedDemoData(db);
     // Demo members get a spread of observance levels so the opening questionnaire shows up in discovery.
     db.exec(`UPDATE users SET
@@ -232,8 +233,14 @@ function open(): DatabaseSync {
   return db;
 }
 
+/** Set once the admin removed all demo members, so a restart doesn't bring them back. */
+export function demoRemoved(d: DatabaseSync): boolean {
+  return !!d.prepare("SELECT 1 FROM app_settings WHERE key = 'demo_removed'").get();
+}
+
 /** Additive, idempotent migrations for databases created by older versions. */
 export function migrate(db: DatabaseSync) {
+  db.exec("CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT NOT NULL DEFAULT (datetime('now')))");
   // Email sign-in: phone_number used to be NOT NULL. SQLite can't drop a constraint in place, so rebuild the
   // table once (same columns, same ids — child tables keep pointing at the right rows).
   const phoneCol = (db.prepare("PRAGMA table_info(users)").all() as { name: string; notnull: number }[]).find((c) => c.name === "phone_number");

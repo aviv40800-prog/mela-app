@@ -2,6 +2,8 @@ import Link from "next/link";
 import { BadgeCheck, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { listUsers, USER_FILTERS, type UserFilter } from "@/lib/admin-data";
 import { Badge, PageHeader, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
+import { CleanupPanel } from "@/components/admin/CleanupPanel";
+import { adminEmails } from "@/lib/admin";
 
 type SP = Promise<{ q?: string; filter?: string; page?: string }>;
 
@@ -10,7 +12,8 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
   const filter = (sp.filter && sp.filter in USER_FILTERS ? sp.filter : "all") as UserFilter;
   const page = Math.max(1, Number(sp.page) || 1);
   const q = sp.q ?? "";
-  const { rows, total, pages } = listUsers({ q, filter, page });
+  const { rows, total, pages } = listUsers({ q, filter, page, perPage: filter === "real" || filter === "demo" ? 200 : 25 });
+  const admins = adminEmails();
   const href = (over: Record<string, string | number>) => {
     const p = new URLSearchParams({ ...(q && { q }), filter, page: String(page), ...Object.fromEntries(Object.entries(over).map(([k, v]) => [k, String(v)])) });
     return `/admin/users?${p}`;
@@ -42,6 +45,20 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
           </Link>
         ))}
       </div>
+
+      {(filter === "demo" || filter === "real") && !q && (
+        <CleanupPanel
+          mode={filter}
+          demoCount={filter === "demo" ? total : 0}
+          rows={rows.map((u) => ({
+            id: u.id,
+            name: u.full_name ?? "(בלי שם)",
+            full: !!u.full_name,
+            sub: [u.email ?? u.phone_number, when(u.created_at)].filter(Boolean).join(" · "),
+            admin: !!u.email && admins.includes(u.email.toLowerCase()),
+          }))}
+        />
+      )}
 
       {/* desktop table */}
       <div className="surface mt-5 hidden overflow-hidden rounded-[20px] md:block">
