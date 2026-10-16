@@ -2,6 +2,7 @@ import "server-only";
 import crypto from "node:crypto";
 import { db, tx } from "./db";
 import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "./content";
+import { notifyPayment } from "./notify";
 
 /**
  * Tranzila checkout: the member pays in Tranzila's iFrame, which also opens a standing order (My Billing)
@@ -158,6 +159,8 @@ export function handleNotify(key: string | null, payload: Record<string, string>
     );
     if (order.user_id) activate(order, payload);
   });
+  const member = order.user_id ? (db.prepare("SELECT email FROM users WHERE id = ?").get(order.user_id) as { email: string | null } | undefined) : undefined;
+  notifyPayment({ userId: order.user_id, email: member?.email ?? null, plan: order.plan_type, sum: order.first_sum, trial: !!order.trial });
   return done(true, "paid");
 }
 
