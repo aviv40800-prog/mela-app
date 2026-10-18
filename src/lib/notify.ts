@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { sendEmail } from "./email";
-import { SITE } from "./site";
+import { SITE, SITE_URL } from "./site";
 
 /**
  * Emails the team about new sign-ups and payments. Goes to MELA_NOTIFY_EMAIL (comma-separated; default: the site
@@ -12,7 +12,7 @@ const recipients = () => {
   if (set.toLowerCase() === "off") return [];
   return (set || SITE.email).split(",").map((e) => e.trim()).filter(Boolean);
 };
-const siteUrl = () => process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://mela-production-e3fb.up.railway.app";
+const siteUrl = () => SITE_URL;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 function notify(subject: string, lines: string[], link: string) {

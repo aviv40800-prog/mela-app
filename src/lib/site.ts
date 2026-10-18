@@ -1,4 +1,7 @@
 /** Public contact details and links, shown in the footer, the legal pages and error messages. */
+/** The public address of the site (SITE_URL overrides it, e.g. for a preview deploy). */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://www.meladate.co.il";
+
 export const SITE = {
   name: "MELA",
   /** Who operates the service, as named in the legal pages (until there is a registered business). */
