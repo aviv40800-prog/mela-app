@@ -10,6 +10,7 @@ import { compressImage, uploadPhoto } from "@/lib/upload";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY } from "@/lib/content";
 import type { ChatView, Draft } from "@/lib/ai-onboarding";
 import { SignOutButton } from "./SignOutButton";
+import { Photo } from "./Photo";
 
 const TOTAL = 13; // FIELD_ORDER.length
 const HEART = "M120 212 C48 160 4 116 4 66 C4 30 32 4 66 4 C92 4 110 18 120 38 C130 18 148 4 174 4 C208 4 236 30 236 66 C236 116 192 160 120 212 Z";
@@ -364,6 +365,11 @@ function PhotoPicker({ onDone }: { onDone: (urls: string[]) => void }) {
       <button onClick={() => (urls.length ? onDone(urls) : input.current?.click())} disabled={uploading > 0} className="btn-gold w-full">
         {urls.length ? `המשך עם ${urls.length === 1 ? "התמונה" : `${urls.length} התמונות`}` : "בחירת תמונות"}
       </button>
+      {!urls.length && uploading === 0 && (
+        <button onClick={() => onDone([])} className="min-h-11 text-[14px] text-mute underline-offset-4 transition hover:text-cream hover:underline">
+          אין לי תמונה כרגע, אוסיף אחר כך
+        </button>
+      )}
     </motion.div>
   );
 }
@@ -398,10 +404,7 @@ function Reveal({ draft, onFix, onDone }: { draft: Draft; onFix: () => void; onD
         style={{ transformPerspective: 900 }}
         className="relative w-full overflow-hidden rounded-[28px] border border-gold/45 bg-ink-3 shadow-[0_30px_60px_rgb(0_0_0/0.45),0_0_50px_rgb(245_196_106/0.12)]"
       >
-        {draft.photos?.[0] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={draft.photos[0]} alt="" className="h-[300px] w-full object-cover" />
-        )}
+        <Photo src={draft.photos?.[0]} name={draft.full_name ?? ""} className="h-[300px] w-full" rounded="rounded-none" />
         <div className="absolute inset-x-0 top-[230px] h-[70px] bg-gradient-to-t from-ink-3 to-transparent" />
         <div className="relative -mt-10 flex flex-col gap-2.5 px-4 pb-4">
           <div className="flex items-baseline gap-2">

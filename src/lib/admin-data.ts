@@ -28,7 +28,7 @@ export function overview() {
     `SELECT COUNT(*) AS n FROM subscriptions s JOIN users u ON u.id = s.user_id
      WHERE u.is_demo = 0 AND (s.status IN ('trialing', 'active') OR (s.status = 'canceled' AND s.current_period_end > datetime('now')))`,
   );
-  const completeReal = count(`SELECT COUNT(*) AS n FROM users WHERE ${real} AND full_name IS NOT NULL AND photos <> '[]'`);
+  const completeReal = count(`SELECT COUNT(*) AS n FROM users WHERE ${real} AND full_name IS NOT NULL AND bio IS NOT NULL`);
   return {
     premiumNow,
     freeUsers: Math.max(0, completeReal - premiumNow),
@@ -104,7 +104,8 @@ export const USER_FILTERS = {
   },
   trialing: { label: "בניסיון", where: "s.status = 'trialing'" },
   active: { label: "משלמים", where: "s.status = 'active' AND u.is_demo = 0" },
-  incomplete: { label: "פרופיל חלקי", where: "(u.full_name IS NULL OR u.photos = '[]')" },
+  incomplete: { label: "פרופיל חלקי", where: "(u.full_name IS NULL OR u.bio IS NULL)" },
+  nophoto: { label: "בלי תמונה", where: "u.is_demo = 0 AND u.photos = '[]'" },
   demo: { label: "דמו", where: "u.is_demo = 1" },
   banned: { label: "מושעים", where: "u.is_banned = 1" },
 } as const;

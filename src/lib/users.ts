@@ -202,7 +202,7 @@ export function updateProfile(userId: number, p: ProfileInput) {
 }
 
 export function isProfileComplete(u: User): boolean {
-  return !!(u.full_name && u.age && u.gender && u.location && u.occupation && u.bio && u.photos.length > 0 && getPrompts(u.id).length >= 2);
+  return !!(u.full_name && u.age && u.gender && u.location && u.occupation && u.bio && getPrompts(u.id).length >= 2); // a photo is encouraged, not required
 }
 
 export function touchLastSeen(userId: number) {

@@ -99,6 +99,27 @@ describe("AI onboarding chat", () => {
     expect(profile).toMatchObject({ full_name: "דנה", age: 27, gender: "female", seeking: "male", looking_for: "serious" });
   });
 
+  it("lets a member finish without a photo and add one later", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    const { isProfileComplete } = await import("@/lib/users");
+    const u = withPassword(createEmailUser("nophoto@example.com"));
+    db.prepare("INSERT INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, '[]', ?, 1)").run(
+      u.id,
+      JSON.stringify({ full_name: "יוסי", age: 30, gender: "male", location: "רחובות", occupation: "מהנדס", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any", bio: "מהנדס מרחובות, אוהב ים ומשפחה.", prompts: [{ question_key: "first_date", answer_text: "קפה וים" }, { question_key: "dealbreaker", answer_text: "לב טוב" }] }),
+    );
+    expect(ai.loadChat(u.id).draft.photos).toBeUndefined();
+    turns.push({ reply: "מוכן!", extracted: empty, bio_draft: null, ask: "none" });
+    const v = await ai.chatTurn(u, { photos: [] });
+    expect(v.done).toBe(true);
+    expect(v.messages.find((m) => m.role === "user")?.text).toBe("(אוסיף תמונה אחר כך)");
+    const profile = ai.draftToProfile(v.draft, "nophoto@example.com");
+    expect(profile?.photos).toEqual([]);
+    const { updateProfile, getUser } = await import("@/lib/users");
+    updateProfile(u.id, profile!);
+    expect(isProfileComplete(getUser(u.id)!)).toBe(true);
+    await expect(ai.chatTurn(u, { photos: ["javascript:alert(1)"] })).rejects.toThrow(/תמונה/);
+  });
+
   it("asks men about their future wife", async () => {
     const ai = await import("@/lib/ai-onboarding");
     expect(ai.partnerQuestion({ gender: "male" })).toContain("באשתך לעתיד");

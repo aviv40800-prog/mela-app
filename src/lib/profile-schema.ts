@@ -15,8 +15,7 @@ export const ProfileSchema = z.object({
   bio: z.string().trim().min(10).max(500),
   photos: z
     .array(z.string().regex(/^\/api\/photos\/[\w-]+\.(jpg|png|webp)$/))
-    .min(1)
-    .max(6),
+    .max(6), // optional: a member may join without a photo and add one later
   pref_age_min: z.number().int().min(18).max(99).nullable().optional(),
   pref_age_max: z.number().int().min(18).max(99).nullable().optional(),
   pref_distance_km: z.number().int().min(1).max(500).nullable().optional(),

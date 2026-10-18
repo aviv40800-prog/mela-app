@@ -79,6 +79,7 @@ export type Draft = {
   bio_draft?: string; // proposed, waiting for the member
   pending?: "partner"; // the partner question was asked; the next free-text answer is its answer
   photos?: string[];
+  photos_skipped?: boolean; // chose to join without a photo for now
   prompts?: { question_key: string; answer_text: string }[];
   religiosity?: keyof typeof RELIGIOSITY;
   partner_religiosity?: keyof typeof PARTNER_RELIGIOSITY;
@@ -156,7 +157,7 @@ export function missingFields(d: Draft): Field[] {
   return FIELD_ORDER.filter((f) => {
     if (f === "prompts") return !d.prompts?.some((p) => p.question_key !== PARTNER_PROMPT);
     if (f === "partner") return !d.prompts?.some((p) => p.question_key === PARTNER_PROMPT);
-    if (f === "photos") return !(d.photos && d.photos.length >= 1);
+    if (f === "photos") return !(d.photos?.length || d.photos_skipped);
     return !ok(S[f], d[f]);
   });
 }
@@ -214,7 +215,7 @@ const FALLBACK_ASK: Record<Field | "none", string> = {
   prompts: "על מה את/ה יכול/ה לדבר שעות?",
   partner: "שאלה אחרונה לפני שאני מקימה לך את הפרופיל: מה הכי חשוב לך בבן/בת הזוג לעתיד?", // replaced by partnerQuestion()
   bio: "אפשר לכתוב כמה מילים על עצמך לביו?",
-  photos: "ועכשיו החלק שהכי עובד — תמונה אחת לפחות, טבעית ועם חיוך.",
+  photos: "ועכשיו החלק שהכי עובד: תמונה טבעית ועם חיוך. אין כרגע? אפשר גם להוסיף אחר כך.",
   none: "תודה! הפרופיל שלך מוכן.",
 };
 
@@ -276,12 +277,12 @@ ${CULTURAL_PROMPTS.map((p) => `  - ${p.key}: ${p.question}`).join("\n")}
 Answer 4 → perfect_weekend or talk_for_hours. Answer 5 → first_date. Answer 6 → ${PARTNER_PROMPT}.
 
 bio: when the state block says BIO_NEEDED, write bio_draft — first person, in their voice, 2–3 sentences (max 300 chars), with concrete, vivid details from this chat and a hint of what they're looking for. No clichés ("אוהב/ת לטייל ולבלות", "מחפש/ת את האחת"). In reply, say you wrote a draft they can approve or tweak. Set ask to "bio".
-photos: when the state block says PHOTOS_NEEDED, ask for one natural, smiling, daylight photo. Set ask to "photos".
+photos: when the state block says PHOTOS_NEEDED, ask for one natural, smiling, daylight photo (it is optional; they may add it later). Set ask to "photos".
 
 Extraction: fill "extracted" only with what they clearly said (in this message or earlier); otherwise null / empty list. Ages are numbers. Infer gender from how they write about themselves in Hebrew when it's clear.`;
 
 function stateBlock(d: Draft, missing: Field[], answers: number): string {
-  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "bio_draft" && k !== "pending"));
+  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "photos_skipped" && k !== "bio_draft" && k !== "pending"));
   const flags = [
     detailsDue(d, answers) ? "DETAILS_NEEDED" : null,
     partnerDue(d, answers) ? `PARTNER_QUESTION: "${partnerQuestion(d)}"` : null,
@@ -483,9 +484,10 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
     userText = labels.join(" · ");
   } else if ("photos" in input) {
     const photos = input.photos.filter((u) => /^\/api\/photos\/[\w-]+\.(jpg|png|webp)$/.test(u)).slice(0, 6);
-    if (!photos.length) throw new ChatError("לא התקבלה תמונה");
-    draft = { ...draft, photos };
-    userText = photos.length === 1 ? "(העליתי תמונה)" : `(העליתי ${photos.length} תמונות)`;
+    if (!photos.length && input.photos.length) throw new ChatError("לא התקבלה תמונה");
+    // an empty list = "later": the member joins without a photo and can add one from the profile
+    draft = { ...draft, photos, photos_skipped: !photos.length };
+    userText = !photos.length ? "(אוסיף תמונה אחר כך)" : photos.length === 1 ? "(העליתי תמונה)" : `(העליתי ${photos.length} תמונות)`;
   } else if ("bio" in input) {
     if (input.bio === "accept") {
       const proposed = draft.bio_draft ?? "";

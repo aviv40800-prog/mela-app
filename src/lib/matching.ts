@@ -110,7 +110,8 @@ function toCandidate(me: number, id: number): Candidate {
 export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candidate[] {
   return candidateIds(me, 200, ignorePrefs)
     .map((id) => toCandidate(me.id, id))
-    .sort((a, b) => b.compatibility - a.compatibility)
+    // members with a photo first, then by compatibility
+    .sort((a, b) => Number(b.photos.length > 0) - Number(a.photos.length > 0) || b.compatibility - a.compatibility)
     .slice(0, limit);
 }
 

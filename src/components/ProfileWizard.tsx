@@ -50,7 +50,7 @@ export type ProfileDraft = {
 
 
 const META: Record<WizardStep, { title: string; subtitle: string; tab: string }> = {
-  photos: { title: "התמונות שלך", subtitle: "לפחות תמונה אחת, עד 6. הראשונה היא מה שרואים קודם.", tab: "תמונות" },
+  photos: { title: "התמונות שלך", subtitle: "עד 6 תמונות. הראשונה היא מה שרואים קודם. אפשר גם להוסיף אחר כך.", tab: "תמונות" },
   basics: { title: "נעים להכיר", subtitle: "הפרטים הבסיסיים שיעזרו לנו להתאים לך אנשים.", tab: "פרטים" },
   about: { title: "קצת עליך", subtitle: "מה את/ה עושה ומה חשוב לך. כנות מנצחת.", tab: "עליי" },
   looking: { title: "את מי את/ה מחפש/ת?", subtitle: "אפשר לשנות את זה בכל רגע, ישירות ממסך הגילוי.", tab: "חיפוש" },
@@ -64,7 +64,7 @@ function errors(d: ProfileDraft, tiles: Tile[], quiz: Record<string, "a" | "b"> 
   const quizLeft = quiz ? ONBOARDING_QUIZ.filter((q) => !quiz[q.key]).length : ONBOARDING_QUIZ.length;
   const answered = d.prompts.filter((p) => p.answer_text.trim().length >= 2);
   return {
-    photos: tiles.some((t) => !t.url && !t.error) ? "התמונות עדיין עולות…" : tiles.filter((t) => t.url).length === 0 ? "צריך לפחות תמונה אחת" : null,
+    photos: tiles.some((t) => !t.url && !t.error) ? "התמונות עדיין עולות…" : null,
     full_name: d.full_name.trim().length < 2 ? "שם מלא — לפחות 2 תווים" : null,
     age: !d.age ? "נא להזין גיל" : d.age < 18 ? "MELA מיועדת לגילאי 18 ומעלה" : d.age > 99 ? "גיל לא תקין" : null,
     location: d.location.trim().length < 2 ? "נא לכתוב עיר מגורים" : null,
@@ -266,6 +266,7 @@ export function ProfileWizard({
               <>
                 <PhotoGrid tiles={tiles} onChange={(u) => setTiles(u)} />
                 {showErrors && errs.photos && <p className="mt-2 px-1 text-[12px] text-danger">{errs.photos}</p>}
+                {!tiles.some((t) => t.url) && <p className="mt-3 px-1 text-[13px] leading-relaxed text-mute">אין תמונה כרגע? אפשר להמשיך בלעדיה ולהוסיף מהפרופיל מתי שנוח. רק שווה לדעת: פרופיל עם תמונה מקבל הרבה יותר לייקים.</p>}
               </>
             )}
 
