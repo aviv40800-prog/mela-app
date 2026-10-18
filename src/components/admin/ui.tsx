@@ -48,9 +48,12 @@ export function Badge({ tone = "mute", children }: { tone?: "gold" | "green" | "
   return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${tones[tone]}`}>{children}</span>;
 }
 
+/** Where a subscription came from: a real payment, or access the admin gave as a gift. */
+export const subSource = (providerRef: string | null | undefined) => (providerRef === "admin" ? "מתנה מהניהול" : providerRef?.startsWith("tranzila:") ? "בתשלום" : null);
+
 export const SUB_BADGE: Record<string, { label: string; tone: "gold" | "green" | "red" | "mute" }> = {
-  trialing: { label: "ניסיון", tone: "gold" },
-  active: { label: "פעיל", tone: "green" },
+  trialing: { label: "פרימיום · ניסיון", tone: "gold" },
+  active: { label: "פרימיום פעיל", tone: "green" },
   canceled: { label: "בוטל", tone: "mute" },
   past_due: { label: "חוב", tone: "red" },
 };

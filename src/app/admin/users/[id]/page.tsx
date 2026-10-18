@@ -4,7 +4,7 @@ import { ArrowRight, BadgeCheck } from "lucide-react";
 import { userDetail } from "@/lib/admin-data";
 import { PLANS, promptQuestion } from "@/lib/content";
 import { isAdmin } from "@/lib/admin";
-import { Badge, Card, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
+import { Badge, Card, Stat, SUB_BADGE, subSource, UserChip, when } from "@/components/admin/ui";
 import { AdminPhotos } from "@/components/admin/AdminPhotos";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 
@@ -27,7 +27,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
         {u.is_demo && <Badge>דמו</Badge>}
         {u.is_banned && <Badge tone="red">מושעה</Badge>}
         {isAdmin(u) && <Badge tone="gold">מנהל/ת</Badge>}
-        {sub && <Badge tone={SUB_BADGE[sub.status].tone}>{SUB_BADGE[sub.status].label}</Badge>}
+        {sub && <Badge tone={SUB_BADGE[sub.status].tone}>{[SUB_BADGE[sub.status].label, subSource(sub.provider_ref)].filter(Boolean).join(" · ")}</Badge>}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -111,7 +111,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-mute">סטטוס</dt>
-                  <dd>{SUB_BADGE[sub.status].label}</dd>
+                  <dd>{[SUB_BADGE[sub.status].label, subSource(sub.provider_ref)].filter(Boolean).join(" · ")}</dd>
                 </div>
                 {sub.trial_ends_at && (
                   <div className="flex justify-between">
