@@ -9,6 +9,7 @@ import { api, haptic } from "@/lib/client";
 import { compressImage, uploadPhoto } from "@/lib/upload";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY } from "@/lib/content";
 import type { ChatView, Draft } from "@/lib/ai-onboarding";
+import { SignOutButton } from "./SignOutButton";
 
 const TOTAL = 13; // FIELD_ORDER.length
 const HEART = "M120 212 C48 160 4 116 4 66 C4 30 32 4 66 4 C92 4 110 18 120 38 C130 18 148 4 174 4 C208 4 236 30 236 66 C236 116 192 160 120 212 Z";
@@ -88,9 +89,12 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
               <div className="truncate text-[12px] text-mute">{busy ? "מקלידה…" : "מכירה אותך · בדרך כלל עונה מיד"}</div>
             </div>
           </div>
-          <Link href="/onboarding/profile" className="shrink-0 rounded-full border border-gold/30 px-3 py-1.5 text-[12.5px] text-cream/90 transition hover:border-gold/60">
-            להשלים בטופס
-          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <Link href="/onboarding/profile" className="rounded-full border border-gold/30 px-3 py-1.5 text-[12.5px] text-cream/90 transition hover:border-gold/60">
+              להשלים בטופס
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
         <section aria-label="מה שלמדתי עלייך" className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/[0.1] to-gold/[0.03] px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
