@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
-import { getPrompts, getUser, updateProfile } from "@/lib/users";
+import { getPrompts, getUser, isProfileComplete, updateProfile } from "@/lib/users";
 import { getSubscription } from "@/lib/billing";
 import { ProfileSchema as Profile } from "@/lib/profile-schema";
 import { seedDemoLikes } from "@/lib/demo";
 import { nextOnboardingStep } from "@/lib/onboarding";
+import { alertWaitingMembers } from "@/lib/match-alerts";
 import { isAdmin } from "@/lib/admin";
 import { deleteOwnAccount } from "@/lib/safety";
 import { destroySession } from "@/lib/session";
@@ -18,6 +19,7 @@ export const PUT = handle(async (req: Request) => {
   const user = await requireUser();
   const parsed = Profile.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error(parsed.error.issues[0]?.message ?? "פרטים חסרים");
+  const wasComplete = isProfileComplete(user);
   try {
     updateProfile(user.id, parsed.data);
   } catch (e) {
@@ -26,6 +28,8 @@ export const PUT = handle(async (req: Request) => {
   }
   const updated = getUser(user.id)!;
   seedDemoLikes(updated);
+  // A new face in the community: let members waiting for someone like them know.
+  if (!wasComplete && isProfileComplete(updated)) alertWaitingMembers(updated);
   return json({ ok: true, next: nextOnboardingStep(updated) });
 });
 

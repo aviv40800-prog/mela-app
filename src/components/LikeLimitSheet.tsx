@@ -18,17 +18,16 @@ export type Quota = {
 const INVITE_TEXT = "מצאתי פלטפורמת היכרויות של הקהילה — MELA, אהבה עם שורשים. בואו להצטרף, זה בחינם 🤎";
 
 /** Opens the native share sheet (or WhatsApp). Resolves false if the member cancelled. */
-async function shareInvite(): Promise<boolean> {
-  const url = `${window.location.origin}/?ref=invite`;
+export async function shareInvite(url: string, text = INVITE_TEXT): Promise<boolean> {
   if (navigator.share) {
     try {
-      await navigator.share({ title: "MELA", text: INVITE_TEXT, url });
+      await navigator.share({ title: "MELA", text, url });
       return true;
     } catch (e) {
       if ((e as Error).name === "AbortError") return false;
     }
   }
-  window.open(`https://wa.me/?text=${encodeURIComponent(`${INVITE_TEXT}\n${url}`)}`, "_blank", "noopener");
+  window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, "_blank", "noopener");
   return true;
 }
 
@@ -46,12 +45,18 @@ export function LikeLimitSheet({ quota: initial, onClose, onQuota }: { quota: Qu
   const [busy, setBusy] = useState(false);
   const [left, setLeft] = useState(() => countdown(quota.resetsAt));
   const share = quota.share;
+  // The member's personal link (fetched up front: iOS only opens the share sheet straight from the tap),
+  // so a friend who joins through it earns them invite likes too.
+  const [link, setLink] = useState<string | null>(null);
+  useEffect(() => {
+    api<{ link: string }>("/api/referral").then((r) => setLink(r.link), () => {});
+  }, []);
 
   async function onShare() {
     if (busy) return;
     setBusy(true);
     try {
-      if (!(await shareInvite())) return;
+      if (!(await shareInvite(link ?? window.location.origin))) return;
       const { quota: q } = await api<{ quota: Quota | null }>("/api/quota/share", { method: "POST" });
       if (!q) return;
       setQuota(q);

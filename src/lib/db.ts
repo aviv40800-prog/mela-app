@@ -284,6 +284,18 @@ export function migrate(db: DatabaseSync) {
   if (!cols.has("code_verified_at")) db.exec("ALTER TABLE users ADD COLUMN code_verified_at INTEGER");
   db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username COLLATE NOCASE)");
   if (!cols.has("looking_for")) db.exec("ALTER TABLE users ADD COLUMN looking_for TEXT");
+  // Invite a friend: the member's personal invite code, who invited them, and bonus likes banked from invites.
+  if (!cols.has("referral_code")) db.exec("ALTER TABLE users ADD COLUMN referral_code TEXT");
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code)");
+  if (!cols.has("referred_by")) db.exec("ALTER TABLE users ADD COLUMN referred_by INTEGER");
+  if (!cols.has("bonus_likes")) db.exec("ALTER TABLE users ADD COLUMN bonus_likes INTEGER NOT NULL DEFAULT 0");
+  // "Your next match is on its way": email me when someone new who fits joins (at most once a day).
+  if (!cols.has("match_alerts")) db.exec("ALTER TABLE users ADD COLUMN match_alerts INTEGER NOT NULL DEFAULT 0");
+  if (!cols.has("match_alert_at")) db.exec("ALTER TABLE users ADD COLUMN match_alert_at TEXT");
+  // Second chance: a passed profile offered again after the member sharpened their answers — once per person.
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",
+  );
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   // Provider-billed subscriptions: the date the recurring charges start from.

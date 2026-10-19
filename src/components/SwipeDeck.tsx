@@ -11,6 +11,7 @@ import { CardSkeleton } from "./ui/Skeleton";
 import { ApiError, api, haptic } from "@/lib/client";
 import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
 import { InterestPause, countSwipeForOffer, startPause, type Pause } from "./InterestPause";
+import { DeckJourney } from "./DeckJourney";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
 
 type SwipeResponse = { status: string; matchId: number; isNewMatch: boolean; other?: PublicProfile; quota: Quota };
@@ -30,12 +31,15 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const [swipes, setSwipes] = useState<number | null>(null);
   const [offer, setOffer] = useState<Pause | null>(null);
   const [paywall, setPaywall] = useState(false);
+  // Showing "second chance" cards: profiles passed on before that the member's new answers rate higher.
+  const [second, setSecond] = useState(false);
   const busy = useRef(false);
   const x = useMotionValue(0);
 
   const load = useCallback(async () => {
     setDeck(null);
     setError(null);
+    setSecond(false);
     try {
       const url = source === "discover" ? "/api/discover" : "/api/daily-picks";
       const data = await api<{ candidates?: Candidate[]; picks?: Candidate[]; quota?: Quota; widened?: boolean; swipes?: number }>(url);
@@ -73,7 +77,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       const target = top;
       if (action === "like" && quota && quota.left !== null) setQuota({ ...quota, left: Math.max(0, quota.left - 1), used: quota.used + 1 });
 
-      const request = api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: target.id, action, comment: opts.comment } })
+      const request = api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: target.id, action, comment: opts.comment, secondChance: second || undefined } })
         .then((res) => {
           setQuota(res.quota);
           if (res.isNewMatch && res.other) {
@@ -108,7 +112,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       if (kept) setSwipes((n) => (n ?? 0) + 1);
       // Every few swipes, a short "moment of interest" (always skippable): up to three light questions,
       // or — every third time, or once the questions run out — "what would you ask the other side?".
-      if (kept && source === "discover" && countSwipeForOffer()) {
+      if (kept && source === "discover" && !second && countSwipeForOffer()) {
         const { community } = startPause();
         if (community) setOffer({ kind: "community" });
         else
@@ -117,7 +121,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
             .catch(() => {});
       }
     },
-    [top, x, quota, source],
+    [top, x, quota, source, second],
   );
 
   useEffect(() => {
@@ -138,6 +142,22 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   }
 
   if (deck === null) return <CardSkeleton />;
+
+  if (!top && source === "discover" && !error) {
+    // Never a dead end: a short path (sharpen your matches → second chance → invite → next match on its way).
+    return (
+      <DeckJourney
+        fresh={swipes === 0}
+        quota={quota}
+        me={me}
+        onRefresh={load}
+        onSecondChance={(cards) => {
+          setSecond(true);
+          setDeck(cards);
+        }}
+      />
+    );
+  }
 
   if (!top) {
     // A member who hasn't swiped yet and sees nobody isn't "done" — the community is still growing.
@@ -195,8 +215,16 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         animate={offer && !match ? { scale: 0.94, opacity: 0.45, filter: "blur(6px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
         transition={{ type: "spring", stiffness: 300, damping: 34 }}
       >
+        {second && (
+          <button
+            onClick={() => setDeck([])}
+            className="on-dark absolute inset-x-0 top-14 z-20 mx-auto flex w-fit max-w-[88%] items-center gap-1.5 rounded-full border border-gold/40 bg-black/60 px-4 py-2 text-[12px] text-cream/90 backdrop-blur-md"
+          >
+            💫 הזדמנות שנייה <span className="text-gold-3">· סיום</span>
+          </button>
+        )}
         <AnimatePresence>
-          {widened && (
+          {widened && !second && (
             <motion.button
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}

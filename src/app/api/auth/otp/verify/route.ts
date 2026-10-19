@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cookies } from "next/headers";
 import { handle, json, error } from "@/lib/api";
 import { normalizeIsraeliPhone } from "@/lib/phone";
 import { verifyOtp } from "@/lib/otp";
@@ -9,6 +10,7 @@ import { isAdmin } from "@/lib/admin";
 import { SITE } from "@/lib/site";
 import { markCodeVerified } from "@/lib/auth";
 import { notifyNewSignup } from "@/lib/notify";
+import { REF_COOKIE, applyReferral } from "@/lib/referral";
 
 const Code = z.string().regex(/^\d{6}$/);
 const Purpose = z.enum(["signup", "reset"]).optional();
@@ -31,7 +33,16 @@ export const POST = handle(async (req: Request) => {
   if (reset && !existing) return error("לא מצאנו חשבון עם הפרטים האלה. אפשר להירשם חדש.", 404);
   if (existing?.is_banned) return error(`החשבון הושעה. לפרטים: ${SITE.email}`, 403);
   let user = existing ?? (email ? createEmailUser(email) : createVerifiedUser(key));
-  if (!existing) notifyNewSignup(user);
+  if (!existing) {
+    notifyNewSignup(user);
+    // Came through a friend's invite link: credit the friend.
+    const jar = await cookies();
+    const ref = jar.get(REF_COOKIE)?.value;
+    if (ref) {
+      applyReferral(user.id, ref);
+      jar.delete(REF_COOKIE);
+    }
+  }
   // A member who registered by phone and later added this email now signs in with it — mark it proven.
   if (email && existing && !existing.email_verified) {
     markEmailVerified(existing.id, email);

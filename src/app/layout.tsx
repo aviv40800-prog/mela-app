@@ -7,6 +7,7 @@ import { MotionProvider } from "@/components/MotionProvider";
 import { Splash } from "@/components/Splash";
 import { SITE_URL } from "@/lib/site";
 import { Analytics } from "@/components/Analytics";
+import { RefCapture } from "@/components/RefCapture";
 
 const DESCRIPTION = "פלטפורמת ההיכרויות של בני העדה — לצעירים וצעירות מהקהילה האתיופית־ישראלית שמחפשים קשר אמיתי — עם מישהו שמבין מאיפה הם באים.";
 
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         <Splash />
         <Analytics />
+        <RefCapture />
         <MotionProvider>
           {children}
         </MotionProvider>

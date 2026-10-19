@@ -14,7 +14,7 @@ type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: Matc
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[] };
 
 /** SQL fragment: other users that are mutually compatible by gender preference with :me. */
-const COMPATIBLE = `
+export const COMPATIBLE = `
   u.id <> :me AND u.full_name IS NOT NULL AND u.gender IS NOT NULL AND u.is_banned = 0
   AND (:seeking = 'everyone' OR u.gender = :seeking)
   AND (u.seeking = 'everyone' OR u.seeking = :gender)
@@ -96,7 +96,7 @@ function likedMe(me: number, other: number): boolean {
   return !!db.prepare("SELECT 1 FROM matches WHERE user_1_id = ? AND user_2_id = ? AND status = 'pending'").get(other, me);
 }
 
-function toCandidate(me: number, id: number): Candidate {
+export function toCandidate(me: number, id: number): Candidate {
   const other = getUser(id)!;
   return {
     ...toPublic(other),

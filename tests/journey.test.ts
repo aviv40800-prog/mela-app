@@ -1,0 +1,87 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { db } from "@/lib/db";
+import { createVerifiedUser, getUser, updateProfile, type Gender } from "@/lib/users";
+import { swipe } from "@/lib/matching";
+import { FREE_DAILY_LIKES, getQuota, recordLike } from "@/lib/quota";
+import { REFERRAL_BONUS_LIKES, applyReferral, referralCode, referralStats } from "@/lib/referral";
+import { decideSecondChance, isSecondChance, secondChanceDeck } from "@/lib/second-chance";
+import { alertWaitingMembers, setMatchAlerts } from "@/lib/match-alerts";
+import { blockUser } from "@/lib/safety";
+
+let seq = 3000000;
+function member(name: string, gender: Gender) {
+  const u = createVerifiedUser(`+97252${seq++}`);
+  updateProfile(u.id, {
+    full_name: name,
+    age: 29,
+    gender,
+    seeking: gender === "male" ? "female" : "male",
+    location: "תל אביב",
+    occupation: "x",
+    bio: "ביו לבדיקה ארוכה מספיק",
+    photos: [],
+    prompts: [
+      { question_key: "buna", answer_text: "א" },
+      { question_key: "sigd", answer_text: "ב" },
+    ],
+  });
+  return getUser(u.id)!;
+}
+
+beforeEach(() => {
+  db.exec("DELETE FROM users; DELETE FROM daily_usage;");
+});
+
+describe("invite a friend", () => {
+  it("credits the inviter once per friend, and the banked likes are used after the day's own", () => {
+    const me = member("אביב", "male");
+    const code = referralCode(me.id);
+    expect(referralCode(me.id)).toBe(code); // stable
+    const friend = createVerifiedUser("+972529999001");
+    expect(applyReferral(friend.id, code.toUpperCase())).toBe(me.id);
+    expect(applyReferral(friend.id, code)).toBeNull(); // already referred
+    expect(applyReferral(me.id, code)).toBeNull(); // not yourself
+    expect(applyReferral(createVerifiedUser("+972529999002").id, "nosuchcode")).toBeNull();
+    expect(referralStats(me.id)).toMatchObject({ joined: 1, earned: REFERRAL_BONUS_LIKES });
+
+    expect(getQuota(me.id).left).toBe(FREE_DAILY_LIKES + REFERRAL_BONUS_LIKES);
+    for (let i = 0; i < FREE_DAILY_LIKES; i++) recordLike(me.id);
+    expect(getQuota(me.id)).toMatchObject({ left: REFERRAL_BONUS_LIKES, banked: REFERRAL_BONUS_LIKES });
+    recordLike(me.id);
+    expect(getQuota(me.id)).toMatchObject({ left: REFERRAL_BONUS_LIKES - 1, banked: REFERRAL_BONUS_LIKES - 1 });
+  });
+});
+
+describe("second chance", () => {
+  it("offers a passed profile once, and a like reopens it", () => {
+    const me = member("דני", "male");
+    const a = member("רותם", "female");
+    const b = member("שירה", "female");
+    const c = member("מיכל", "female");
+    swipe(me.id, a.id, "pass");
+    swipe(me.id, b.id, "pass");
+    swipe(me.id, c.id, "pass");
+    swipe(c.id, me.id, "like"); // she swiped after my pass — not offered again
+    blockUser(b.id, me.id); // she blocked me
+    expect(secondChanceDeck(me).map((x) => x.id)).toEqual([a.id]);
+
+    expect(isSecondChance(me, a.id)).toBe(true);
+    decideSecondChance(me.id, a.id, true);
+    expect(isSecondChance(me, a.id)).toBe(false);
+    expect(swipe(me.id, a.id, "like")).toMatchObject({ status: "pending", recorded: true });
+  });
+});
+
+describe("match alerts", () => {
+  it("emails opted-in members a newcomer fits, at most once a day", () => {
+    const waiting = member("נועה", "female");
+    db.prepare("UPDATE users SET email = 'noa@example.com', email_verified = 1 WHERE id = ?").run(waiting.id);
+    setMatchAlerts(waiting.id, true);
+    const other = member("ליה", "female"); // not opted in
+    expect(other.id).toBeTruthy();
+    const newcomer = member("יוסי", "male");
+    expect(alertWaitingMembers(newcomer)).toBe(1);
+    expect(alertWaitingMembers(member("משה", "male"))).toBe(0); // already alerted today
+    expect(alertWaitingMembers(member("רונית", "female"))).toBe(0); // not who she's looking for
+  });
+});

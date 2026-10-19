@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "./db";
+import { db, tx } from "./db";
 import { getSubscription, hasAccess } from "./billing";
 
 /** Likes per day on the free tier (no card). Passes are always unlimited. */
@@ -17,6 +17,8 @@ export type Quota = {
   used: number;
   left: number | null;
   resetsAt: string;
+  /** Extra likes earned by inviting friends: used once the day's likes run out, and they never expire. */
+  banked?: number;
   /** Today's share-for-likes progress (free members only). */
   share?: { shares: number; needed: number; bonus: number; claimed: boolean };
 };
@@ -56,13 +58,15 @@ export function getQuota(userId: number): Quota {
     | undefined;
   const used = row?.likes ?? 0;
   const bonus = row?.bonus ?? 0;
-  const limit = FREE_DAILY_LIKES + bonus;
+  const banked = bankedLikes(userId);
+  const left = Math.max(0, FREE_DAILY_LIKES + bonus - used) + banked;
   return {
     premium: false,
-    limit,
+    limit: used + left,
     used,
-    left: Math.max(0, limit - used),
+    left,
     resetsAt,
+    banked,
     share: { shares: Math.min(row?.shares ?? 0, SHARES_FOR_BONUS), needed: SHARES_FOR_BONUS, bonus: SHARE_BONUS_LIKES, claimed: bonus > 0 },
   };
 }
@@ -86,8 +90,20 @@ export function recordShare(userId: number): Quota {
   return getQuota(userId);
 }
 
+export function bankedLikes(userId: number): number {
+  return (db.prepare("SELECT bonus_likes FROM users WHERE id = ?").get(userId) as { bonus_likes: number } | undefined)?.bonus_likes ?? 0;
+}
+
+/** Counts a like; once the day's own likes are spent, it comes out of the banked invite likes. */
 export function recordLike(userId: number) {
-  db.prepare(
-    "INSERT INTO daily_usage (user_id, day, likes) VALUES (?, ?, 1) ON CONFLICT(user_id, day) DO UPDATE SET likes = likes + 1",
-  ).run(userId, israelDay());
+  const day = israelDay();
+  tx(() => {
+    const row = db.prepare("SELECT likes, bonus FROM daily_usage WHERE user_id = ? AND day = ?").get(userId, day) as { likes: number; bonus: number } | undefined;
+    if ((row?.likes ?? 0) >= FREE_DAILY_LIKES + (row?.bonus ?? 0)) {
+      db.prepare("UPDATE users SET bonus_likes = MAX(0, bonus_likes - 1) WHERE id = ?").run(userId);
+    }
+    db.prepare(
+      "INSERT INTO daily_usage (user_id, day, likes) VALUES (?, ?, 1) ON CONFLICT(user_id, day) DO UPDATE SET likes = likes + 1",
+    ).run(userId, day);
+  });
 }
