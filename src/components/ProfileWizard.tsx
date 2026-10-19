@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowLeft, ArrowRight, ChevronDown, Loader2, Plus, X } from "lucide-react";
-import { api, haptic } from "@/lib/client";
+import { api, haptic, track } from "@/lib/client";
 import {
   CULTURAL_PROMPTS,
   LOOKING_FOR,
@@ -201,6 +201,7 @@ export function ProfileWizard({
         },
       });
       haptic([10, 30, 10]);
+      if (!editing) track("profile_complete", { method: "form" });
       if (draftKey)
         try {
           localStorage.removeItem(draftKey);

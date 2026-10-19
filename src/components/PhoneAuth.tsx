@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Check, Loader2, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
-import { api, haptic } from "@/lib/client";
+import { api, haptic, track } from "@/lib/client";
 import { normalizeIsraeliPhone } from "@/lib/phone";
 
 const slide = {
@@ -112,6 +112,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
       const wanted = params.get("next");
       // Only same-site paths, and only once onboarding is done.
       const dest = wanted && wanted.startsWith("/") && !wanted.startsWith("//") && res.next === "/discover" ? wanted : res.next;
+      if (res.isNew) track("sign_up", { method: "email" });
       if (mode === "signup" && !res.isNew) setNotice("כבר יש לך חשבון — מחברים אותך 👋");
       setTimeout(() => router.replace(dest), mode === "signup" && !res.isNew ? 1400 : 650);
     } catch (e) {

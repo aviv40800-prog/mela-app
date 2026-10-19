@@ -27,6 +27,15 @@ export async function api<T = unknown>(url: string, init?: RequestInit & { json?
 
 import { getPrefs } from "./prefs";
 
+/** A funnel event for Google Analytics (no personal details — only the step and, for payments, the amount). */
+export function track(event: string, params?: Record<string, string | number>) {
+  try {
+    (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.("event", event, params);
+  } catch {
+    /* analytics must never break the app */
+  }
+}
+
 /** Short vibration on supporting devices (Android). Respects the in-app haptics preference. */
 export function haptic(pattern: number | number[] = 12) {
   if (typeof navigator === "undefined" || !("vibrate" in navigator) || !getPrefs().haptics) return;

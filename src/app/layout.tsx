@@ -6,6 +6,7 @@ import "./globals.css";
 import { MotionProvider } from "@/components/MotionProvider";
 import { Splash } from "@/components/Splash";
 import { SITE_URL } from "@/lib/site";
+import { Analytics } from "@/components/Analytics";
 
 const DESCRIPTION = "פלטפורמת ההיכרויות של בני העדה — לצעירים וצעירות מהקהילה האתיופית־ישראלית שמחפשים קשר אמיתי — עם מישהו שמבין מאיפה הם באים.";
 
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-sans">
         <Splash />
+        <Analytics />
         <MotionProvider>
           {children}
         </MotionProvider>

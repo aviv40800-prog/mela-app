@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { ArrowLeft, Camera, Check, Loader2, PenLine, RefreshCw } from "lucide-react";
-import { api, haptic } from "@/lib/client";
+import { api, haptic, track } from "@/lib/client";
 import { compressImage, uploadPhoto } from "@/lib/upload";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY } from "@/lib/content";
 import type { ChatView, Draft } from "@/lib/ai-onboarding";
@@ -384,6 +384,7 @@ function Reveal({ draft, onFix, onDone }: { draft: Draft; onFix: () => void; onD
     try {
       const r = await api<{ next: string }>("/api/onboarding/chat/finish", { method: "POST" });
       haptic([10, 40, 20]);
+      track("profile_complete", { method: "ai_chat" });
       onDone(r.next);
     } catch (e) {
       setErr((e as Error).message);

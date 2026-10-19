@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Check, Loader2, Lock, ShieldCheck } from "lucide-react";
-import { api, haptic } from "@/lib/client";
+import { api, haptic, track } from "@/lib/client";
 import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "@/lib/content";
 
 type Checkout = { orderId: string; action: string; fields: Record<string, string> };
@@ -32,6 +32,7 @@ export function TranzilaCheckout({ plan, trial }: { plan: PlanType; trial: boole
     setErr(null);
     try {
       setCheckout(await api<Checkout>("/api/billing/checkout", { method: "POST", json: { plan } }));
+      track("begin_checkout", { currency: "ILS", value: trial ? TRIAL_FEE : p.price, plan });
       setStage("paying");
     } catch (e) {
       setErr((e as Error).message);
@@ -54,6 +55,7 @@ export function TranzilaCheckout({ plan, trial }: { plan: PlanType; trial: boole
         if (stopped) return;
         if (o.status === "paid") {
           haptic([10, 40, 20]);
+          track(trial ? "trial_start" : "purchase", { currency: "ILS", value: trial ? TRIAL_FEE : p.price, plan });
           setStage("done");
           setTimeout(() => {
             router.replace("/discover");
