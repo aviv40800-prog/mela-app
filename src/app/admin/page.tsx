@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } from "@/lib/admin-data";
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
+import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 
 const ils = (n: number) => `₪${n.toLocaleString("he-IL")}`;
@@ -19,6 +20,7 @@ export default function AdminOverview() {
   return (
     <>
       <PageHeader eyebrow="לוח בקרה" title="סקירה כללית">
+        <TestSignupButton />
         <Link href="/admin/users" className="btn-ghost py-2.5 text-sm">
           לכל המשתמשים <ArrowLeft size={15} />
         </Link>

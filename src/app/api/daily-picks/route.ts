@@ -1,10 +1,12 @@
 import { handle, json, requireUser } from "@/lib/api";
 import { dailyPicks } from "@/lib/matching";
 import { FREE_DAILY_PICKS, getQuota } from "@/lib/quota";
+import { isTestUser } from "@/lib/test-account";
 
 export const GET = handle(async () => {
   const user = await requireUser({ requireProfile: true });
   const quota = getQuota(user.id);
+  if (isTestUser(user.id)) return json({ picks: [], quota }); // sandbox accounts never see real members
   // Free members see one pick in full; the rest are teasers (first name + main photo only).
   const picks = dailyPicks(user).map((p, i) =>
     quota.premium || i < FREE_DAILY_PICKS

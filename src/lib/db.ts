@@ -292,6 +292,8 @@ export function migrate(db: DatabaseSync) {
   // "Your next match is on its way": email me when someone new who fits joins (at most once a day).
   if (!cols.has("match_alerts")) db.exec("ALTER TABLE users ADD COLUMN match_alerts INTEGER NOT NULL DEFAULT 0");
   if (!cols.has("match_alert_at")) db.exec("ALTER TABLE users ADD COLUMN match_alert_at TEXT");
+  // Sandbox accounts the team creates to walk through sign-up as a member would (never shown to anyone).
+  if (!cols.has("is_test")) db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0");
   // "Only a few minutes left" — one reminder to members who verified but didn't finish their profile.
   if (!cols.has("signup_reminder_at")) db.exec("ALTER TABLE users ADD COLUMN signup_reminder_at TEXT");
   // Personal matchmaking: the team suggests two members to each other, each with a note on why.

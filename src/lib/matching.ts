@@ -15,7 +15,7 @@ export type Candidate = PublicProfile & { compatibility: number; likedYou: boole
 
 /** SQL fragment: other users that are mutually compatible by gender preference with :me. */
 export const COMPATIBLE = `
-  u.id <> :me AND u.full_name IS NOT NULL AND u.gender IS NOT NULL AND u.is_banned = 0
+  u.id <> :me AND u.full_name IS NOT NULL AND u.gender IS NOT NULL AND u.is_banned = 0 AND u.is_test = 0
   AND (:seeking = 'everyone' OR u.gender = :seeking)
   AND (u.seeking = 'everyone' OR u.seeking = :gender)
 `;

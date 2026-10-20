@@ -5,6 +5,7 @@ import { getUser, toPublic } from "@/lib/users";
 import { getQuota, recordLike } from "@/lib/quota";
 import { decideSecondChance, isSecondChance } from "@/lib/second-chance";
 import { isOpenSuggestion } from "@/lib/suggestions";
+import { isTestUser } from "@/lib/test-account";
 
 const Body = z.object({
   targetId: z.number().int().positive(),
@@ -21,6 +22,7 @@ export const POST = handle(async (req: Request) => {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return error("בקשה לא תקינה");
   const { targetId, action, comment, secondChance } = parsed.data;
+  if (isTestUser(user.id)) return error("חשבון טסט: לא שולחים לייקים למשתמשים אמיתיים", 403);
   if (targetId === user.id || !getUser(targetId)) return error("פרופיל לא נמצא", 404);
   if (secondChance && !isSecondChance(user, targetId)) return error("הפרופיל כבר לא זמין", 404);
   // Free tier: a fixed number of likes per Israel calendar day. Passes are never limited.

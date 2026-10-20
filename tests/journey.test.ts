@@ -128,3 +128,22 @@ describe("signup reminders", () => {
     expect(sendSignupReminders()).toBe(0); // never twice
   });
 });
+
+import { isTestUser, startTestAccount } from "@/lib/test-account";
+import { discoveryDeck } from "@/lib/matching";
+
+describe("sandbox test accounts", () => {
+  it("are hidden from members and replaced on each new run", () => {
+    const real = member("אורי", "male");
+    const t1 = startTestAccount();
+    updateProfile(t1.id, {
+      full_name: "טסט", age: 29, gender: "female", seeking: "male", location: "תל אביב", occupation: "x", bio: "ביו לבדיקה ארוכה מספיק", photos: [],
+      prompts: [{ question_key: "buna", answer_text: "א" }, { question_key: "sigd", answer_text: "ב" }],
+    });
+    expect(isTestUser(t1.id)).toBe(true);
+    expect(discoveryDeck(real).map((c) => c.id)).not.toContain(t1.id);
+    const t2 = startTestAccount();
+    expect(getUser(t1.id)).toBeNull();
+    expect(isTestUser(t2.id)).toBe(true);
+  });
+});

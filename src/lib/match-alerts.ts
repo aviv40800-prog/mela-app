@@ -3,6 +3,7 @@ import { db } from "./db";
 import { cityDistanceKm } from "./cities";
 import { mailMember } from "./member-mail";
 import type { User } from "./users";
+import { isTestUser } from "./test-account";
 
 export function matchAlertsOn(userId: number): boolean {
   return !!(db.prepare("SELECT match_alerts FROM users WHERE id = ?").get(userId) as { match_alerts: number } | undefined)?.match_alerts;
@@ -17,11 +18,11 @@ export function setMatchAlerts(userId: number, on: boolean) {
  * newcomer fits (gender both ways, their age and distance range) — at most one alert a day each.
  */
 export function alertWaitingMembers(newcomer: User): number {
-  if (!newcomer.gender || newcomer.is_demo || newcomer.is_banned) return 0;
+  if (!newcomer.gender || newcomer.is_demo || newcomer.is_banned || isTestUser(newcomer.id)) return 0;
   const rows = db
     .prepare(
       `SELECT u.id, u.location, u.pref_distance_km FROM users u
-       WHERE u.match_alerts = 1 AND u.email_verified = 1 AND u.id <> :new AND u.is_banned = 0 AND u.gender IS NOT NULL AND u.full_name IS NOT NULL
+       WHERE u.match_alerts = 1 AND u.email_verified = 1 AND u.is_test = 0 AND u.id <> :new AND u.is_banned = 0 AND u.gender IS NOT NULL AND u.full_name IS NOT NULL
          AND (u.seeking = 'everyone' OR u.seeking = :ngender) AND (:nseeking = 'everyone' OR u.gender = :nseeking)
          AND (:nage IS NULL OR ((u.pref_age_min IS NULL OR :nage >= u.pref_age_min) AND (u.pref_age_max IS NULL OR :nage <= u.pref_age_max)))
          AND (u.match_alert_at IS NULL OR u.match_alert_at < datetime('now', '-20 hours'))

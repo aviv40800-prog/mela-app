@@ -2,10 +2,13 @@ import { handle, json, requireUser } from "@/lib/api";
 import { discoverFeed } from "@/lib/matching";
 import { getQuota } from "@/lib/quota";
 import { suggestedCards } from "@/lib/suggestions";
+import { isTestUser } from "@/lib/test-account";
 
 export const GET = handle(async () => {
   const user = await requireUser({ requireProfile: true });
   const quota = getQuota(user.id);
+  // A sandbox account sees the "next match is on its way" path, never real members.
+  if (isTestUser(user.id)) return json({ candidates: [], quota, widened: false, swipes: 0 });
   // "Liked you" badges are a Premium feature; free members still match normally by liking back.
   const feed = discoverFeed(user);
   // Personal suggestions from the team come first.

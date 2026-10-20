@@ -7,7 +7,7 @@ const one = <T>(sql: string, ...args: (string | number)[]) => db.prepare(sql).ge
 const count = (sql: string, ...args: (string | number)[]) => one<{ n: number }>(sql, ...args).n;
 
 export function overview() {
-  const real = "is_demo = 0";
+  const real = "is_demo = 0 AND is_test = 0";
   const subs = db
     .prepare(
       `SELECT s.status, s.plan_type, COUNT(*) AS n FROM subscriptions s JOIN users u ON u.id = s.user_id
@@ -66,7 +66,7 @@ export function signupsByDay(days = 14): { day: string; n: number }[] {
   const rows = db
     .prepare(
       `SELECT date(created_at) AS day, COUNT(*) AS n FROM users
-       WHERE is_demo = 0 AND created_at >= date('now', ?) GROUP BY day`,
+       WHERE is_demo = 0 AND is_test = 0 AND created_at >= date('now', ?) GROUP BY day`,
     )
     .all(`-${days - 1} days`) as { day: string; n: number }[];
   const map = new Map(rows.map((r) => [r.day, r.n]));
@@ -97,7 +97,7 @@ export type AdminUserRow = {
 
 export const USER_FILTERS = {
   all: { label: "כולם", where: "1 = 1" },
-  real: { label: "אמיתיים", where: "u.is_demo = 0" },
+  real: { label: "אמיתיים", where: "u.is_demo = 0 AND u.is_test = 0" },
   free: {
     label: "חינמיים",
     where: "u.is_demo = 0 AND u.full_name IS NOT NULL AND (s.status IS NULL OR (s.status = 'canceled' AND s.current_period_end <= datetime('now')))",
