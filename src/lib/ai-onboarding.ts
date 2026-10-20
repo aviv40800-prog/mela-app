@@ -133,8 +133,8 @@ const DETAILS_LABELS: Record<DetailsField, string> = {
 
 const detailsMissing = (d: Draft): DetailsField[] => DETAILS_FIELDS.filter((f) => !ok(S[f], d[f]));
 
-/** The quick-choice card comes as question 3: once the member said what they do (or answered twice). */
-const detailsDue = (d: Draft, answers: number) => detailsMissing(d).length > 0 && (!!d.occupation || answers >= 2);
+/** The quick-choice card comes as question 3: once the member said what they do (or answered three times). */
+const detailsDue = (d: Draft, answers: number) => detailsMissing(d).length > 0 && (!!d.occupation || answers >= 3);
 
 /** The partner question comes last, after the details card and the weekend / first-date questions. */
 function partnerDue(d: Draft, answers: number): boolean {
@@ -232,7 +232,7 @@ const promptKeys = CULTURAL_PROMPTS.map((p) => p.key) as [string, ...string[]];
 const TurnSchema = z.object({
   reply: z.string().describe("Your next message to the member, in Hebrew. 1–3 short sentences. Ends with at most one question."),
   extracted: z.object({
-    full_name: z.string().nullable().describe("First name (and last name if given). Null if not said."),
+    full_name: z.string().nullable().describe("The person's name only: first name (and last name if given). Never the city — 'דוד מיבנה' is name 'דוד', location 'יבנה'. Null if not said."),
     age: z.number().int().nullable(),
     gender: z.enum(["male", "female"]).nullable().describe("Only when clear from what they said or how they write about themselves in Hebrew."),
     seeking: z.enum(["male", "female", "everyone"]).nullable().describe("Only if they said who they want to meet."),
@@ -289,7 +289,8 @@ function stateBlock(d: Draft, missing: Field[], answers: number): string {
     missing.includes("bio") && missing.filter((f) => f !== "photos" && f !== "bio").length === 0 && !d.bio_draft ? "BIO_NEEDED" : null,
     missing.length === 1 && missing[0] === "photos" ? "PHOTOS_NEEDED" : null,
   ].filter(Boolean);
-  return `<state>\nanswers so far: ${answers}\nknown: ${JSON.stringify(known)}\nmissing (in order): ${missing.join(", ") || "nothing"}\n${flags.join("\n")}\n</state>`;
+  const address = d.gender === "male" ? "address the member in masculine Hebrew (no slash forms)" : d.gender === "female" ? "address the member in feminine Hebrew (no slash forms)" : null;
+  return `<state>\nanswers so far: ${answers}\nknown: ${JSON.stringify(known)}\nmissing (in order): ${missing.join(", ") || "nothing"}\n${[...flags, address].filter(Boolean).join("\n")}\n</state>`;
 }
 
 let client: Anthropic | null = null;
@@ -349,6 +350,15 @@ function mergePrompts(current: NonNullable<Draft["prompts"]>, incoming: NonNulla
   return partner ? [...others, partner] : others;
 }
 
+/** "דוד מיבנה" with location "יבנה" → "דוד": drops a "from <city>" word the model folded into the name. */
+export function cleanName(name: string, location?: string): string {
+  const loc = location?.trim();
+  if (!loc) return name;
+  const words = name.trim().split(/\s+/);
+  const kept = words.filter((w) => !(w === loc || w === `מ${loc}` || w === `מה${loc}` || w === `מ־${loc}` || w === `מ-${loc}`));
+  return kept.length ? kept.join(" ") : name;
+}
+
 /** Merge model-extracted values into the draft — each one only if it validates. */
 function merge(d: Draft, x: Turn["extracted"]): Draft {
   const out: Draft = { ...d };
@@ -366,6 +376,7 @@ function merge(d: Draft, x: Turn["extracted"]): Draft {
   set("marital_status", x.marital_status, S.marital_status);
   set("looking_for", x.looking_for, S.looking_for);
   out.prompts = mergePrompts(out.prompts ?? [], x.prompt_answers ?? []);
+  if (out.full_name) out.full_name = cleanName(out.full_name, out.location);
   return out;
 }
 
@@ -529,6 +540,28 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
   return finishTurn(user.id, messages, draft, c.turns + 1, turn.reply.trim(), turn.ask === "none" ? (missingFields(draft)[0] ?? "none") : turn.ask);
 }
 
+/** Slash forms ("את/ה", "עוסק/ת", "בן/בת") in the member's gender, once it's known. */
+export function genderize(text: string, gender?: "male" | "female"): string {
+  if (!gender) return text;
+  const f = gender === "female";
+  return text
+    .replace(/את\/ה/g, f ? "את" : "אתה")
+    .replace(/בן\/בת/g, f ? "בת" : "בן")
+    .replace(/([\u0590-\u05FF]+)\/(ה|ת|ית)(?![\u0590-\u05FF])/g, (_, base: string, suf: string) => (f ? base + suf : base));
+}
+
+const CARD_LINE = "כמה פרטים קצרים בלחיצה 👇";
+/** The friendly reaction at the start of a reply, without its question (or "" when there's no such part). */
+function reaction(text: string): string {
+  const first = text.split(/(?<=[.!])\s+/)[0] ?? "";
+  return first && !first.includes("?") && !first.includes("בלחיצה") && first !== text ? `${first} ` : "";
+}
+function nextQuestion(field: Field | "details" | "none", d: Draft): string {
+  if (field === "details") return CARD_LINE;
+  const q = FALLBACK_ASK[field];
+  return field === "partner_religiosity" || field === "partner" ? q : genderize(q, d.gender);
+}
+
 /** Adds the host's message (the model's, or a fixed one), and makes sure the partner question is asked word for word. */
 function finishTurn(userId: number, messages: ChatMsg[], draft: Draft, turns: number, reply: string | null, ask: Field | "details" | "none"): ChatView {
   const answers = answersIn(messages);
@@ -538,8 +571,14 @@ function finishTurn(userId: number, messages: ChatMsg[], draft: Draft, turns: nu
     if (!text?.includes("שאלה אחרונה")) text = q;
     draft = { ...draft, pending: "partner" };
   } else if (!text) {
+    text = nextQuestion(view(messages, draft, ask).ask, draft);
+  } else {
+    // The screen decides what comes next (the card, a widget, a question) — the words must match it:
+    // no "pick below 👇" when there's nothing to pick, and no other question while the card is showing.
     const next = view(messages, draft, ask).ask;
-    text = next === "details" ? "כמה פרטים קצרים בלחיצה 👇" : FALLBACK_ASK[next];
+    const saysCard = text.includes("בלחיצה");
+    if (next === "details" && !saysCard) text = reaction(text) + CARD_LINE;
+    else if (next !== "details" && saysCard) text = reaction(text) + nextQuestion(next, draft);
   }
   messages.push({ role: "assistant", text });
   saveChat(userId, messages, draft, turns);

@@ -65,7 +65,7 @@ describe("AI onboarding chat", () => {
     v = await ai.chatTurn(u, { details: { looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
     expect(v.draft).toMatchObject({ looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" });
     expect(v.messages.at(-2)?.text).toMatch(/^.+ · רווק\/ה · מסורתי\/ת · לא משנה לי$/);
-    expect(v.messages.at(-1)?.text).toBe("על מה את/ה יכול/ה לדבר שעות?");
+    expect(v.messages.at(-1)?.text).toBe("על מה את יכולה לדבר שעות?"); // in her gender, once known
 
     // 4–5. Weekend and first date fill the prompts; then the partner question is asked word for word.
     turns.push({ reply: "חחח מושלם. ואיך נראה דייט ראשון מושלם?", extracted: { ...empty, prompt_answers: [{ question_key: "perfect_weekend", answer_text: "ים, בונה ומשפחה" }] }, bio_draft: null, ask: "prompts" });
@@ -118,6 +118,29 @@ describe("AI onboarding chat", () => {
     updateProfile(u.id, profile!);
     expect(isProfileComplete(getUser(u.id)!)).toBe(true);
     await expect(ai.chatTurn(u, { photos: ["javascript:alert(1)"] })).rejects.toThrow(/תמונה/);
+  });
+
+  it("keeps the words in step with the screen, and the city out of the name (David from Yavne)", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    const u = withPassword(createEmailUser("david@example.com"));
+    ai.getChat(u);
+    // the model folds the city into the name
+    turns.push({ reply: "נעים מאוד! ואיפה אתה גר?", extracted: { ...empty, full_name: "דוד מיבנה", age: 30, gender: "male" }, bio_draft: null, ask: "location" });
+    let v = await ai.chatTurn(u, { text: "דוד מיבנה 30" });
+    turns.push({ reply: "יבנה, יפה! מה אתה עושה בימים?", extracted: { ...empty, location: "יבנה" }, bio_draft: null, ask: "occupation" });
+    v = await ai.chatTurn(u, { text: "גר ביבנה" });
+    expect(v.draft.full_name).toBe("דוד");
+    expect(v.ask).toBe("occupation"); // two answers, no job yet: no card yet
+    // the job arrives; the model asks something else, but the card is what shows — so that's what she says
+    turns.push({ reply: "מרלוג תרופות, מעניין! ומה אתה מחפש?", extracted: { ...empty, occupation: "מרלוג תרופות" }, bio_draft: null, ask: "looking_for" });
+    v = await ai.chatTurn(u, { text: "עובד במרלוג תרופות בטבע" });
+    expect(v.ask).toBe("details");
+    expect(v.messages.at(-1)?.text).toBe("מרלוג תרופות, מעניין! כמה פרטים קצרים בלחיצה 👇");
+    // after the card, a "pick below 👇" with nothing to pick becomes the next real question
+    turns.push({ reply: "קיבלתי! עכשיו כמה פרטים קצרים בלחיצה 👇", extracted: empty, bio_draft: null, ask: "details" });
+    v = await ai.chatTurn(u, { details: { looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
+    expect(v.ask).not.toBe("details");
+    expect(v.messages.at(-1)?.text).toBe("קיבלתי! על מה אתה יכול לדבר שעות?");
   });
 
   it("asks men about their future wife", async () => {
