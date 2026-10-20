@@ -144,7 +144,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             )}
           </Card>
 
-          <AdminUserActions userId={u.id} verified={u.is_verified} banned={u.is_banned} hasSub={!!sub && sub.status !== "canceled"} />
+          <AdminUserActions userId={u.id} verified={u.is_verified} banned={u.is_banned} hasSub={!!sub && sub.status !== "canceled"} seeking={u.seeking} />
         </div>
       </div>
     </>

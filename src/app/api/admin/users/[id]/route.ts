@@ -14,6 +14,8 @@ const Patch = z.object({
     .max(6)
     .optional(),
   subscription: z.enum(["extend_trial_7", "grant_month", "cancel"]).optional(),
+  /** Fix who the member is looking for (e.g. a wrong guess during sign-up). */
+  seeking: z.enum(["male", "female", "everyone"]).optional(),
 });
 
 export const PATCH = handle(async (req: Request, { params }: Ctx) => {
@@ -28,6 +30,7 @@ export const PATCH = handle(async (req: Request, { params }: Ctx) => {
 
   if (p.is_verified !== undefined) db.prepare("UPDATE users SET is_verified = ? WHERE id = ?").run(p.is_verified ? 1 : 0, id);
   if (p.is_banned !== undefined) db.prepare("UPDATE users SET is_banned = ? WHERE id = ?").run(p.is_banned ? 1 : 0, id);
+  if (p.seeking) db.prepare("UPDATE users SET seeking = ? WHERE id = ?").run(p.seeking, id);
   if (p.photos) db.prepare("UPDATE users SET photos = ? WHERE id = ?").run(JSON.stringify(p.photos), id);
 
   if (p.subscription) {

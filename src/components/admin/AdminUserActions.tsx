@@ -6,7 +6,25 @@ import { Loader2 } from "lucide-react";
 import { api } from "@/lib/client";
 import { Toggle } from "../ui/Toggle";
 
-export function AdminUserActions({ userId, verified, banned, hasSub }: { userId: number; verified: boolean; banned: boolean; hasSub: boolean }) {
+const SEEKING = [
+  ["male", "גבר"],
+  ["female", "אישה"],
+  ["everyone", "כולם"],
+] as const;
+
+export function AdminUserActions({
+  userId,
+  verified,
+  banned,
+  hasSub,
+  seeking,
+}: {
+  userId: number;
+  verified: boolean;
+  banned: boolean;
+  hasSub: boolean;
+  seeking: "male" | "female" | "everyone";
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -46,6 +64,22 @@ export function AdminUserActions({ userId, verified, banned, hasSub }: { userId:
         </Row>
         <Row title="השעיית חשבון" sub="מנתק ומסתיר מהגילוי">
           <Toggle label="השעיית חשבון" checked={banned} onChange={(v) => patch("ban", { is_banned: v })} />
+        </Row>
+        <Row title="מחפש/ת" sub="את מי רואים במסך הגילוי ומי רואה אותם">
+          <div className="flex gap-1" role="radiogroup" aria-label="מחפש/ת">
+            {SEEKING.map(([v, label]) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={seeking === v}
+                disabled={!!busy || seeking === v}
+                onClick={() => patch("seeking", { seeking: v })}
+                className={`rounded-full border px-3 py-1.5 text-[12.5px] transition ${seeking === v ? "border-gold bg-gold/20 text-cream" : "border-line text-mute hover:border-gold/50"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </Row>
       </div>
 
