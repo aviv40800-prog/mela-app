@@ -91,6 +91,7 @@ export type Draft = {
 export const FIELD_ORDER = [
   "full_name",
   "gender",
+  "seeking",
   "age",
   "location",
   "occupation",
@@ -108,6 +109,7 @@ export type Field = (typeof FIELD_ORDER)[number];
 /** Tap-to-answer choices for the enum fields. */
 export const CHOICES: Partial<Record<Field, Record<string, string>>> = {
   gender: { female: "אישה", male: "גבר" },
+  seeking: { male: "גברים", female: "נשים" },
   looking_for: LOOKING_FOR,
   marital_status: MARITAL_STATUS,
   religiosity: RELIGIOSITY,
@@ -121,10 +123,11 @@ const S = ProfileSchema.shape;
 export const PARTNER_PROMPT = "dealbreaker";
 
 /** Answered together on one quick-choice card instead of five separate questions. */
-export const DETAILS_FIELDS = ["gender", "looking_for", "marital_status", "religiosity", "partner_religiosity"] as const;
+export const DETAILS_FIELDS = ["gender", "seeking", "looking_for", "marital_status", "religiosity", "partner_religiosity"] as const;
 export type DetailsField = (typeof DETAILS_FIELDS)[number];
 const DETAILS_LABELS: Record<DetailsField, string> = {
   gender: "לשון פנייה",
+  seeking: "מי מעניין אותך?",
   looking_for: "מה את/ה מחפש/ת",
   marital_status: "סטטוס",
   religiosity: "דת ומסורת",
@@ -205,6 +208,7 @@ export function resetChat(userId: number) {
 const FALLBACK_ASK: Record<Field | "none", string> = {
   full_name: "איך קוראים לך?",
   gender: "ואיך לפנות אלייך — בלשון זכר או נקבה?",
+  seeking: "ומי מעניין אותך, גברים או נשים?",
   age: "בן/בת כמה את/ה?",
   location: "איפה את/ה גר/ה?",
   occupation: "ובמה את/ה עוסק/ת?",
@@ -235,7 +239,6 @@ const TurnSchema = z.object({
     full_name: z.string().nullable().describe("The person's name only: first name (and last name if given). Never the city — 'דוד מיבנה' is name 'דוד', location 'יבנה'. Null if not said."),
     age: z.number().int().nullable(),
     gender: z.enum(["male", "female"]).nullable().describe("Only when clear from what they said or how they write about themselves in Hebrew."),
-    seeking: z.enum(["male", "female", "everyone"]).nullable().describe("Only if they said who they want to meet."),
     location: z.string().nullable().describe("City or town in Israel."),
     occupation: z.string().nullable(),
     religiosity: enumOrNull(RELIGIOSITY),
@@ -264,7 +267,7 @@ How you talk (Hebrew only):
 The script — ask these, in this order, and nothing else (the <state> block tells you how many answers they have given and what is still missing):
 1. (Already asked in the greeting) name, age and city.
 2. What they do (work / studies) and what fills their days.
-3. The quick-choice card: when the state says DETAILS_NEEDED, reply with a short reaction plus one sentence like "כמה פרטים קצרים בלחיצה 👇" and set ask to "details". The app shows buttons for gender, what they're looking for, status, religiosity and the partner's religiosity — don't ask these in words.
+3. The quick-choice card: when the state says DETAILS_NEEDED, reply with a short reaction plus one sentence like "כמה פרטים קצרים בלחיצה 👇" and set ask to "details". The app shows buttons for gender, who they want to meet, what they're looking for, status, religiosity and the partner's religiosity — don't ask these in words, and never assume who they want to meet.
 4. What fills their weekend, or what they can talk about for hours (pick what fits them).
 5. Their idea of a perfect first date.
 6. When the state says PARTNER_QUESTION, ask exactly that question (you may add a two-word reaction before it) and set ask to "partner".
@@ -368,7 +371,6 @@ function merge(d: Draft, x: Turn["extracted"]): Draft {
   set("full_name", x.full_name, S.full_name);
   set("age", x.age, S.age);
   set("gender", x.gender, S.gender);
-  set("seeking", x.seeking, S.seeking);
   set("location", x.location, S.location);
   set("occupation", x.occupation, S.occupation);
   set("religiosity", x.religiosity, S.religiosity);

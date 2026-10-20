@@ -12,7 +12,7 @@ import type { ChatView, Draft } from "@/lib/ai-onboarding";
 import { SignOutButton } from "./SignOutButton";
 import { Photo } from "./Photo";
 
-const TOTAL = 13; // FIELD_ORDER.length
+const TOTAL = 14; // FIELD_ORDER.length
 const HEART = "M120 212 C48 160 4 116 4 66 C4 30 32 4 66 4 C92 4 110 18 120 38 C130 18 148 4 174 4 C208 4 236 30 236 66 C236 116 192 160 120 212 Z";
 const bubbleIn = { initial: { opacity: 0, y: 10, scale: 0.94 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: "spring" as const, stiffness: 420, damping: 32 } };
 

@@ -56,15 +56,15 @@ describe("AI onboarding chat", () => {
     turns.push({ reply: "וואו, אחות! כמה פרטים קצרים בלחיצה 👇", extracted: { ...empty, occupation: "אחות", age: 27, gender: "female" }, bio_draft: null, ask: "details" });
     v = await ai.chatTurn(u, { text: "אחות, בת 27" });
     expect(v.ask).toBe("details");
-    expect(v.details.map((r) => r.field)).toEqual(["looking_for", "marital_status", "religiosity", "partner_religiosity"]);
+    expect(v.details.map((r) => r.field)).toEqual(["seeking", "looking_for", "marital_status", "religiosity", "partner_religiosity"]);
 
     // 3. The card sets the fields directly and must be complete; when the model is down, a fixed question follows.
-    await expect(ai.chatTurn(u, { details: { looking_for: "serious" } })).rejects.toThrow(/בכל שורה/);
-    await expect(ai.chatTurn(u, { details: { looking_for: "serious", marital_status: "pirate", religiosity: "traditional", partner_religiosity: "any" } })).rejects.toThrow();
+    await expect(ai.chatTurn(u, { details: { seeking: "male", looking_for: "serious" } })).rejects.toThrow(/בכל שורה/);
+    await expect(ai.chatTurn(u, { details: { seeking: "male", looking_for: "serious", marital_status: "pirate", religiosity: "traditional", partner_religiosity: "any" } })).rejects.toThrow();
     turns.push(new Error("overloaded"));
-    v = await ai.chatTurn(u, { details: { looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
+    v = await ai.chatTurn(u, { details: { seeking: "male", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
     expect(v.draft).toMatchObject({ looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" });
-    expect(v.messages.at(-2)?.text).toMatch(/^.+ · רווק\/ה · מסורתי\/ת · לא משנה לי$/);
+    expect(v.messages.at(-2)?.text).toMatch(/^גברים · .+ · רווק\/ה · מסורתי\/ת · לא משנה לי$/);
     expect(v.messages.at(-1)?.text).toBe("על מה את יכולה לדבר שעות?"); // in her gender, once known
 
     // 4–5. Weekend and first date fill the prompts; then the partner question is asked word for word.
@@ -105,7 +105,7 @@ describe("AI onboarding chat", () => {
     const u = withPassword(createEmailUser("nophoto@example.com"));
     db.prepare("INSERT INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, '[]', ?, 1)").run(
       u.id,
-      JSON.stringify({ full_name: "יוסי", age: 30, gender: "male", location: "רחובות", occupation: "מהנדס", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any", bio: "מהנדס מרחובות, אוהב ים ומשפחה.", prompts: [{ question_key: "first_date", answer_text: "קפה וים" }, { question_key: "dealbreaker", answer_text: "לב טוב" }] }),
+      JSON.stringify({ full_name: "יוסי", age: 30, gender: "male", seeking: "female", location: "רחובות", occupation: "מהנדס", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any", bio: "מהנדס מרחובות, אוהב ים ומשפחה.", prompts: [{ question_key: "first_date", answer_text: "קפה וים" }, { question_key: "dealbreaker", answer_text: "לב טוב" }] }),
     );
     expect(ai.loadChat(u.id).draft.photos).toBeUndefined();
     turns.push({ reply: "מוכן!", extracted: empty, bio_draft: null, ask: "none" });
@@ -138,9 +138,21 @@ describe("AI onboarding chat", () => {
     expect(v.messages.at(-1)?.text).toBe("מרלוג תרופות, מעניין! כמה פרטים קצרים בלחיצה 👇");
     // after the card, a "pick below 👇" with nothing to pick becomes the next real question
     turns.push({ reply: "קיבלתי! עכשיו כמה פרטים קצרים בלחיצה 👇", extracted: empty, bio_draft: null, ask: "details" });
-    v = await ai.chatTurn(u, { details: { looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
+    v = await ai.chatTurn(u, { details: { seeking: "female", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any" } });
     expect(v.ask).not.toBe("details");
     expect(v.messages.at(-1)?.text).toBe("קיבלתי! על מה אתה יכול לדבר שעות?");
+  });
+
+  it("never guesses who a member wants to meet — it's asked on the card", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    const u = withPassword(createEmailUser("seek@example.com"));
+    ai.getChat(u);
+    turns.push({ reply: "נעים מאוד! במה את עוסקת?", extracted: { ...empty, full_name: "שירה", age: 30, gender: "female", seeking: "female" }, bio_draft: null, ask: "occupation" });
+    let v = await ai.chatTurn(u, { text: "שירה, 30, מחפשת גבר עם זיקה לדת" });
+    expect(v.draft.seeking).toBeUndefined(); // the model's guess is ignored
+    turns.push({ reply: "יפה! כמה פרטים קצרים בלחיצה 👇", extracted: { ...empty, occupation: "אחות" }, bio_draft: null, ask: "details" });
+    v = await ai.chatTurn(u, { text: "אחות" });
+    expect(v.details[0]).toMatchObject({ field: "seeking", label: "מי מעניין אותך?" });
   });
 
   it("asks men about their future wife", async () => {
