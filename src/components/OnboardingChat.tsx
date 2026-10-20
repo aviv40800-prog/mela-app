@@ -131,7 +131,7 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
 
       {/* conversation — the only part that scrolls */}
       <main ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4" aria-live="polite">
-        <p className="mb-3 text-center text-[11px] leading-relaxed text-mute-2">השיחה מעובדת בעזרת בינה מלאכותית (Claude של Anthropic) רק כדי לבנות את הפרופיל שלך. כל פרט אפשר לערוך לפני השמירה.</p>
+        <p className="mb-3 text-center text-[11px] leading-relaxed text-mute-2">כאן תכירו את MELA: בינה מלאכותית שנבנתה במיוחד בשביל הקהילה, כדי להכיר אתכם לעומק ולבנות לכם פרופיל שקולע בול. כל פרט אפשר לערוך לפני השמירה.</p>
         <div className="flex flex-col gap-2.5">
           {chat.messages.map((m, i) => (
             <motion.div
