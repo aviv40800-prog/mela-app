@@ -107,6 +107,21 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             <Stat label="לייקים שהתקבלו" value={stats.likesReceived} accent />
             <Stat label="התאמות" value={stats.matches} />
             <Stat label="הודעות שנשלחו" value={stats.messagesSent} />
+            <Stat label="דילוגים" value={stats.passes} />
+            <Stat
+              label="פרופילים שעוד לא ראה/תה"
+              value={stats.unseen.inRange}
+              accent={stats.unseen.inRange === 0}
+              sub={
+                stats.unseen.inRange === 0
+                  ? stats.unseen.all
+                    ? `נגמרו בטווח שבחר/ה · ${stats.unseen.all} מחוץ לטווח`
+                    : "נגמרו — הזמן לשידוך אישי"
+                  : stats.unseen.all > stats.unseen.inRange
+                    ? `+${stats.unseen.all - stats.unseen.inRange} מחוץ לטווח הגיל/מרחק`
+                    : undefined
+              }
+            />
           </div>
 
           <Card title="מנוי">

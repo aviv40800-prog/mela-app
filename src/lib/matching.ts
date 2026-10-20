@@ -92,6 +92,12 @@ function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
     .map((r) => r.id);
 }
 
+/** How many profiles the member hasn't seen yet in Discover: within their age/distance range, and overall. */
+export function unseenCount(me: User): { inRange: number; all: number } {
+  if (!me.gender) return { inRange: 0, all: 0 };
+  return { inRange: candidateIds(me, 1000).length, all: candidateIds(me, 1000, true).length };
+}
+
 function likedMe(me: number, other: number): boolean {
   return !!db.prepare("SELECT 1 FROM matches WHERE user_1_id = ? AND user_2_id = ? AND status = 'pending'").get(other, me);
 }

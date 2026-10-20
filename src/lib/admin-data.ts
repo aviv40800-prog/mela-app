@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { getPrompts, getUser, type User } from "./users";
 import { getSubscription } from "./billing";
+import { unseenCount } from "./matching";
 
 const one = <T>(sql: string, ...args: (string | number)[]) => db.prepare(sql).get(...args) as T;
 const count = (sql: string, ...args: (string | number)[]) => one<{ n: number }>(sql, ...args).n;
@@ -171,6 +172,7 @@ export function userDetail(id: number) {
     matches: count("SELECT COUNT(*) AS n FROM matches WHERE status = 'matched' AND (user_1_id = ? OR user_2_id = ?)", id, id),
     messagesSent: count("SELECT COUNT(*) AS n FROM messages WHERE sender_id = ?", id),
     quizAnswers: count("SELECT COUNT(*) AS n FROM quiz_answers WHERE user_id = ?", id),
+    unseen: unseenCount(user),
   };
   const matches = (
     db
