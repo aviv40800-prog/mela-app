@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Check, Loader2, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
+import { InAppBrowserHint } from "./InAppBrowserHint";
 import { api, haptic, track } from "@/lib/client";
 import { normalizeIsraeliPhone } from "@/lib/phone";
 
@@ -43,6 +44,26 @@ const PHONE_COPY = {
   cta: "שלחו קוד כניסה",
 };
 
+/** A code was sent: remembered for a while, so stepping out to the mail app and back resumes at the code screen. */
+const PENDING_KEY = (mode: Mode) => `mela:otp-pending:${mode}`;
+const PENDING_TTL = 10 * 60_000;
+const pending = {
+  get(mode: Mode): { to: string; phone: boolean } | null {
+    try {
+      const v = JSON.parse(localStorage.getItem(PENDING_KEY(mode)) ?? "null") as { to: string; phone: boolean; at: number } | null;
+      return v && Date.now() - v.at < PENDING_TTL ? v : null;
+    } catch {
+      return null;
+    }
+  },
+  set(mode: Mode, to: string | null, phone = false) {
+    try {
+      if (to) localStorage.setItem(PENDING_KEY(mode), JSON.stringify({ to, phone, at: Date.now() }));
+      else localStorage.removeItem(PENDING_KEY(mode));
+    } catch {}
+  },
+};
+
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
 /**
@@ -68,6 +89,19 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
   const valid = usePhone ? normalizeIsraeliPhone(phone) !== null : emailOk(email);
   const copy = usePhone ? PHONE_COPY : COPY[mode];
 
+  // Back from the mail app: pick up at the code screen (unless a different address was asked for in the link).
+  useEffect(() => {
+    const p = pending.get(mode);
+    const wanted = params.get("email");
+    if (!p || (wanted && wanted.toLowerCase() !== p.to.toLowerCase())) return;
+    setUsePhone(p.phone);
+    if (p.phone) setPhone(p.to);
+    else setEmail(p.to); // so "send again" still knows where to
+    setSentTo(p.to);
+    setTimeout(() => inputs.current[0]?.focus(), 350);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
@@ -88,6 +122,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
         json: usePhone ? { phone } : { email: email.trim() },
       });
       setSentTo(res.email ?? res.phone ?? null);
+      pending.set(mode, res.email ?? res.phone ?? null, usePhone);
       setDevCode(res.devCode ?? null);
       setDigits(Array(6).fill(""));
       setCooldown(30);
@@ -108,6 +143,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
         json: usePhone ? { phone: sentTo, code, purpose: mode } : { email: sentTo, code, purpose: mode },
       });
       setVerified(true);
+      pending.set(mode, null);
       haptic([10, 40, 20]);
       const wanted = params.get("next");
       // Only same-site paths, and only once onboarding is done.
@@ -223,6 +259,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
               <ShieldCheck size={14} className="text-gold" /> {usePhone ? "הכניסה מאובטחת בקוד חד־פעמי" : "כל חבר/ה ב־MELA עובר/ת אימות בקוד חד־פעמי"}
             </div>
             {!usePhone && <p className="mt-2 text-xs text-mute-2">לא רואים את המייל תוך דקה? כדאי לבדוק בתיקיית הספאם / קידומי מכירות.</p>}
+            <InAppBrowserHint />
 
             <div className="mt-auto pt-10">
               <button className="btn-gold w-full text-[17px]" disabled={busy || !valid}>
@@ -275,7 +312,12 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
           </motion.form>
         ) : (
           <motion.div key="code" {...slide} className="mt-10 flex flex-1 flex-col">
-            <button onClick={() => setSentTo(null)} className="mb-6 flex w-fit items-center gap-1 text-sm text-mute transition hover:text-cream">
+            <button
+              onClick={() => {
+                setSentTo(null);
+                pending.set(mode, null);
+              }}
+              className="mb-6 flex w-fit items-center gap-1 text-sm text-mute transition hover:text-cream">
               <ArrowRight size={16} /> {usePhone ? "שינוי מספר" : "שינוי כתובת"}
             </button>
             <h1 className="font-display text-[2.1rem] leading-tight font-bold">הקלד/י את הקוד</h1>
@@ -343,6 +385,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
               </AnimatePresence>
             </div>
 
+            <InAppBrowserHint />
             <button onClick={() => requestCode()} disabled={cooldown > 0 || busy} className="tabular mx-auto mt-6 text-sm text-gold transition disabled:text-mute-2">
               {cooldown > 0 ? `שליחה חוזרת בעוד 0:${String(cooldown).padStart(2, "0")}` : "לא קיבלתי — שלחו שוב"}
             </button>

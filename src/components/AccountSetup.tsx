@@ -6,9 +6,11 @@ import { Check, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
 import { api, haptic } from "@/lib/client";
 
+// New and earlier members see the same screen.
+const SETUP = { title: "בחירת שם משתמש וסיסמה", sub: "כדי להיכנס בקלות בפעם הבאה, בלי לחכות לקוד במייל.", cta: "שמירה והמשך" };
 const COPY = {
-  new: { title: "שם משתמש וסיסמה", sub: "מעכשיו נכנסים איתם, בלי לחכות לקוד במייל.", cta: "שמירה והמשך" },
-  existing: { title: "הגדרת סיסמה", sub: "שדרגנו את הכניסה: מעכשיו נכנסים עם שם משתמש וסיסמה, והקוד במייל נשאר רק למקרה ששכחת סיסמה.", cta: "שמירה" },
+  new: SETUP,
+  existing: SETUP,
   reset: { title: "סיסמה חדשה", sub: "בחר/י סיסמה חדשה לחשבון.", cta: "שמירת הסיסמה" },
 };
 

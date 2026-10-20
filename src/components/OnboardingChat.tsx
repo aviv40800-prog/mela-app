@@ -100,11 +100,9 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
         <section aria-label="מה שלמדתי עלייך" className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-b from-gold/[0.1] to-gold/[0.03] px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[12.5px] font-medium text-gold-3">{done ? "מה שלמדתי עלייך" : "הפרופיל שלך ייבנה כאן תוך כדי שיחה"}</span>
-            <span className="tabular text-[11.5px] text-mute">
-              {done} / {TOTAL}
-            </span>
+            <span className="tabular text-[12px] font-semibold text-gold-3">הפרופיל שלך: {Math.round((done / TOTAL) * 100)}%</span>
           </div>
-          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-fg/10">
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-fg/10">
             <motion.div className="h-full rounded-full bg-gradient-to-l from-gold-3 to-rose" animate={{ width: `${(done / TOTAL) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
           </div>
           {facts(chat.draft).length > 0 && (
@@ -431,6 +429,13 @@ function Reveal({ draft, onFix, onDone }: { draft: Draft; onFix: () => void; onD
           </div>
         </div>
       </motion.article>
+      {/* MELA says what happens next, in her own voice */}
+      <div className="w-full rounded-[22px] border border-gold/30 bg-gradient-to-b from-gold/[0.1] to-gold/[0.03] px-4 py-3.5 text-[14.5px] leading-relaxed">
+        <span className="font-semibold text-gold-3">הפרופיל שלך מוכן ✨</span>{" "}
+        מעכשיו אני עובדת בשבילך: אני מכירה כל מי שמצטרף ל־MELA ומחפשת מי שבאמת מתאים לך לפי מה שסיפרת לי. כשאמצא התאמה,{" "}
+        {draft.gender === "female" ? "תקבלי" : draft.gender === "male" ? "תקבל" : "תקבל/י"} ממני מייל אישי עם ההסבר למה. ובינתיים,{" "}
+        {draft.gender === "female" ? "ספרי" : draft.gender === "male" ? "ספר" : "ספר/י"} לחברים: כל מי שמצטרף מגדיל את הסיכוי שלך 💛
+      </div>
       <p className="text-center text-[13px] text-mute">אפשר לערוך כל פרט עכשיו או מאוחר יותר מהפרופיל.</p>
       {err && <p className="text-sm text-danger">{err}</p>}
       <div className="mt-auto flex w-full flex-col gap-2">

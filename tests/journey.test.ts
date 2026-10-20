@@ -111,3 +111,20 @@ describe("personal match suggestions", () => {
     expect(suggestionsFor(shiran.id)[0]).toMatchObject({ matched: true, seenTheirs: true, mine: "liked", theirs: "liked" });
   });
 });
+
+import { sendSignupReminders } from "@/lib/reminders";
+import { createEmailUser, markEmailVerified } from "@/lib/users";
+
+describe("signup reminders", () => {
+  it("reminds once, an hour after verifying, only those who didn't finish", () => {
+    const stuck = createEmailUser("stuck@example.com");
+    markEmailVerified(stuck.id, "stuck@example.com");
+    const done = member("גלית", "female");
+    db.prepare("UPDATE users SET email = 'done@example.com', email_verified = 1 WHERE id = ?").run(done.id);
+    const fresh = createEmailUser("fresh@example.com");
+    markEmailVerified(fresh.id, "fresh@example.com");
+    db.prepare("UPDATE users SET created_at = datetime('now', '-2 hours') WHERE id IN (?, ?)").run(stuck.id, done.id);
+    expect(sendSignupReminders()).toBe(1); // only "stuck": "done" finished, "fresh" verified a minute ago
+    expect(sendSignupReminders()).toBe(0); // never twice
+  });
+});
