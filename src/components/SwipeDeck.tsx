@@ -63,7 +63,8 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
     async (action: Action, opts: { velocity?: number; comment?: { text: string; promptKey?: string } } = {}) => {
       if (!top || busy.current) return;
       // Free tier out of likes: don't throw the card — spring it back and offer Premium. Passes stay free.
-      if (action === "like" && quota && quota.left === 0) {
+      // (A personal suggestion from the team is liked for free.)
+      if (action === "like" && quota && quota.left === 0 && !top.suggestion) {
         haptic([30, 40, 30]);
         setSheet(null);
         setPaywall(true);
@@ -75,7 +76,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
       haptic(action === "like" ? [12, 30, 18] : 8);
       if (action === "like") setBurst((b) => b + 1);
       const target = top;
-      if (action === "like" && quota && quota.left !== null) setQuota({ ...quota, left: Math.max(0, quota.left - 1), used: quota.used + 1 });
+      if (action === "like" && !top.suggestion && quota && quota.left !== null) setQuota({ ...quota, left: Math.max(0, quota.left - 1), used: quota.used + 1 });
 
       const request = api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: target.id, action, comment: opts.comment, secondChance: second || undefined } })
         .then((res) => {
@@ -215,6 +216,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         animate={offer && !match ? { scale: 0.94, opacity: 0.45, filter: "blur(6px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
         transition={{ type: "spring", stiffness: 300, damping: 34 }}
       >
+        {top.suggestion && !second && <SuggestionNote key={top.id} note={top.suggestion.note} />}
         {second && (
           <button
             onClick={() => setDeck([])}
@@ -224,7 +226,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
           </button>
         )}
         <AnimatePresence>
-          {widened && !second && (
+          {widened && !second && !top.suggestion && (
             <motion.button
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -328,6 +330,23 @@ function TopCard({
         לא הפעם
       </motion.div>
     </motion.div>
+  );
+}
+
+/** "A personal suggestion from MELA": the team's note on why, over the top card. Tap to read it all. */
+function SuggestionNote({ note }: { note: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={() => setOpen((o) => !o)}
+      className="on-dark absolute inset-x-4 top-14 z-20 rounded-2xl border border-gold/45 bg-black/65 px-4 py-2.5 text-start backdrop-blur-md"
+      aria-expanded={open}
+    >
+      <span className="block text-[12px] font-semibold text-gold-3">💛 הצעה אישית מ־MELA</span>
+      <span className={`mt-0.5 block text-[13px] leading-snug text-cream/90 ${open ? "" : "line-clamp-2"}`}>{note}</span>
+    </motion.button>
   );
 }
 

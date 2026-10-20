@@ -85,3 +85,29 @@ describe("match alerts", () => {
     expect(alertWaitingMembers(member("רונית", "female"))).toBe(0); // not who she's looking for
   });
 });
+
+import { createSuggestion, suggestedCards, suggestionCandidates, suggestionsFor, isOpenSuggestion } from "@/lib/suggestions";
+
+describe("personal match suggestions", () => {
+  it("pins each to the other, reopens earlier passes, and tracks the outcome", () => {
+    const admin = member("מנהל", "male");
+    const shiran = member("שירן", "female");
+    const berhan = member("ברהן", "male");
+    const other = member("דני", "male");
+    swipe(berhan.id, shiran.id, "pass"); // he passed on her before
+    expect(suggestionCandidates(shiran).map((c) => c.id)).toEqual(expect.arrayContaining([berhan.id, other.id]));
+
+    const { id } = createSuggestion(admin.id, shiran.id, berhan.id, "שניכם אוהבים משפחה", "שניכם אוהבים משפחה");
+    expect(id).toBeGreaterThan(0);
+    expect(() => createSuggestion(admin.id, berhan.id, shiran.id, "שוב פעם אחת", "שוב פעם אחת")).toThrow();
+    expect(suggestionCandidates(shiran).map((c) => c.id)).not.toContain(berhan.id);
+
+    const cards = suggestedCards(berhan);
+    expect(cards[0]).toMatchObject({ id: shiran.id, suggestion: { note: "שניכם אוהבים משפחה" } });
+    expect(isOpenSuggestion(berhan.id, shiran.id)).toBe(true);
+    expect(swipe(berhan.id, shiran.id, "like").status).toBe("pending"); // the old pass no longer blocks
+    expect(suggestedCards(berhan)).toHaveLength(0);
+    expect(swipe(shiran.id, berhan.id, "like").isNewMatch).toBe(true);
+    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ matched: true, seenTheirs: true, mine: "liked", theirs: "liked" });
+  });
+});

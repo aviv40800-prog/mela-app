@@ -4,6 +4,7 @@ import { swipe } from "@/lib/matching";
 import { getUser, toPublic } from "@/lib/users";
 import { getQuota, recordLike } from "@/lib/quota";
 import { decideSecondChance, isSecondChance } from "@/lib/second-chance";
+import { isOpenSuggestion } from "@/lib/suggestions";
 
 const Body = z.object({
   targetId: z.number().int().positive(),
@@ -23,7 +24,9 @@ export const POST = handle(async (req: Request) => {
   if (targetId === user.id || !getUser(targetId)) return error("פרופיל לא נמצא", 404);
   if (secondChance && !isSecondChance(user, targetId)) return error("הפרופיל כבר לא זמין", 404);
   // Free tier: a fixed number of likes per Israel calendar day. Passes are never limited.
-  if (action === "like") {
+  // A like on a personal suggestion from the team doesn't use up the day's likes.
+  const suggested = action === "like" && isOpenSuggestion(user.id, targetId);
+  if (action === "like" && !suggested) {
     const quota = getQuota(user.id);
     if (quota.left === 0) return error("נגמרו הלייקים להיום", 429, { code: "like_limit", quota });
   }
@@ -33,6 +36,6 @@ export const POST = handle(async (req: Request) => {
     if (action === "pass") return json({ status: "rejected", matchId: 0, isNewMatch: false, recorded: false, quota: getQuota(user.id) });
   }
   const result = swipe(user.id, targetId, action, comment);
-  if (action === "like" && result.recorded && !getQuota(user.id).premium) recordLike(user.id);
+  if (action === "like" && result.recorded && !suggested && !getQuota(user.id).premium) recordLike(user.id);
   return json({ ...result, quota: getQuota(user.id), other: result.isNewMatch ? toPublic(getUser(targetId)!) : undefined });
 });

@@ -15,7 +15,15 @@ export type PublicProfile = {
   looking_for: "serious" | "open" | "casual" | null;
   prompts: Prompt[];
 };
-export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm?: number | null; shared?: string[]; locked?: boolean };
+export type Candidate = PublicProfile & {
+  compatibility: number;
+  likedYou: boolean;
+  distanceKm?: number | null;
+  shared?: string[];
+  locked?: boolean;
+  /** A personal suggestion from the MELA team, with their note on why. */
+  suggestion?: { note: string };
+};
 export type ChatMessage = { id: number; match_id: number; sender_id: number; text_content: string; is_read: boolean; sent_at: string };
 export type RealtimeEvent =
   | { type: "message"; matchId: number; message: ChatMessage }

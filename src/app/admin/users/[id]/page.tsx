@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { Badge, Card, Stat, SUB_BADGE, subSource, UserChip, when } from "@/components/admin/ui";
 import { AdminPhotos } from "@/components/admin/AdminPhotos";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
+import { SuggestMatchPanel } from "@/components/admin/SuggestMatchPanel";
 
 const SEX: Record<string, string> = { male: "גבר", female: "אישה", everyone: "כולם" };
 
@@ -62,6 +63,12 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
               </>
             )}
           </Card>
+
+          {!u.is_demo && (
+            <Card title="💛 הצעת שידוך">
+              <SuggestMatchPanel userId={u.id} name={u.full_name ?? ""} />
+            </Card>
+          )}
 
           <Card title={`שאלות מהבית (${prompts.length})`}>
             {prompts.length === 0 ? (

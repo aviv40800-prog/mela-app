@@ -292,6 +292,19 @@ export function migrate(db: DatabaseSync) {
   // "Your next match is on its way": email me when someone new who fits joins (at most once a day).
   if (!cols.has("match_alerts")) db.exec("ALTER TABLE users ADD COLUMN match_alerts INTEGER NOT NULL DEFAULT 0");
   if (!cols.has("match_alert_at")) db.exec("ALTER TABLE users ADD COLUMN match_alert_at TEXT");
+  // Personal matchmaking: the team suggests two members to each other, each with a note on why.
+  db.exec(`CREATE TABLE IF NOT EXISTS match_suggestions (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_a     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_b     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    note_a     TEXT NOT NULL,
+    note_b     TEXT NOT NULL,
+    created_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    seen_a_at  TEXT,
+    seen_b_at  TEXT,
+    UNIQUE (user_a, user_b)
+  )`);
   // Second chance: a passed profile offered again after the member sharpened their answers — once per person.
   db.exec(
     "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",
