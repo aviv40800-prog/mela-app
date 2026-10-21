@@ -206,6 +206,14 @@ describe("AI onboarding chat", () => {
     expect(ai.aiUsageStats().today.cost).toBeCloseTo((2000 * 0.1 + 300 * 0.5) / 1e6);
     expect(ai.aiOnboardingAvailable(a.id)).toBe(true); // already started — keeps going
     expect(ai.aiOnboardingAvailable(b.id)).toBe(false); // cap reached — gets the form
+    // the team's sandbox accounts neither count toward the cap nor are blocked by it
+    const { startTestAccount } = await import("@/lib/test-account");
+    const t = startTestAccount();
+    expect(ai.aiOnboardingAvailable(t.id)).toBe(true);
+    turns.push({ reply: "היי", extracted: empty, bio_draft: null, ask: "full_name" });
+    await ai.chatTurn(getUser(t.id)!, { text: "היי" });
+    db.prepare("UPDATE users SET is_test = 0 WHERE id = ?").run(b.id);
+    expect(ai.aiOnboardingAvailable(b.id)).toBe(false); // still one real chat today
     delete process.env.MELA_AI_DAILY_LIMIT;
   });
 });

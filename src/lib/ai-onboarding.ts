@@ -6,6 +6,7 @@ import { db } from "./db";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, PARTNER_RELIGIOSITY, RELIGIOSITY } from "./content";
 import { ProfileSchema } from "./profile-schema";
 import type { User } from "./users";
+import { notifyAiLimit } from "./notify";
 
 /**
  * AI-guided sign-up: instead of a form, a new member chats with MELA's host. Each turn the model replies in
@@ -34,9 +35,29 @@ export function costUsd(model: string, u: { input_tokens?: number | null; output
   return ((u.input_tokens ?? 0) * i + (u.cache_read_input_tokens ?? 0) * i * 0.1 + (u.cache_creation_input_tokens ?? 0) * i * 1.25 + (u.output_tokens ?? 0) * o) / 1e6;
 }
 
-/** Members who started an AI chat today (UTC) — the daily cap counts these. */
+/**
+ * Members who started an AI chat today (UTC) — the daily cap counts these. The team's sandbox accounts and
+ * other AI use (e.g. drafting match notes) don't count.
+ */
 function chatsStartedToday(): number {
-  return (db.prepare("SELECT COUNT(DISTINCT user_id) AS n FROM ai_usage WHERE created_at >= date('now')").get() as { n: number }).n;
+  return (
+    db
+      .prepare(
+        `SELECT COUNT(DISTINCT a.user_id) AS n FROM ai_usage a JOIN users u ON u.id = a.user_id
+         WHERE a.created_at >= date('now') AND u.is_test = 0 AND EXISTS (SELECT 1 FROM onboarding_chats c WHERE c.user_id = a.user_id)`,
+      )
+      .get() as { n: number }
+  ).n;
+}
+
+/** Emails the team once a day when today's AI chats pass 80% of the cap, and again when the cap is reached. */
+function alertNearLimit(limit: number) {
+  const n = chatsStartedToday();
+  const level = n >= limit ? "full" : n >= Math.ceil(limit * 0.8) ? "near" : null;
+  if (!level) return;
+  const key = `ai_limit_alert:${new Date().toISOString().slice(0, 10)}:${level}`;
+  const fresh = db.prepare("INSERT OR IGNORE INTO app_settings (key, value) VALUES (?, '1')").run(key).changes > 0;
+  if (fresh) notifyAiLimit({ used: n, limit, full: level === "full" });
 }
 
 /** AI chat for this member: on, and either they already started one or today's cap isn't reached. */
@@ -45,7 +66,11 @@ export function aiOnboardingAvailable(userId: number): boolean {
   const limit = dailyLimit();
   if (!limit) return true;
   if (db.prepare("SELECT 1 FROM onboarding_chats WHERE user_id = ? AND turns > 0").get(userId)) return true;
-  return chatsStartedToday() < limit;
+  // the team's sandbox accounts can always walk through the chat
+  if ((db.prepare("SELECT is_test FROM users WHERE id = ?").get(userId) as { is_test: number } | undefined)?.is_test) return true;
+  const open = chatsStartedToday() < limit;
+  if (!open) alertNearLimit(limit);
+  return open;
 }
 
 export function aiUsageStats() {
@@ -335,6 +360,8 @@ async function callModel(userId: number, history: ChatMsg[], state: string): Pro
   } catch (e) {
     console.error("[ai-onboarding] usage log failed", e);
   }
+  const limit = dailyLimit();
+  if (limit) alertNearLimit(limit);
   if (res.stop_reason === "refusal" || res.stop_reason === "max_tokens") return null;
   return res.parsed_output ?? null;
 }
