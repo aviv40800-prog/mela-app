@@ -13,9 +13,11 @@ type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: Matc
 
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[] };
 
-/** SQL fragment: other users that are mutually compatible by gender preference with :me. */
+/** SQL fragment: other users with a complete profile who are mutually compatible by gender preference with :me. */
 export const COMPATIBLE = `
   u.id <> :me AND u.full_name IS NOT NULL AND u.gender IS NOT NULL AND u.is_banned = 0 AND u.is_test = 0
+  AND u.age IS NOT NULL AND u.location IS NOT NULL AND u.occupation IS NOT NULL AND u.bio IS NOT NULL
+  AND (SELECT COUNT(*) FROM cultural_prompts cp WHERE cp.user_id = u.id) >= 2
   AND (:seeking = 'everyone' OR u.gender = :seeking)
   AND (u.seeking = 'everyone' OR u.seeking = :gender)
 `;

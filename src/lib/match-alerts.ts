@@ -26,7 +26,10 @@ export function alertWaitingMembers(newcomer: User): number {
          AND (u.seeking = 'everyone' OR u.seeking = :ngender) AND (:nseeking = 'everyone' OR u.gender = :nseeking)
          AND (:nage IS NULL OR ((u.pref_age_min IS NULL OR :nage >= u.pref_age_min) AND (u.pref_age_max IS NULL OR :nage <= u.pref_age_max)))
          AND (u.match_alert_at IS NULL OR u.match_alert_at < datetime('now', '-20 hours'))
-         AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = u.id AND b.blocked_id = :new) OR (b.blocker_id = :new AND b.blocked_id = u.id))`,
+         AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = u.id AND b.blocked_id = :new) OR (b.blocker_id = :new AND b.blocked_id = u.id))
+         -- only members who will actually find the newcomer in Discover (same rule as the deck: not decided on yet)
+         AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = u.id AND m.user_2_id = :new)
+         AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = :new AND m.user_2_id = u.id AND m.status <> 'pending')`,
     )
     .all({ new: newcomer.id, ngender: newcomer.gender, nseeking: newcomer.seeking, nage: newcomer.age }) as {
     id: number;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { createVerifiedUser, getUser, updateProfile, type Gender } from "@/lib/users";
-import { swipe } from "@/lib/matching";
+import { discoverFeed, swipe } from "@/lib/matching";
 import { FREE_DAILY_LIKES, getQuota, recordLike } from "@/lib/quota";
 import { REFERRAL_BONUS_LIKES, applyReferral, referralCode, referralStats } from "@/lib/referral";
 import { decideSecondChance, isSecondChance, secondChanceDeck } from "@/lib/second-chance";
@@ -83,6 +83,24 @@ describe("match alerts", () => {
     expect(alertWaitingMembers(newcomer)).toBe(1);
     expect(alertWaitingMembers(member("משה", "male"))).toBe(0); // already alerted today
     expect(alertWaitingMembers(member("רונית", "female"))).toBe(0); // not who she's looking for
+  });
+
+  it("skips members who already decided on the newcomer (they won't see them in Discover)", () => {
+    const waiting = member("שני", "female");
+    db.prepare("UPDATE users SET email = 'shani@example.com', email_verified = 1 WHERE id = ?").run(waiting.id);
+    setMatchAlerts(waiting.id, true);
+    const newcomer = member("אבי", "male");
+    swipe(waiting.id, newcomer.id, "pass");
+    expect(alertWaitingMembers(newcomer)).toBe(0);
+  });
+});
+
+describe("discover deck", () => {
+  it("shows only complete profiles", () => {
+    const me = member("גלית", "female");
+    const half = createVerifiedUser("+972521111222");
+    db.prepare("UPDATE users SET full_name = 'חצי', gender = 'male', seeking = 'female' WHERE id = ?").run(half.id); // stopped mid-signup
+    expect(discoverFeed(me, 1000).candidates.map((c) => c.id)).not.toContain(half.id);
   });
 });
 
