@@ -25,6 +25,15 @@ function matchBetween(a: number, b: number): number | null {
   return row?.id ?? null;
 }
 
+function chatState(matchId: number | null): SuggestionView["chat"] {
+  if (!matchId) return { by: "none" };
+  const senders = (db.prepare("SELECT DISTINCT sender_id FROM messages WHERE match_id = ?").all(matchId) as { sender_id: number }[]).map((r) => r.sender_id);
+  if (senders.length === 0) return { by: "none" };
+  if (senders.length > 1) return { by: "both" };
+  const sender = getUser(senders[0]);
+  return { by: "one", senderId: senders[0], label: `${first(sender?.full_name ?? null)} ${sender?.gender === "female" ? "שלחה" : "שלח"} הודעה` };
+}
+
 function findPair(a: number, b: number): Row | undefined {
   return db.prepare("SELECT * FROM match_suggestions WHERE (user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?)").get(a, b, b, a) as Row | undefined;
 }
@@ -90,7 +99,8 @@ export type SuggestionView = {
   matched: boolean;
   /** The match row (when matched), whether they've written to each other, and when each side got the "time to write" email. */
   matchId: number | null;
-  chatting: boolean;
+  /** Who has written so far: nobody, only one side (by id), or both. */
+  chat: { by: "none" | "both" } | { by: "one"; senderId: number; label: string };
   nudgedMine: string | null;
   nudgedTheirs: string | null;
 };
@@ -124,7 +134,7 @@ export function suggestionsFor(userId: number): SuggestionView[] {
         theirs: matched ? "liked" : decision(theirSwipe),
         matched,
         matchId,
-        chatting: !!matchId && !!db.prepare("SELECT 1 FROM messages WHERE match_id = ? LIMIT 1").get(matchId),
+        chat: chatState(matchId),
         nudgedMine: mineIsA ? r.nudge_a_at : r.nudge_b_at,
         nudgedTheirs: mineIsA ? r.nudge_b_at : r.nudge_a_at,
       },

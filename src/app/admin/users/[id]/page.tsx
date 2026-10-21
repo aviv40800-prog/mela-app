@@ -107,6 +107,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             <Stat label="לייקים שהתקבלו" value={stats.likesReceived} accent />
             <Stat label="התאמות" value={stats.matches} />
             <Stat label="הודעות שנשלחו" value={stats.messagesSent} />
+            <Stat label="הודעות שהתקבלו" value={stats.messagesReceived} />
             <Stat label="דילוגים" value={stats.passes} />
             <Stat
               label="פרופילים שעוד לא ראה/תה"

@@ -171,6 +171,12 @@ export function userDetail(id: number) {
     passes: count("SELECT COUNT(*) AS n FROM matches WHERE user_1_id = ? AND status = 'rejected'", id),
     matches: count("SELECT COUNT(*) AS n FROM matches WHERE status = 'matched' AND (user_1_id = ? OR user_2_id = ?)", id, id),
     messagesSent: count("SELECT COUNT(*) AS n FROM messages WHERE sender_id = ?", id),
+    messagesReceived: count(
+      "SELECT COUNT(*) AS n FROM messages ms JOIN matches m ON m.id = ms.match_id WHERE (m.user_1_id = ? OR m.user_2_id = ?) AND ms.sender_id <> ?",
+      id,
+      id,
+      id,
+    ),
     quizAnswers: count("SELECT COUNT(*) AS n FROM quiz_answers WHERE user_id = ?", id),
     unseen: unseenCount(user),
   };

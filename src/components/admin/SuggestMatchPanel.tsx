@@ -19,7 +19,7 @@ type Suggestion = {
   theirs: "liked" | "passed" | null;
   matched: boolean;
   matchId: number | null;
-  chatting: boolean;
+  chat: { by: "none" | "both" } | { by: "one"; senderId: number; label: string };
   nudgedMine: string | null;
   nudgedTheirs: string | null;
 };
@@ -236,7 +236,11 @@ export function SuggestMatchPanel({ userId, name }: { userId: number; name: stri
                 <p className="mt-2 text-[12px] leading-relaxed text-mute">״{s.noteMine}״</p>
                 {s.matched && (
                   <div className="mt-3 space-y-2 border-t border-line pt-3">
-                    <p className="text-[12px] text-mute">{s.chatting ? "💬 כבר התחילו להתכתב" : "💬 עוד לא התחילו להתכתב"}</p>
+                    <p className="text-[12px] text-mute">{s.chat.by === "both"
+                        ? "💬 התחילו להתכתב"
+                        : s.chat.by === "one"
+                          ? `💬 ${s.chat.label}, מחכים לתשובה`
+                          : "💬 עוד אף אחד לא שלח הודעה"}</p>
                     <NudgeButton suggestionId={s.id} toId={s.other.id} toName={firstName(s.other.name)} otherName={firstName(name)} nudgedAt={s.nudgedTheirs} onSent={load} />
                     <NudgeButton suggestionId={s.id} toId={userId} toName={firstName(name)} otherName={firstName(s.other.name)} nudgedAt={s.nudgedMine} onSent={load} />
                   </div>

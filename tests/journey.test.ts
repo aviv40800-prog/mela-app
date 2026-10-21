@@ -114,8 +114,16 @@ describe("personal match suggestions", () => {
     expect(() => nudgeToChat(id, berhan.id)).toThrow(); // no verified email
     db.prepare("UPDATE users SET email = 'b@x.co', email_verified = 1 WHERE id = ?").run(berhan.id);
     expect(nudgeToChat(id, berhan.id)).toEqual({ emailed: true });
-    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ chatting: false, nudgedTheirs: expect.any(String), nudgedMine: null });
+    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ chat: { by: "none" }, nudgedTheirs: expect.any(String), nudgedMine: null });
     expect(() => nudgeToChat(id, other.id)).toThrow(); // not part of this suggestion
+
+    // Chat status: one side wrote → waiting for a reply; both wrote → they're talking.
+    const matchId = suggestionsFor(shiran.id)[0].matchId!;
+    const say = (from: number) => db.prepare("INSERT INTO messages (match_id, sender_id, text_content) VALUES (?, ?, 'היי')").run(matchId, from);
+    say(berhan.id);
+    expect(suggestionsFor(shiran.id)[0].chat).toEqual({ by: "one", senderId: berhan.id, label: "ברהן שלח הודעה" });
+    say(shiran.id);
+    expect(suggestionsFor(shiran.id)[0].chat).toEqual({ by: "both" });
   });
 });
 
