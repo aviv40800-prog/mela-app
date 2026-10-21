@@ -8,6 +8,7 @@ import { nextOnboardingStep } from "@/lib/onboarding";
 import { alertWaitingMembers } from "@/lib/match-alerts";
 import { isAdmin } from "@/lib/admin";
 import { deleteOwnAccount } from "@/lib/safety";
+import { recordDeparture } from "@/lib/departures";
 import { destroySession } from "@/lib/session";
 
 export const GET = handle(async () => {
@@ -40,6 +41,7 @@ export const DELETE = handle(async (req: Request) => {
   const user = await requireUser();
   if (isAdmin(user)) return error("חשבון מנהל לא נמחק מכאן", 403);
   if (!DeleteBody.safeParse(await req.json().catch(() => null)).success) return error("כדי למחוק, הקלד/י ״מחיקה״");
+  recordDeparture(user);
   deleteOwnAccount(user.id);
   await destroySession();
   return json({ ok: true });

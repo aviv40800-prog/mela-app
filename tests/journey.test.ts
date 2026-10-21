@@ -195,3 +195,20 @@ describe("unseen profiles (admin)", () => {
     expect(unseenCount(me).inRange).toBe(1);
   });
 });
+
+import { departures, recordDeparture } from "@/lib/departures";
+import { deleteOwnAccount } from "@/lib/safety";
+
+describe("departures (admin)", () => {
+  it("keeps anonymous numbers about a member who deleted their account", () => {
+    const her = member("יעל", "female");
+    for (const name of ["א", "ב", "ג"]) swipe(her.id, member(name, "male").id, "pass");
+    const before = departures().total;
+    recordDeparture(getUser(her.id)!);
+    deleteOwnAccount(her.id);
+    const d = departures();
+    expect(d.total).toBe(before + 1);
+    expect(d.recent[0]).toMatchObject({ gender: "female", age: 29, passes: 3, likes: 0, matches: 0, profile_complete: 1 });
+    expect(Object.keys(d.recent[0])).not.toContain("full_name");
+  });
+});

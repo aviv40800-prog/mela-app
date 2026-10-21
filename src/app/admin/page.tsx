@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } from "@/lib/admin-data";
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
+import { departures } from "@/lib/departures";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 
@@ -15,6 +16,7 @@ export default function AdminOverview() {
   const matches = recentMatches(6);
   const hooks = recentWebhooks(6);
   const ai = aiUsageStats();
+  const left = departures(8);
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
@@ -151,6 +153,46 @@ export default function AdminOverview() {
           )}
         </Card>
       </div>
+
+      <Card title="משתמשים שעזבו (מחקו את החשבון)" className="mt-4">
+        <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <span>השבוע: <b className="tabular">{left.week}</b></span>
+          <span>30 יום: <b className="tabular">{left.month}</b></span>
+          <span className="text-mute">סה״כ: <span className="tabular">{left.total}</span></span>
+        </div>
+        {left.recent.length === 0 ? (
+          <p className="text-sm text-mute">עוד אף אחד לא מחק חשבון.</p>
+        ) : (
+          <ul className="space-y-2.5 text-sm">
+            {left.recent.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                <span>
+                  {d.gender === "female" ? "אישה" : d.gender === "male" ? "גבר" : "—"}
+                  {d.age ? `, ${d.age}` : ""}
+                  <span className="text-mute"> · היה/תה {stayed(d.signed_up_at, d.left_at)}</span>
+                </span>
+                <span className="flex flex-wrap items-center gap-1.5 text-[12px] text-mute">
+                  {!d.profile_complete && <Badge tone="red">פרופיל לא הושלם</Badge>}
+                  {d.premium ? <Badge tone="gold">Premium</Badge> : null}
+                  <span>{d.likes} לייקים · {d.passes} דילוגים · {d.matches} התאמות · {d.messages} הודעות</span>
+                  <span className="text-mute-2">· {when(d.left_at)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-3 text-[11.5px] text-mute-2">נשמרים רק נתונים אנונימיים: בלי שם, פרטי קשר או עיר.</p>
+      </Card>
     </>
   );
+}
+
+/** How long a member stayed, from sign-up to deleting the account. */
+function stayed(from: string | null, to: string) {
+  if (!from) return "—";
+  const ms = (s: string) => new Date(s.includes("T") ? s : s.replace(" ", "T") + "Z").getTime();
+  const mins = Math.max(0, Math.round((ms(to) - ms(from)) / 60000));
+  if (mins < 60) return `${mins} דק׳`;
+  if (mins < 60 * 24) return `${Math.round(mins / 60)} שע׳`;
+  return `${Math.round(mins / 1440)} ימים`;
 }

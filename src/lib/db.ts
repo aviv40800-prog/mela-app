@@ -313,6 +313,20 @@ export function migrate(db: DatabaseSync) {
   const sugCols = new Set((db.prepare("PRAGMA table_info(match_suggestions)").all() as { name: string }[]).map((c) => c.name));
   if (!sugCols.has("nudge_a_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_a_at TEXT");
   if (!sugCols.has("nudge_b_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_b_at TEXT");
+  // Members who deleted their own account: anonymous numbers only (no name, contact or city), to learn why people leave.
+  db.exec(`CREATE TABLE IF NOT EXISTS departures (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    gender           TEXT,
+    age              INTEGER,
+    signed_up_at     TEXT,
+    left_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    profile_complete INTEGER NOT NULL DEFAULT 0,
+    likes            INTEGER NOT NULL DEFAULT 0,
+    passes           INTEGER NOT NULL DEFAULT 0,
+    matches          INTEGER NOT NULL DEFAULT 0,
+    messages         INTEGER NOT NULL DEFAULT 0,
+    premium          INTEGER NOT NULL DEFAULT 0
+  )`);
   // Second chance: a passed profile offered again after the member sharpened their answers — once per person.
   db.exec(
     "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",
