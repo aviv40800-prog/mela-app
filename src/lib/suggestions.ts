@@ -9,13 +9,20 @@ import { mailMember } from "./member-mail";
  * first in Discover with a "personal suggestion from MELA" note, and gets an email. Liking stays mutual as always.
  * Note `note_a` is shown to user_a (about user_b), `note_b` to user_b.
  */
-type Row = { id: number; user_a: number; user_b: number; note_a: string; note_b: string; created_at: string; seen_a_at: string | null; seen_b_at: string | null };
+type Row = { id: number; user_a: number; user_b: number; note_a: string; note_b: string; created_at: string; seen_a_at: string | null; seen_b_at: string | null; nudge_a_at: string | null; nudge_b_at: string | null };
 
 const blocked = (a: number, b: number) =>
   !!db.prepare("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)").get(a, b, b, a);
 
 function swipeOf(from: number, to: number): string | null {
   return (db.prepare("SELECT status FROM matches WHERE user_1_id = ? AND user_2_id = ?").get(from, to) as { status: string } | undefined)?.status ?? null;
+}
+
+function matchBetween(a: number, b: number): number | null {
+  const row = db
+    .prepare("SELECT id FROM matches WHERE status = 'matched' AND ((user_1_id = ? AND user_2_id = ?) OR (user_1_id = ? AND user_2_id = ?))")
+    .get(a, b, b, a) as { id: number } | undefined;
+  return row?.id ?? null;
 }
 
 function findPair(a: number, b: number): Row | undefined {
@@ -81,6 +88,11 @@ export type SuggestionView = {
   mine: string | null;
   theirs: string | null;
   matched: boolean;
+  /** The match row (when matched), whether they've written to each other, and when each side got the "time to write" email. */
+  matchId: number | null;
+  chatting: boolean;
+  nudgedMine: string | null;
+  nudgedTheirs: string | null;
 };
 
 const decision = (status: string | null) => (status === "pending" || status === "matched" ? "liked" : status === "rejected" ? "passed" : null);
@@ -97,6 +109,7 @@ export function suggestionsFor(userId: number): SuggestionView[] {
     const theirSwipe = swipeOf(otherId, userId);
     // A match lives in one row (whoever liked first), so it counts as a like from both.
     const matched = mineSwipe === "matched" || theirSwipe === "matched";
+    const matchId = matched ? matchBetween(userId, otherId) : null;
     return [
       {
         id: r.id,
@@ -110,6 +123,10 @@ export function suggestionsFor(userId: number): SuggestionView[] {
         mine: matched ? "liked" : decision(mineSwipe),
         theirs: matched ? "liked" : decision(theirSwipe),
         matched,
+        matchId,
+        chatting: !!matchId && !!db.prepare("SELECT 1 FROM messages WHERE match_id = ? LIMIT 1").get(matchId),
+        nudgedMine: mineIsA ? r.nudge_a_at : r.nudge_b_at,
+        nudgedTheirs: mineIsA ? r.nudge_b_at : r.nudge_a_at,
       },
     ];
   });
@@ -141,6 +158,50 @@ function suggestionEmail(to: User, other: User, note: string) {
 }
 
 export class SuggestionError extends Error {}
+
+/**
+ * From the admin page: after a suggestion became a match, email one side that the other liked them back and it's
+ * time to write the first message. Returns whether it could be emailed (verified address).
+ */
+export function nudgeToChat(suggestionId: number, toId: number): { emailed: boolean } {
+  const r = db.prepare("SELECT * FROM match_suggestions WHERE id = ?").get(suggestionId) as Row | undefined;
+  if (!r || (r.user_a !== toId && r.user_b !== toId)) throw new SuggestionError("ההצעה לא נמצאה");
+  const toIsA = r.user_a === toId;
+  const to = getUser(toId);
+  const other = getUser(toIsA ? r.user_b : r.user_a);
+  if (!to || !other) throw new SuggestionError("המשתמש/ת לא נמצא/ה");
+  const matchId = matchBetween(to.id, other.id);
+  if (!matchId) throw new SuggestionError("הם עוד לא בהתאמה");
+  if (!(to.email && to.email_verified) || to.is_banned) throw new SuggestionError("אין לו/ה מייל מאומת");
+
+  const she = to.gender === "female";
+  const otherIsHe = other.gender === "male";
+  const name = first(other.full_name);
+  // The match row belongs to whoever liked first: if that's the recipient, the other one "liked back".
+  const likedBack = (db.prepare("SELECT user_1_id FROM matches WHERE id = ?").get(matchId) as { user_1_id: number }).user_1_id === to.id;
+  const liked = likedBack ? (otherIsHe ? "החזיר לך לייק" : "החזירה לך לייק") : otherIsHe ? "עשה לך לייק" : "עשתה לך לייק";
+  const note = toIsA ? r.note_a : r.note_b;
+  mailMember(to.id, {
+    subject: `${first(to.full_name)}, ${name} ${liked} 💛`,
+    lines: [
+      `היי ${first(to.full_name)},`,
+      `יש לנו חדשות טובות: ${name} ${liked}, ואתם עכשיו התאמה ב-MELA 🎉`,
+      "",
+      "תזכורת קטנה למה חשבנו עליכם:",
+      `״${note}״`,
+      "",
+      `עכשיו הכדור אצלך. טיפ מהשדכנית: הודעה ראשונה שעובדת היא קצרה, אישית ונגמרת בשאלה. משהו שכתוב בפרופיל ${otherIsHe ? "שלו" : "שלה"} הוא פתיחה הרבה יותר טובה מ״היי, מה נשמע?״.`,
+      `ואל ${she ? "תחכי" : "תחכה"} יותר מדי: הרגע הכי טוב לכתוב הוא עכשיו, כשההתרגשות עוד טרייה.`,
+      "",
+      "מחזיקים לכם אצבעות,",
+      "צוות MELA",
+    ],
+    link: `/matches/${matchId}`,
+    cta: `לכתוב ל${name} הודעה ראשונה 💬`,
+  });
+  db.prepare(`UPDATE match_suggestions SET ${toIsA ? "nudge_a_at" : "nudge_b_at"} = datetime('now') WHERE id = ?`).run(r.id);
+  return { emailed: true };
+}
 
 /**
  * Suggest `a` and `b` to each other. Earlier passes between them are cleared so each can still like the other

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Check, Heart, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Heart, Loader2, Mail, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/client";
 import { Photo } from "../Photo";
 
@@ -18,6 +18,10 @@ type Suggestion = {
   mine: "liked" | "passed" | null;
   theirs: "liked" | "passed" | null;
   matched: boolean;
+  matchId: number | null;
+  chatting: boolean;
+  nudgedMine: string | null;
+  nudgedTheirs: string | null;
 };
 type Data = { reason: string | null; candidates: Candidate[]; suggestions: Suggestion[] };
 
@@ -31,6 +35,40 @@ function Decision({ who, d }: { who: string; d: "liked" | "passed" | null }) {
   if (d === "liked") return <Step done label={`${who} עשה/תה לייק`} />;
   if (d === "passed") return <span className="rounded-full bg-fg/[0.05] px-2 py-0.5 text-[11px] text-mute">✕ {who} דילג/ה</span>;
   return <Step done={false} label={`${who} עוד לא החליט/ה`} />;
+}
+
+const when = (sqlDate: string) => new Date(sqlDate.replace(" ", "T") + "Z").toLocaleString("he-IL", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** After a match: email one side "they liked you back, time to write" (once is usually enough; can resend). */
+function NudgeButton({ suggestionId, toId, toName, otherName, nudgedAt, onSent }: { suggestionId: number; toId: number; toName: string; otherName: string; nudgedAt: string | null; onSent: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function send() {
+    if (nudgedAt && !confirm(`כבר נשלח ל${toName} מייל כזה. לשלוח שוב?`)) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      await api("/api/admin/suggestions/nudge", { method: "POST", json: { id: suggestionId, to: toId } });
+      onSent();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div>
+      <button
+        onClick={send}
+        disabled={busy}
+        className="press flex w-full items-center justify-center gap-1.5 rounded-full border border-gold/40 bg-gold/[0.08] px-3 py-2 text-[12.5px] font-semibold text-gold-3 disabled:opacity-60"
+      >
+        {busy ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+        {nudgedAt ? `נשלח ל${toName} ✓ (${when(nudgedAt)}) · לשלוח שוב` : `מייל ל${toName}: ${otherName} בהתאמה איתך, הגיע הזמן להתכתב`}
+      </button>
+      {err && <p className="mt-1 text-[12px] text-danger">{err}</p>}
+    </div>
+  );
 }
 
 /** Admin: suggest this member and another to each other ("personal matchmaking"), with a note for each side. */
@@ -196,6 +234,13 @@ export function SuggestMatchPanel({ userId, name }: { userId: number; name: stri
                   <Decision who={firstName(s.other.name)} d={s.theirs} />
                 </div>
                 <p className="mt-2 text-[12px] leading-relaxed text-mute">״{s.noteMine}״</p>
+                {s.matched && (
+                  <div className="mt-3 space-y-2 border-t border-line pt-3">
+                    <p className="text-[12px] text-mute">{s.chatting ? "💬 כבר התחילו להתכתב" : "💬 עוד לא התחילו להתכתב"}</p>
+                    <NudgeButton suggestionId={s.id} toId={s.other.id} toName={firstName(s.other.name)} otherName={firstName(name)} nudgedAt={s.nudgedTheirs} onSent={load} />
+                    <NudgeButton suggestionId={s.id} toId={userId} toName={firstName(name)} otherName={firstName(s.other.name)} nudgedAt={s.nudgedMine} onSent={load} />
+                  </div>
+                )}
               </li>
             ))}
           </ul>

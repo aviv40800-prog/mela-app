@@ -86,7 +86,7 @@ describe("match alerts", () => {
   });
 });
 
-import { createSuggestion, suggestedCards, suggestionCandidates, suggestionsFor, isOpenSuggestion } from "@/lib/suggestions";
+import { createSuggestion, suggestedCards, suggestionCandidates, suggestionsFor, isOpenSuggestion, nudgeToChat } from "@/lib/suggestions";
 
 describe("personal match suggestions", () => {
   it("pins each to the other, reopens earlier passes, and tracks the outcome", () => {
@@ -109,6 +109,13 @@ describe("personal match suggestions", () => {
     expect(suggestedCards(berhan)).toHaveLength(0);
     expect(swipe(shiran.id, berhan.id, "like").isNewMatch).toBe(true);
     expect(suggestionsFor(shiran.id)[0]).toMatchObject({ matched: true, seenTheirs: true, seenMine: true, mine: "liked", theirs: "liked" }); // she liked without seeing the card
+
+    // "Time to write" email from the admin page: only after a match, only to a verified address.
+    expect(() => nudgeToChat(id, berhan.id)).toThrow(); // no verified email
+    db.prepare("UPDATE users SET email = 'b@x.co', email_verified = 1 WHERE id = ?").run(berhan.id);
+    expect(nudgeToChat(id, berhan.id)).toEqual({ emailed: true });
+    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ chatting: false, nudgedTheirs: expect.any(String), nudgedMine: null });
+    expect(() => nudgeToChat(id, other.id)).toThrow(); // not part of this suggestion
   });
 });
 

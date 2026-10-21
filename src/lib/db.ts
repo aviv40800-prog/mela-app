@@ -309,6 +309,10 @@ export function migrate(db: DatabaseSync) {
     seen_b_at  TEXT,
     UNIQUE (user_a, user_b)
   )`);
+  // When the team emailed each side "you matched — time to write" (nudge from the admin page).
+  const sugCols = new Set((db.prepare("PRAGMA table_info(match_suggestions)").all() as { name: string }[]).map((c) => c.name));
+  if (!sugCols.has("nudge_a_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_a_at TEXT");
+  if (!sugCols.has("nudge_b_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_b_at TEXT");
   // Second chance: a passed profile offered again after the member sharpened their answers — once per person.
   db.exec(
     "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",
