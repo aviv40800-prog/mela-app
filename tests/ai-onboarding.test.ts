@@ -155,6 +155,23 @@ describe("AI onboarding chat", () => {
     expect(v.details[0]).toMatchObject({ field: "seeking", label: "מי מעניין אותך?" });
   });
 
+  it("asks once more, naturally, when the occupation is just 'עובדת'", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    const u = withPassword(createEmailUser("betel@example.com"));
+    ai.getChat(u);
+    turns.push({ reply: "שמחה להכיר, בתאל! ומה את עושה בחיים?", extracted: { ...empty, full_name: "בתאל", age: 31, gender: "female", location: "אשקלון" }, bio_draft: null, ask: "occupation" });
+    let v = await ai.chatTurn(u, { text: "בתאל בת 31 מאשקלון" });
+    turns.push({ reply: "יופי! כמה פרטים קצרים בלחיצה 👇", extracted: { ...empty, occupation: "עובדת" }, bio_draft: null, ask: "details" });
+    v = await ai.chatTurn(u, { text: "עובדת" });
+    expect(v.draft.occupation).toBeUndefined();
+    expect(v.ask).toBe("occupation"); // no card yet: the words become the next real question
+    expect(v.messages.at(-1)?.text).toBe("יופי! ומה את עושה בחיים?");
+    turns.push({ reply: "גננת, איזה כיף! כמה פרטים קצרים בלחיצה 👇", extracted: { ...empty, occupation: "גננת" }, bio_draft: null, ask: "details" });
+    v = await ai.chatTurn(u, { text: "גננת" });
+    expect(v.draft.occupation).toBe("גננת");
+    expect(v.ask).toBe("details");
+  });
+
   it("asks men about their future wife", async () => {
     const ai = await import("@/lib/ai-onboarding");
     expect(ai.partnerQuestion({ gender: "male" })).toContain("באשתך לעתיד");

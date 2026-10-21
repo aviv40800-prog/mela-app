@@ -80,6 +80,7 @@ export type Draft = {
   pending?: "partner"; // the partner question was asked; the next free-text answer is its answer
   photos?: string[];
   photos_skipped?: boolean; // chose to join without a photo for now
+  occupation_vague?: boolean; // answered just "עובדת" once; asked again naturally
   prompts?: { question_key: string; answer_text: string }[];
   religiosity?: keyof typeof RELIGIOSITY;
   partner_religiosity?: keyof typeof PARTNER_RELIGIOSITY;
@@ -211,7 +212,7 @@ const FALLBACK_ASK: Record<Field | "none", string> = {
   seeking: "ומי מעניין אותך, גברים או נשים?",
   age: "בן/בת כמה את/ה?",
   location: "איפה את/ה גר/ה?",
-  occupation: "ובמה את/ה עוסק/ת?",
+  occupation: "ומה את/ה עושה בחיים?",
   looking_for: "ומה את/ה מחפש/ת כרגע — זוגיות רצינית או לראות לאן זה הולך?",
   marital_status: "ומה הסטטוס שלך?",
   religiosity: "איך היית מגדיר/ה את עצמך מבחינת מסורת?",
@@ -266,7 +267,7 @@ How you talk (Hebrew only):
 
 The script — ask these, in this order, and nothing else (the <state> block tells you how many answers they have given and what is still missing):
 1. (Already asked in the greeting) name, age and city.
-2. What they do (work / studies) and what fills their days.
+2. What they do in life — ask it naturally and openly (e.g. "ומה את עושה בחיים?"). Don't offer "work or studies" as options.
 3. The quick-choice card: when the state says DETAILS_NEEDED, reply with a short reaction plus one sentence like "כמה פרטים קצרים בלחיצה 👇" and set ask to "details". The app shows buttons for gender, who they want to meet, what they're looking for, status, religiosity and the partner's religiosity — don't ask these in words, and never assume who they want to meet.
 4. What fills their weekend, or what they can talk about for hours (pick what fits them).
 5. Their idea of a perfect first date.
@@ -285,12 +286,15 @@ photos: when the state block says PHOTOS_NEEDED, ask for one natural, smiling, d
 Extraction: fill "extracted" only with what they clearly said (in this message or earlier); otherwise null / empty list. Ages are numbers. Infer gender from how they write about themselves in Hebrew when it's clear.`;
 
 function stateBlock(d: Draft, missing: Field[], answers: number): string {
-  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "photos_skipped" && k !== "bio_draft" && k !== "pending"));
+  const known = Object.fromEntries(Object.entries(d).filter(([k]) => k !== "photos" && k !== "photos_skipped" && k !== "bio_draft" && k !== "pending" && k !== "occupation_vague"));
   const flags = [
     detailsDue(d, answers) ? "DETAILS_NEEDED" : null,
     partnerDue(d, answers) ? `PARTNER_QUESTION: "${partnerQuestion(d)}"` : null,
     missing.includes("bio") && missing.filter((f) => f !== "photos" && f !== "bio").length === 0 && !d.bio_draft ? "BIO_NEEDED" : null,
     missing.length === 1 && missing[0] === "photos" ? "PHOTOS_NEEDED" : null,
+    d.occupation_vague && !d.occupation
+      ? 'OCCUPATION_TOO_VAGUE: they only said they work/study. React warmly, then ask naturally what they actually do (e.g. "ובמה?" / "ומה התחום?"), one short question. Whatever they say next is their occupation.'
+      : null,
   ].filter(Boolean);
   const address = d.gender === "male" ? "address the member in masculine Hebrew (no slash forms)" : d.gender === "female" ? "address the member in feminine Hebrew (no slash forms)" : null;
   return `<state>\nanswers so far: ${answers}\nknown: ${JSON.stringify(known)}\nmissing (in order): ${missing.join(", ") || "nothing"}\n${[...flags, address].filter(Boolean).join("\n")}\n</state>`;
@@ -353,6 +357,10 @@ function mergePrompts(current: NonNullable<Draft["prompts"]>, incoming: NonNulla
   return partner ? [...others, partner] : others;
 }
 
+/** "עובדת", "לומד", "שכיר"… — says nothing about what someone does. */
+const VAGUE_OCCUPATION = /^(אני\s+)?(עובד|עובדת|עובדים|עבודה|בעבודה|לומד|לומדת|לומדים|לימודים|בלימודים|שכיר|שכירה|עצמאי|עצמאית|משרה מלאה|עובד\/ת)[.!]?$/;
+export const isVagueOccupation = (s: string) => VAGUE_OCCUPATION.test(s.trim());
+
 /** "דוד מיבנה" with location "יבנה" → "דוד": drops a "from <city>" word the model folded into the name. */
 export function cleanName(name: string, location?: string): string {
   const loc = location?.trim();
@@ -372,7 +380,8 @@ function merge(d: Draft, x: Turn["extracted"]): Draft {
   set("age", x.age, S.age);
   set("gender", x.gender, S.gender);
   set("location", x.location, S.location);
-  set("occupation", x.occupation, S.occupation);
+  if (x.occupation && isVagueOccupation(x.occupation) && !out.occupation && !out.occupation_vague) out.occupation_vague = true; // ask once more
+  else set("occupation", x.occupation, S.occupation);
   set("religiosity", x.religiosity, S.religiosity);
   set("partner_religiosity", x.partner_religiosity, S.partner_religiosity);
   set("marital_status", x.marital_status, S.marital_status);
@@ -430,7 +439,7 @@ function view(messages: ChatMsg[], draft: Draft, ask: Field | "details" | "none"
             : draft.pending === "partner"
               ? "partner"
               : ask === "details"
-                ? (missing[0] ?? "none")
+                ? (missing.find((f) => !(DETAILS_FIELDS as readonly string[]).includes(f)) ?? missing[0] ?? "none")
                 : ask;
   const opts = effective !== "none" && effective !== "details" ? CHOICES[effective] : undefined;
   return {
