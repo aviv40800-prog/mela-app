@@ -34,6 +34,11 @@ function chatState(matchId: number | null): SuggestionView["chat"] {
   return { by: "one", senderId: senders[0], label: `${first(sender?.full_name ?? null)} ${sender?.gender === "female" ? "שלחה" : "שלח"} הודעה` };
 }
 
+function sentLine(matchId: number, u: User): string {
+  const { n } = db.prepare("SELECT COUNT(*) AS n FROM messages WHERE match_id = ? AND sender_id = ?").get(matchId, u.id) as { n: number };
+  return `${first(u.full_name)} ${u.gender === "female" ? "שלחה" : "שלח"} ${n} עד כה`;
+}
+
 function findPair(a: number, b: number): Row | undefined {
   return db.prepare("SELECT * FROM match_suggestions WHERE (user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?)").get(a, b, b, a) as Row | undefined;
 }
@@ -103,6 +108,8 @@ export type SuggestionView = {
   chat: { by: "none" | "both" } | { by: "one"; senderId: number; label: string };
   nudgedMine: string | null;
   nudgedTheirs: string | null;
+  /** Messages each side has sent so far (counts only, never the content), e.g. "נתנאל שלח 6 עד כה". */
+  sent: string[];
 };
 
 const decision = (status: string | null) => (status === "pending" || status === "matched" ? "liked" : status === "rejected" ? "passed" : null);
@@ -137,6 +144,7 @@ export function suggestionsFor(userId: number): SuggestionView[] {
         chat: chatState(matchId),
         nudgedMine: mineIsA ? r.nudge_a_at : r.nudge_b_at,
         nudgedTheirs: mineIsA ? r.nudge_b_at : r.nudge_a_at,
+        sent: matchId ? [getUser(userId)!, other].map((u) => sentLine(matchId, u)) : [],
       },
     ];
   });

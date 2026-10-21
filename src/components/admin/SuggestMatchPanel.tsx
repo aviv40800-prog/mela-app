@@ -22,6 +22,7 @@ type Suggestion = {
   chat: { by: "none" | "both" } | { by: "one"; senderId: number; label: string };
   nudgedMine: string | null;
   nudgedTheirs: string | null;
+  sent: string[];
 };
 type Data = { reason: string | null; candidates: Candidate[]; suggestions: Suggestion[] };
 
@@ -241,6 +242,13 @@ export function SuggestMatchPanel({ userId, name }: { userId: number; name: stri
                         : s.chat.by === "one"
                           ? `💬 ${s.chat.label}, מחכים לתשובה`
                           : "💬 עוד אף אחד לא שלח הודעה"}</p>
+                    {s.chat.by !== "none" && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {s.sent.map((line) => (
+                          <span key={line} className="rounded-full bg-fg/[0.05] px-2 py-0.5 text-[11px] text-cream/90">✉️ {line}</span>
+                        ))}
+                      </div>
+                    )}
                     <NudgeButton suggestionId={s.id} toId={s.other.id} toName={firstName(s.other.name)} otherName={firstName(name)} nudgedAt={s.nudgedTheirs} onSent={load} />
                     <NudgeButton suggestionId={s.id} toId={userId} toName={firstName(name)} otherName={firstName(s.other.name)} nudgedAt={s.nudgedMine} onSent={load} />
                   </div>

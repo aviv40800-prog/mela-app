@@ -124,6 +124,8 @@ describe("personal match suggestions", () => {
     expect(suggestionsFor(shiran.id)[0].chat).toEqual({ by: "one", senderId: berhan.id, label: "ברהן שלח הודעה" });
     say(shiran.id);
     expect(suggestionsFor(shiran.id)[0].chat).toEqual({ by: "both" });
+    say(berhan.id);
+    expect(suggestionsFor(shiran.id)[0].sent).toEqual(["שירן שלחה 1 עד כה", "ברהן שלח 2 עד כה"]);
   });
 });
 
