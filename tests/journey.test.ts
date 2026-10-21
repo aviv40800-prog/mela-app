@@ -108,7 +108,7 @@ describe("personal match suggestions", () => {
     expect(swipe(berhan.id, shiran.id, "like").status).toBe("pending"); // the old pass no longer blocks
     expect(suggestedCards(berhan)).toHaveLength(0);
     expect(swipe(shiran.id, berhan.id, "like").isNewMatch).toBe(true);
-    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ matched: true, seenTheirs: true, mine: "liked", theirs: "liked" });
+    expect(suggestionsFor(shiran.id)[0]).toMatchObject({ matched: true, seenTheirs: true, seenMine: true, mine: "liked", theirs: "liked" }); // she liked without seeing the card
   });
 });
 

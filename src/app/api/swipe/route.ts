@@ -4,7 +4,7 @@ import { swipe } from "@/lib/matching";
 import { getUser, toPublic } from "@/lib/users";
 import { getQuota, recordLike } from "@/lib/quota";
 import { decideSecondChance, isSecondChance } from "@/lib/second-chance";
-import { isOpenSuggestion } from "@/lib/suggestions";
+import { isOpenSuggestion, markSuggestionSeen } from "@/lib/suggestions";
 import { isTestUser } from "@/lib/test-account";
 
 const Body = z.object({
@@ -38,6 +38,7 @@ export const POST = handle(async (req: Request) => {
     if (action === "pass") return json({ status: "rejected", matchId: 0, isNewMatch: false, recorded: false, quota: getQuota(user.id) });
   }
   const result = swipe(user.id, targetId, action, comment);
+  markSuggestionSeen(user.id, targetId);
   if (action === "like" && result.recorded && !suggested && !getQuota(user.id).premium) recordLike(user.id);
   return json({ ...result, quota: getQuota(user.id), other: result.isNewMatch ? toPublic(getUser(targetId)!) : undefined });
 });

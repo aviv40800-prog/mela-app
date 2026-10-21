@@ -104,8 +104,9 @@ export function suggestionsFor(userId: number): SuggestionView[] {
         other: { id: other.id, name: other.full_name ?? "", photo: other.photos[0] ?? null },
         noteMine: mineIsA ? r.note_a : r.note_b,
         noteTheirs: mineIsA ? r.note_b : r.note_a,
-        seenMine: !!(mineIsA ? r.seen_a_at : r.seen_b_at),
-        seenTheirs: !!(mineIsA ? r.seen_b_at : r.seen_a_at),
+        // Deciding on them means they saw the suggestion, even if it never showed as a Discover card.
+        seenMine: !!(mineIsA ? r.seen_a_at : r.seen_b_at) || matched || mineSwipe !== null,
+        seenTheirs: !!(mineIsA ? r.seen_b_at : r.seen_a_at) || matched || theirSwipe !== null,
         mine: matched ? "liked" : decision(mineSwipe),
         theirs: matched ? "liked" : decision(theirSwipe),
         matched,
@@ -192,6 +193,14 @@ export function suggestedCards(me: User): (Candidate & { suggestion: { note: str
     db.prepare(`UPDATE match_suggestions SET ${mineIsA ? "seen_a_at" : "seen_b_at"} = COALESCE(${mineIsA ? "seen_a_at" : "seen_b_at"}, datetime('now')) WHERE id = ?`).run(r.id);
     return [{ ...toCandidate(me.id, otherId), suggestion: { note: mineIsA ? r.note_a : r.note_b } }];
   });
+}
+
+/** Records that a member saw their suggestion (e.g. they liked or passed on that profile from anywhere). */
+export function markSuggestionSeen(meId: number, otherId: number) {
+  const r = findPair(meId, otherId);
+  if (!r) return;
+  const col = r.user_a === meId ? "seen_a_at" : "seen_b_at";
+  db.prepare(`UPDATE match_suggestions SET ${col} = COALESCE(${col}, datetime('now')) WHERE id = ?`).run(r.id);
 }
 
 /** A like on a personal suggestion is on the house — it doesn't use up the daily likes. */
