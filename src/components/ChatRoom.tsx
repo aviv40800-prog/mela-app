@@ -8,11 +8,12 @@ import { ArrowRight, BadgeCheck, CalendarHeart, Check, CheckCheck, MapPin, Messa
 import { DatePlannerSheet } from "./DatePlanner";
 import { SafetySheet } from "./SafetySheet";
 import { Photo } from "./Photo";
+import { ProfileSheet } from "./ProfileSheet";
 import { useRealtime } from "./Realtime";
 import { api, haptic } from "@/lib/client";
 import { CONVO_QUESTIONS, DATE_PREFIX, ICEBREAKERS, promptQuestion } from "@/lib/content";
 import type { DatePlan } from "@/lib/dates";
-import type { ChatMessage, PublicProfile } from "@/lib/types";
+import type { Candidate, ChatMessage, PublicProfile } from "@/lib/types";
 
 const TZ = "Asia/Jerusalem";
 const time = (iso: string) => new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
@@ -40,6 +41,7 @@ export function ChatRoom({
   matchId,
   meId,
   partner,
+  card,
   initial,
   plan,
   shared = [],
@@ -47,6 +49,8 @@ export function ChatRoom({
   matchId: number;
   meId: number;
   partner: PublicProfile;
+  /** Their full card, opened by tapping their photo or name. */
+  card: Candidate;
   initial: ChatMessage[];
   plan: DatePlan;
   shared?: string[];
@@ -57,6 +61,7 @@ export function ChatRoom({
   const [sending, setSending] = useState(false);
   const [tray, setTray] = useState(false);
   const [safety, setSafety] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const router = useRouter();
   const [round, setRound] = useState(() => Math.floor(Math.random() * 1000));
   // Questions the community suggested (and an admin approved) join the "idea for a question" pool.
@@ -185,7 +190,8 @@ export function ChatRoom({
         <Link href="/matches" className="grid h-10 w-10 place-items-center rounded-full text-mute transition hover:bg-fg/5 hover:text-cream" aria-label="חזרה">
           <ArrowRight size={21} />
         </Link>
-        <div className="h-11 w-11 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-ink">
+        <button onClick={() => setViewing(true)} className="flex min-w-0 flex-1 items-center gap-3 text-start" aria-label={`לצפייה בפרופיל של ${first}`}>
+        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-ink">
           <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
         </div>
         <div className="min-w-0 flex-1">
@@ -198,6 +204,7 @@ export function ChatRoom({
             </motion.div>
           </AnimatePresence>
         </div>
+        </button>
         {dateReady && (
         <motion.button
           initial={{ scale: 0.6, opacity: 0 }}
@@ -227,9 +234,9 @@ export function ChatRoom({
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center pt-8 pb-7 text-center">
             <div className="relative">
               <div className="absolute inset-0 animate-pulse-ring rounded-full" />
-              <div className="h-28 w-28 overflow-hidden rounded-full ring-2 ring-gold/60 ring-offset-4 ring-offset-ink">
+              <button onClick={() => setViewing(true)} className="block h-28 w-28 overflow-hidden rounded-full ring-2 ring-gold/60 ring-offset-4 ring-offset-ink" aria-label={`לצפייה בפרופיל של ${first}`}>
                 <Photo src={partner.photos[0]} name={partner.full_name} className="h-full w-full" rounded="rounded-full" />
-              </div>
+              </button>
             </div>
             <p className="eyebrow mt-7">התאמה חדשה</p>
             <p className="font-display mt-1.5 text-[1.75rem] leading-tight">התאמתם עם {first}</p>
@@ -491,6 +498,7 @@ export function ChatRoom({
           )}
         </AnimatePresence>
       </form>
+      <ProfileSheet profile={viewing ? card : null} title={`הפרופיל של ${first}`} onClose={() => setViewing(false)} />
     </main>
   );
 }

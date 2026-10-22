@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requirePageUser } from "@/lib/guard";
-import { matchPartner } from "@/lib/matching";
+import { matchPartner, toCandidate } from "@/lib/matching";
 import { listMessages } from "@/lib/chat";
 import { toPublic } from "@/lib/users";
 import { datePlan } from "@/lib/dates";
@@ -17,6 +17,7 @@ export default async function ChatPage({ params }: { params: Promise<{ id: strin
       matchId={matchId}
       meId={me.id}
       partner={toPublic(partner)}
+      card={toCandidate(me.id, partner.id)}
       initial={listMessages(matchId)}
       plan={datePlan(me, partner)}
       shared={sharedAnswers(me.id, partner.id, 3)}

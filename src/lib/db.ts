@@ -315,6 +315,13 @@ export function migrate(db: DatabaseSync) {
   if (!sugCols.has("nudge_b_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_b_at TEXT");
   // "Later" on the username + password screen at the end of sign-up: stop asking (they sign in with an email code).
   if (!cols.has("account_skipped_at")) db.exec("ALTER TABLE users ADD COLUMN account_skipped_at TEXT");
+  // A pass on someone who had liked you is remembered as such, so Picks can offer that person again ("give it a chance").
+  const matchCols = new Set((db.prepare("PRAGMA table_info(matches)").all() as { name: string }[]).map((c) => c.name));
+  if (!matchCols.has("declined_at")) db.exec("ALTER TABLE matches ADD COLUMN declined_at TEXT");
+  // People a member removed from "who liked you" in Picks.
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS admirers_hidden (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, other_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, PRIMARY KEY (user_id, other_id))",
+  );
   // Members who deleted their own account: anonymous numbers only (no name, contact or city), to learn why people leave.
   db.exec(`CREATE TABLE IF NOT EXISTS departures (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,

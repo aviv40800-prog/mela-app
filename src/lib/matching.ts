@@ -179,11 +179,9 @@ export function swipe(
       if (theirs.status === "matched") return { status: "matched", matchId: theirs.id, isNewMatch: false, recorded: false };
       if (theirs.status === "pending") {
         const status: MatchStatus = action === "like" ? "matched" : "rejected";
-        db.prepare("UPDATE matches SET status = ?, matched_at = CASE WHEN ? = 'matched' THEN datetime('now') END WHERE id = ?").run(
-          status,
-          status,
-          theirs.id,
-        );
+        db.prepare(
+          "UPDATE matches SET status = ?, matched_at = CASE WHEN ? = 'matched' THEN datetime('now') END, declined_at = CASE WHEN ? = 'rejected' THEN datetime('now') END WHERE id = ?",
+        ).run(status, status, status, theirs.id);
         if (comment && action === "like") insertMessage(theirs.id, meId, formatComment(comment));
         return { status, matchId: theirs.id, isNewMatch: status === "matched", recorded: true };
       }

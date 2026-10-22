@@ -212,3 +212,36 @@ describe("departures (admin)", () => {
     expect(Object.keys(d.recent[0])).not.toContain("full_name");
   });
 });
+
+import { admirers, hideAdmirer, reopenPassed } from "@/lib/admirers";
+
+describe("people who liked you (Picks)", () => {
+  it("lists matches, waiting likes and likes I passed on; free sees one admirer; remove and second chance work", () => {
+    const me = member("מירב", "female");
+    const waiting = member("אלון", "male");
+    const passed = member("בני", "male");
+    const matched = member("גיל", "male");
+    const theyPassed = member("דור", "male");
+    swipe(waiting.id, me.id, "like");
+    swipe(passed.id, me.id, "like");
+    swipe(me.id, passed.id, "pass"); // I said no to someone who liked me
+    swipe(matched.id, me.id, "like");
+    swipe(me.id, matched.id, "like");
+    swipe(theyPassed.id, me.id, "pass"); // their own pass is not a like
+
+    const all = admirers(me.id, true);
+    const kinds = Object.fromEntries(all.map((a) => [a.id, a.kind]));
+    expect(kinds).toEqual({ [waiting.id]: "liked", [passed.id]: "passed", [matched.id]: "match" });
+
+    const free = admirers(me.id, false);
+    expect(free.find((a) => a.id === matched.id)?.locked).toBe(false); // matches are always open
+    expect(free.filter((a) => a.kind !== "match" && !a.locked)).toHaveLength(1);
+
+    expect(reopenPassed(me.id, passed.id)).toBeGreaterThan(0);
+    expect(admirers(me.id, true).find((a) => a.id === passed.id)?.kind).toBe("match");
+    expect(reopenPassed(me.id, theyPassed.id)).toBeNull();
+
+    hideAdmirer(me.id, waiting.id);
+    expect(admirers(me.id, true).map((a) => a.id)).not.toContain(waiting.id);
+  });
+});
