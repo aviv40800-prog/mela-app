@@ -467,7 +467,9 @@ function view(messages: ChatMsg[], draft: Draft, ask: Field | "details" | "none"
               ? "partner"
               : ask === "details"
                 ? (missing.find((f) => !(DETAILS_FIELDS as readonly string[]).includes(f)) ?? missing[0] ?? "none")
-                : ask;
+                : ask === "photos"
+                  ? missing[0] // the model jumped ahead: the photo comes last
+                  : ask;
   const opts = effective !== "none" && effective !== "details" ? CHOICES[effective] : undefined;
   return {
     messages,
@@ -491,6 +493,14 @@ export function getChat(user: User): ChatView {
   if (!c.messages.length) {
     saveChat(user.id, GREETING, c.draft, 0);
     return view(GREETING, c.draft, "full_name");
+  }
+  // A chat that stopped with only the bio left and no draft to approve (see fallbackBio): offer one now.
+  const rest = missingFields(c.draft).filter((f) => f !== "photos");
+  if (rest.length === 1 && rest[0] === "bio" && !c.draft.bio_draft) {
+    const draft = { ...c.draft, bio_draft: fallbackBio(c.draft) };
+    const messages = [...c.messages, { role: "assistant" as const, text: BIO_LINE }];
+    saveChat(user.id, messages, draft, c.turns);
+    return view(messages, draft, "bio");
   }
   return view(c.messages, c.draft, missingFields(c.draft)[0] ?? "none");
 }
@@ -589,6 +599,7 @@ export function genderize(text: string, gender?: "male" | "female"): string {
 }
 
 const CARD_LINE = "כמה פרטים קצרים בלחיצה 👇";
+const BIO_LINE = "כתבתי לך טיוטה קצרה לביו מכל מה שסיפרת. אפשר לערוך ולאשר 👇";
 /** The friendly reaction at the start of a reply, without its question (or "" when there's no such part). */
 function reaction(text: string): string {
   const first = text.split(/(?<=[.!])\s+/)[0] ?? "";
@@ -596,13 +607,29 @@ function reaction(text: string): string {
 }
 function nextQuestion(field: Field | "details" | "none", d: Draft): string {
   if (field === "details") return CARD_LINE;
+  if (field === "bio" && d.bio_draft) return BIO_LINE;
   const q = FALLBACK_ASK[field];
   return field === "partner_religiosity" || field === "partner" ? q : genderize(q, d.gender);
+}
+
+/**
+ * A plain first-person bio from what the member already said, for when the model didn't write one — so the chat
+ * never stalls with the bio as the only thing left and nothing to approve. They can edit it on the card.
+ */
+export function fallbackBio(d: Draft): string {
+  const f = d.gender === "female";
+  const who = [d.occupation, d.location ? `מ${d.location}` : null].filter(Boolean).join(" ");
+  const looking =
+    d.looking_for === "serious" ? (f ? "מחפשת זוגיות רצינית" : "מחפש זוגיות רצינית") : d.looking_for === "open" ? (f ? "פתוחה להכיר ולראות לאן זה מתפתח" : "פתוח להכיר ולראות לאן זה מתפתח") : f ? "שמחה להכיר אנשים חדשים" : "שמח להכיר אנשים חדשים";
+  const partner = d.prompts?.find((p) => p.question_key === PARTNER_PROMPT)?.answer_text;
+  return [who ? `${who}.` : null, partner ? `${looking}, ומה שהכי חשוב לי: ${partner}` : `${looking}.`].filter(Boolean).join(" ").slice(0, 500);
 }
 
 /** Adds the host's message (the model's, or a fixed one), and makes sure the partner question is asked word for word. */
 function finishTurn(userId: number, messages: ChatMsg[], draft: Draft, turns: number, reply: string | null, ask: Field | "details" | "none"): ChatView {
   const answers = answersIn(messages);
+  const rest = missingFields(draft).filter((f) => f !== "photos");
+  if (rest.length === 1 && rest[0] === "bio" && !draft.bio_draft) draft = { ...draft, bio_draft: fallbackBio(draft) };
   let text = reply;
   if (partnerDue(draft, answers)) {
     const q = partnerQuestion(draft);
@@ -615,7 +642,8 @@ function finishTurn(userId: number, messages: ChatMsg[], draft: Draft, turns: nu
     // no "pick below 👇" when there's nothing to pick, and no other question while the card is showing.
     const next = view(messages, draft, ask).ask;
     const saysCard = text.includes("בלחיצה");
-    if (next === "details" && !saysCard) text = reaction(text) + CARD_LINE;
+    if (next === "bio" && draft.bio_draft && !text.includes("ביו")) text = reaction(text) + BIO_LINE;
+    else if (next === "details" && !saysCard) text = reaction(text) + CARD_LINE;
     else if (next !== "details" && saysCard) text = reaction(text) + nextQuestion(next, draft);
   }
   messages.push({ role: "assistant", text });

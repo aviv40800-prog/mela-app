@@ -120,6 +120,29 @@ describe("AI onboarding chat", () => {
     await expect(ai.chatTurn(u, { photos: ["javascript:alert(1)"] })).rejects.toThrow(/תמונה/);
   });
 
+  it("never stalls with the bio as the only thing left: the model asked for a photo first, the member skipped it", async () => {
+    const ai = await import("@/lib/ai-onboarding");
+    const u = withPassword(createEmailUser("stuck@example.com"));
+    const draft = { full_name: "איילה", age: 29, gender: "female", seeking: "male", location: "רמת גן", occupation: "עובדת בתחום השיווק", looking_for: "serious", marital_status: "single", religiosity: "traditional", partner_religiosity: "any", prompts: [{ question_key: "first_date", answer_text: "קפה וים" }, { question_key: "dealbreaker", answer_text: "לב טוב והומור" }] };
+    db.prepare("INSERT INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, '[]', ?, 1)").run(u.id, JSON.stringify(draft));
+    // the model jumps to the photo while the bio is still missing: the screen still asks for the bio first
+    turns.push({ reply: "עכשיו תמונה?", extracted: empty, bio_draft: null, ask: "photos" });
+    let v = await ai.chatTurn(u, { text: "יאללה" });
+    expect(v.ask).toBe("bio");
+    expect(v.draft.bio_draft).toContain("רמת גן");
+    expect(v.messages.at(-1)?.text).toContain("ביו");
+    v = await ai.chatTurn(u, { bio: "accept" });
+    expect(v.missing).toEqual(["photos"]);
+
+    // a chat already stuck that way is offered a draft when opened again
+    const u2 = withPassword(createEmailUser("stuck2@example.com"));
+    const stuckMsgs = JSON.stringify([{ role: "assistant", text: "בסדר גמור, התמונה תחכה לך בפרופיל. הפרופיל שלך כמעט מוכן!" }]);
+    db.prepare("INSERT INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, ?, ?, 3)").run(u2.id, stuckMsgs, JSON.stringify({ ...draft, photos_skipped: true }));
+    const g = ai.getChat(u2);
+    expect(g.ask).toBe("bio");
+    expect(g.draft.bio_draft).toBeTruthy();
+  });
+
   it("keeps the words in step with the screen, and the city out of the name (David from Yavne)", async () => {
     const ai = await import("@/lib/ai-onboarding");
     const u = withPassword(createEmailUser("david@example.com"));
