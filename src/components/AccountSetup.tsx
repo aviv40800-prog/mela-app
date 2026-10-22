@@ -3,14 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
-import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
 import { api, haptic } from "@/lib/client";
 
-// New and earlier members see the same screen.
-const SETUP = { title: "בחירת שם משתמש וסיסמה", sub: "כדי להיכנס בקלות בפעם הבאה, בלי לחכות לקוד במייל.", cta: "שמירה והמשך" };
+// New members reach this at the end of sign-up, with their profile ready; earlier members see it once.
 const COPY = {
-  new: SETUP,
-  existing: SETUP,
+  new: { title: "הפרופיל שלך מוכן! 🎉", sub: "בחירת שם משתמש וסיסמה, כדי להיכנס בקלות בפעם הבאה בלי לחכות לקוד במייל.", cta: "שמירה וכניסה ל־MELA" },
+  existing: { title: "בחירת שם משתמש וסיסמה", sub: "כדי להיכנס בקלות בפעם הבאה, בלי לחכות לקוד במייל.", cta: "שמירה והמשך" },
   reset: { title: "סיסמה חדשה", sub: "בחר/י סיסמה חדשה לחשבון.", cta: "שמירת הסיסמה" },
 };
 
@@ -21,9 +19,8 @@ export function AccountSetup({ mode, currentUsername, suggested }: { mode: "new"
   const copy = COPY[mode];
   const [username, setUsername] = useState(suggested);
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"save" | "skip" | false>(false);
   const [err, setErr] = useState<string | null>(null);
   const [nameState, setNameState] = useState<{ ok: boolean; error?: string } | null>(null);
 
@@ -41,12 +38,12 @@ export function AccountSetup({ mode, currentUsername, suggested }: { mode: "new"
 
   const pwProblem =
     password.length === 0 ? null : password.length < 8 ? "לפחות 8 תווים" : !/[A-Za-z֐-׿]/.test(password) || !/\d/.test(password) ? "גם אותיות וגם ספרות" : null;
-  const valid = !!nameState?.ok && password.length >= 8 && !pwProblem && confirm === password;
+  const valid = !!nameState?.ok && password.length >= 8 && !pwProblem;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!valid) return;
-    setBusy(true);
+    setBusy("save");
     setErr(null);
     try {
       const r = await api<{ next: string }>("/api/auth/password", { method: "POST", json: { username, password } });
@@ -59,9 +56,22 @@ export function AccountSetup({ mode, currentUsername, suggested }: { mode: "new"
     }
   }
 
+  // "Later": no password for now — next time they sign in with a code by email.
+  async function skip() {
+    setBusy("skip");
+    setErr(null);
+    try {
+      const r = await api<{ next: string }>("/api/auth/password/skip", { method: "POST" });
+      router.replace(r.next);
+      router.refresh();
+    } catch (e) {
+      setErr((e as Error).message);
+      setBusy(false);
+    }
+  }
+
   return (
     <form onSubmit={save} className="flex flex-1 flex-col">
-      {mode === "new" && <OnboardingProgress step={2} label="שם משתמש וסיסמה" />}
       <h1 className="font-display mt-8 text-[2.1rem] leading-tight font-bold">{copy.title}</h1>
       <p className="mt-2 text-[15px] text-mute">{copy.sub}</p>
 
@@ -103,27 +113,16 @@ export function AccountSetup({ mode, currentUsername, suggested }: { mode: "new"
         <span className={`mt-1 block px-1 text-[12px] ${pwProblem ? "text-danger" : "text-mute-2"}`}>{pwProblem ?? "לפחות 8 תווים, עם אותיות וספרות"}</span>
       </label>
 
-      <label className="mt-3 block">
-        <span className="label px-1">אימות סיסמה</span>
-        <span className="field flex items-center gap-3 !py-0" dir="ltr">
-          <Lock size={19} className="shrink-0 text-mute" />
-          <input
-            id="confirm-password"
-            type={show ? "text" : "password"}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            className="h-[54px] min-w-0 flex-1 bg-transparent text-[17px] outline-none"
-          />
-        </span>
-        {confirm && confirm !== password && <span className="mt-1 block px-1 text-[12px] text-danger">הסיסמאות לא זהות</span>}
-      </label>
-
       {err && <p className="mt-4 text-sm text-danger">{err}</p>}
       <div className="mt-auto pt-10">
-        <button className="btn-gold w-full text-[17px]" disabled={busy || !valid}>
-          {busy ? <Loader2 className="animate-spin" size={18} /> : copy.cta}
+        <button className="btn-gold w-full text-[17px]" disabled={!!busy || !valid}>
+          {busy === "save" ? <Loader2 className="animate-spin" size={18} /> : copy.cta}
         </button>
+        {mode !== "reset" && (
+          <button type="button" onClick={skip} disabled={!!busy} className="mx-auto mt-4 block py-2 text-[15px] text-mute transition hover:text-cream disabled:opacity-60">
+            {busy === "skip" ? <Loader2 className="inline animate-spin" size={16} /> : "אחר כך"}
+          </button>
+        )}
       </div>
     </form>
   );

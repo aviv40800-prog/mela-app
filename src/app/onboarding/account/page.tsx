@@ -11,7 +11,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const user = await requirePageUser("verified");
   const { reset } = await searchParams;
   if (!canSetPassword(user.id)) redirect(isAdmin(user) ? "/admin" : nextOnboardingStep(user));
-  // new members haven't built a profile yet; members from before passwords have one
-  const mode = reset ? "reset" : isProfileComplete(user) ? "existing" : "new";
+  // Sign-up now asks for this at the end, right after the profile is built; members from before passwords see it once.
+  const isNew = Date.now() - new Date(user.created_at.replace(" ", "T") + "Z").getTime() < 3 * 86_400_000;
+  const mode = reset ? "reset" : isNew || !isProfileComplete(user) ? "new" : "existing";
   return <AccountSetup mode={mode} currentUsername={user.username} suggested={user.username ?? suggestUsername(user.email)} />;
 }

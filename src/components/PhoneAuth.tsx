@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { ArrowRight, Check, Loader2, Mail, ShieldCheck, Smartphone } from "lucide-react";
-import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
 import { InAppBrowserHint } from "./InAppBrowserHint";
 import { api, haptic, track } from "@/lib/client";
 import { normalizeIsraeliPhone } from "@/lib/phone";
@@ -183,7 +182,7 @@ export function PhoneAuth({ mode }: { mode: Mode }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      {mode === "signup" ? <OnboardingProgress step={1} label={sentTo ? "אימות קוד" : "אימייל"} /> : <p className="eyebrow text-center">איפוס סיסמה</p>}
+      {mode !== "signup" && <p className="eyebrow text-center">איפוס סיסמה</p>}
 
       <AnimatePresence mode="wait" initial={false}>
         {!sentTo ? (

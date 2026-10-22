@@ -313,6 +313,8 @@ export function migrate(db: DatabaseSync) {
   const sugCols = new Set((db.prepare("PRAGMA table_info(match_suggestions)").all() as { name: string }[]).map((c) => c.name));
   if (!sugCols.has("nudge_a_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_a_at TEXT");
   if (!sugCols.has("nudge_b_at")) db.exec("ALTER TABLE match_suggestions ADD COLUMN nudge_b_at TEXT");
+  // "Later" on the username + password screen at the end of sign-up: stop asking (they sign in with an email code).
+  if (!cols.has("account_skipped_at")) db.exec("ALTER TABLE users ADD COLUMN account_skipped_at TEXT");
   // Members who deleted their own account: anonymous numbers only (no name, contact or city), to learn why people leave.
   db.exec(`CREATE TABLE IF NOT EXISTS departures (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,

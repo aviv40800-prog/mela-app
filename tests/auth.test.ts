@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
-import { createEmailUser, getUser } from "@/lib/users";
+import { createEmailUser, getUser, updateProfile } from "@/lib/users";
 import { canSetPassword, hashPassword, loginWithPassword, markCodeVerified, setCredentials, suggestUsername, verifyPassword } from "@/lib/auth";
-import { nextOnboardingStep } from "@/lib/onboarding";
+import { nextOnboardingStep, skipAccountSetup } from "@/lib/onboarding";
 
 beforeEach(() => db.exec("DELETE FROM users"));
 
@@ -25,9 +25,30 @@ describe("passwords", () => {
 });
 
 describe("sign-up and sign-in", () => {
-  it("a new member sets a username + password first, then signs in with either username or email", () => {
-    const u = createEmailUser("dana@test.com");
+  it("the profile comes first; the username + password screen comes once it's ready, and can be put off", () => {
+    const u = createEmailUser("ron@test.com");
+    expect(nextOnboardingStep(getUser(u.id)!)).toMatch(/^\/onboarding\/(chat|profile)$/);
+    updateProfile(u.id, {
+      full_name: "רון",
+      age: 30,
+      gender: "male",
+      seeking: "female",
+      location: "נתניה",
+      occupation: "מורה",
+      bio: "ביו לבדיקה ארוכה מספיק",
+      photos: [],
+      prompts: [
+        { question_key: "buna", answer_text: "א" },
+        { question_key: "sigd", answer_text: "ב" },
+      ],
+    });
     expect(nextOnboardingStep(getUser(u.id)!)).toBe("/onboarding/account");
+    skipAccountSetup(u.id);
+    expect(nextOnboardingStep(getUser(u.id)!)).toBe("/discover");
+  });
+
+  it("a new member sets a username + password, then signs in with either username or email", () => {
+    const u = createEmailUser("dana@test.com");
     expect(setCredentials(u.id, { username: "dana.k", password: "short" })).toMatchObject({ ok: false });
     expect(setCredentials(u.id, { username: "dana.k", password: "abcdefgh" })).toMatchObject({ ok: false }); // no digits
     expect(setCredentials(u.id, { username: "1dana", password: "Abcdef12" })).toMatchObject({ ok: false }); // must start with a letter

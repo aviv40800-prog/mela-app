@@ -9,11 +9,8 @@ export function OnboardingProgress({ step, label }: { step: number; label?: stri
   const pct = Math.min(1, step / ONBOARDING_STEPS);
   return (
     <div className="w-full" role="progressbar" aria-valuemin={0} aria-valuemax={ONBOARDING_STEPS} aria-valuenow={step} aria-label={label}>
-      <div className="mb-2 flex items-center justify-between text-[11px]">
+      <div className="mb-2 text-[11px]">
         <span className="font-medium text-gold-2">{label}</span>
-        <span className="tabular text-mute">
-          {step}/{ONBOARDING_STEPS}
-        </span>
       </div>
       <div className="relative h-[3px] overflow-hidden rounded-full bg-fg/[0.07]">
         <motion.div

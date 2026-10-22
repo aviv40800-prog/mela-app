@@ -53,6 +53,6 @@ export const POST = handle(async (req: Request) => {
   await createSession(user.id);
   // New members (and anyone without a password yet, or resetting it) choose a username + password first;
   // admins then land on the dashboard — they don't need a dating profile to manage the platform.
-  const next = reset ? "/onboarding/account?reset=1" : !user.has_password ? "/onboarding/account" : isAdmin(user) ? "/admin" : nextOnboardingStep(user);
+  const next = reset ? "/onboarding/account?reset=1" : isAdmin(user) ? (user.has_password ? "/admin" : "/onboarding/account") : nextOnboardingStep(user);
   return json({ ok: true, isNew: !existing, next });
 });
