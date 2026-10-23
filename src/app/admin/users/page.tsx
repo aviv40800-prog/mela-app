@@ -4,6 +4,8 @@ import { listUsers, USER_FILTERS, type UserFilter } from "@/lib/admin-data";
 import { Badge, PageHeader, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 import { CleanupPanel } from "@/components/admin/CleanupPanel";
 import { adminEmails } from "@/lib/admin";
+import { getUser } from "@/lib/users";
+import { signupStage, stageTag } from "@/lib/signup-stage";
 
 type SP = Promise<{ q?: string; filter?: string; page?: string }>;
 
@@ -14,6 +16,11 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
   const q = sp.q ?? "";
   const { rows, total, pages } = listUsers({ q, filter, page, perPage: filter === "real" || filter === "demo" ? 200 : 25 });
   const admins = adminEmails();
+  // where each member who hasn't finished their profile stopped
+  const stage = (id: number) => {
+    const u = getUser(id);
+    return u && !u.is_demo ? stageTag(signupStage(u)) : null;
+  };
   const href = (over: Record<string, string | number>) => {
     const p = new URLSearchParams({ ...(q && { q }), filter, page: String(page), ...Object.fromEntries(Object.entries(over).map(([k, v]) => [k, String(v)])) });
     return `/admin/users?${p}`;
@@ -92,6 +99,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
                     {u.sub_status ? <Badge tone={SUB_BADGE[u.sub_status].tone}>{SUB_BADGE[u.sub_status].label}</Badge> : <Badge>ללא</Badge>}
                     {u.is_demo && <Badge>דמו</Badge>}
                     {u.is_banned && <Badge tone="red">מושעה</Badge>}
+                    {stage(u.id) && <Badge tone="red">{stage(u.id)}</Badge>}
                   </div>
                 </td>
                 <td className="tabular px-4 py-3">{u.matches}</td>
@@ -117,6 +125,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
             <div className="flex shrink-0 flex-col items-end gap-1">
               {u.sub_status && <Badge tone={SUB_BADGE[u.sub_status].tone}>{SUB_BADGE[u.sub_status].label}</Badge>}
               {u.is_banned ? <Badge tone="red">מושעה</Badge> : u.is_demo ? <Badge>דמו</Badge> : null}
+              {stage(u.id) && <Badge tone="red">{stage(u.id)}</Badge>}
             </div>
           </li>
         ))}

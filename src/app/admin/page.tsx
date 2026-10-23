@@ -4,6 +4,7 @@ import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } 
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
 import { departures } from "@/lib/departures";
+import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 
@@ -17,6 +18,7 @@ export default function AdminOverview() {
   const hooks = recentWebhooks(6);
   const ai = aiUsageStats();
   const left = departures(8);
+  const funnel = signupFunnel();
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
@@ -153,6 +155,39 @@ export default function AdminOverview() {
           )}
         </Card>
       </div>
+
+      <Card title="משפך הרשמה" className="mt-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {(
+            [
+              ["נרשמו (קוד)", funnel.reached.signedUp],
+              ["התחילו פרופיל", funnel.reached.started],
+              ["עברו את כרטיס הפרטים", funnel.reached.details],
+              ["אישרו ביו", funnel.reached.bio],
+              ["השלימו פרופיל", funnel.reached.complete],
+            ] as const
+          ).map(([label, n], i) => (
+            <div key={label} className="rounded-2xl border border-line bg-fg/[0.03] px-3 py-2.5">
+              <div className="text-[12px] text-mute">{label}</div>
+              <div className="tabular mt-0.5 text-lg font-semibold">
+                {n}
+                {i > 0 && funnel.reached.signedUp > 0 && <span className="text-[12px] font-normal text-mute"> · {Math.round((n / funnel.reached.signedUp) * 100)}%</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 mb-2 text-[12.5px] font-semibold">איפה עומדים עכשיו מי שלא השלימו:</p>
+        <div className="flex flex-wrap gap-1.5">
+          {(Object.entries(funnel.now) as [Stage, number][])
+            .filter(([s, n]) => s !== "complete" && n > 0)
+            .sort((a, b) => b[1] - a[1])
+            .map(([s, n]) => (
+              <Link key={s} href="/admin/users?filter=incomplete" className="rounded-full bg-fg/[0.05] px-2.5 py-1 text-[12px] hover:text-gold-2">
+                {STAGE_LABEL[s]} · <b className="tabular">{n}</b>
+              </Link>
+            ))}
+        </div>
+      </Card>
 
       <Card title="משתמשים שעזבו (מחקו את החשבון)" className="mt-4">
         <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">

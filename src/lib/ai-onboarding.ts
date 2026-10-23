@@ -160,7 +160,7 @@ const DETAILS_LABELS: Record<DetailsField, string> = {
   partner_religiosity: "כמה חשוב לך שהצד השני יהיה דתי/ה",
 };
 
-const detailsMissing = (d: Draft): DetailsField[] => DETAILS_FIELDS.filter((f) => !ok(S[f], d[f]));
+export const detailsMissing = (d: Draft): DetailsField[] => DETAILS_FIELDS.filter((f) => !ok(S[f], d[f]));
 
 /** The quick-choice card comes as question 3: once the member said what they do (or answered three times). */
 const detailsDue = (d: Draft, answers: number) => detailsMissing(d).length > 0 && (!!d.occupation || answers >= 3);

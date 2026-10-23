@@ -8,6 +8,7 @@ import { Badge, Card, Stat, SUB_BADGE, subSource, UserChip, when } from "@/compo
 import { AdminPhotos } from "@/components/admin/AdminPhotos";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { SuggestMatchPanel } from "@/components/admin/SuggestMatchPanel";
+import { signupStage } from "@/lib/signup-stage";
 
 const SEX: Record<string, string> = { male: "גבר", female: "אישה", everyone: "כולם" };
 
@@ -15,6 +16,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   const d = userDetail(Number((await params).id));
   if (!d) notFound();
   const { user: u, prompts, subscription: sub, stats, matches } = d;
+  const stage = signupStage(u);
 
   return (
     <>
@@ -36,6 +38,21 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
           <Card title="תמונות">
             <AdminPhotos userId={u.id} initial={u.photos} name={u.full_name ?? ""} />
           </Card>
+
+          {stage.stage !== "complete" && (
+            <Card title="איפה עצר/ה בהרשמה">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge tone="red">{stage.label}</Badge>
+                {stage.percent !== null && <span className="tabular text-mute">הפרופיל: {stage.percent}%</span>}
+                {stage.lastAt && <span className="text-mute-2">· פעילות אחרונה {when(stage.lastAt)}</span>}
+              </div>
+              {stage.lastQuestion && (
+                <p className="mt-3 rounded-2xl border border-line bg-fg/[0.03] px-3.5 py-2.5 text-[13px] leading-relaxed text-cream/90">
+                  <span className="text-mute">השאלה האחרונה של MELA: </span>״{stage.lastQuestion}״
+                </p>
+              )}
+            </Card>
+          )}
 
           <Card title="פרטים">
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-3">

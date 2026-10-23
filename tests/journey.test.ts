@@ -245,3 +245,40 @@ describe("people who liked you (Picks)", () => {
     expect(admirers(me.id, true).map((a) => a.id)).not.toContain(waiting.id);
   });
 });
+
+import { signupFunnel, signupStage } from "@/lib/signup-stage";
+
+describe("where sign-up stopped (admin)", () => {
+  const chat = (id: number, draft: object, messages: object[]) =>
+    db.prepare("INSERT INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, ?, ?, 2)").run(id, JSON.stringify(messages), JSON.stringify(draft));
+  it("tells the stage from the account and the sign-up chat", () => {
+    db.exec("DELETE FROM onboarding_chats");
+    const fresh = createEmailUser("fresh@x.com");
+    expect(signupStage(getUser(fresh.id)!).stage).toBe("after_code");
+
+    const talking = createEmailUser("talking@x.com");
+    chat(talking.id, { full_name: "רון", age: 30 }, [
+      { role: "assistant", text: "היי! איך קוראים לך?" },
+      { role: "user", text: "רון, 30" },
+      { role: "assistant", text: "נעים מאוד! ומה אתה עושה בחיים?" },
+    ]);
+    const t = signupStage(getUser(talking.id)!);
+    expect(t).toMatchObject({ stage: "chat", lastQuestion: "נעים מאוד! ומה אתה עושה בחיים?" });
+    expect(t.percent).toBeGreaterThan(0);
+
+    const card = createEmailUser("card@x.com");
+    chat(card.id, { full_name: "דנה", age: 27, location: "נתניה", occupation: "אחות" }, [{ role: "user", text: "דנה" }]);
+    expect(signupStage(getUser(card.id)!).stage).toBe("details");
+
+    const bio = createEmailUser("bio@x.com");
+    chat(bio.id, { full_name: "דנה", bio_draft: "טיוטה לבדיקה ארוכה מספיק" }, [{ role: "user", text: "דנה" }]);
+    expect(signupStage(getUser(bio.id)!).stage).toBe("bio");
+
+    const done = member("שלמה", "male");
+    expect(signupStage(done).stage).toBe("complete");
+
+    const f = signupFunnel();
+    expect(f.reached).toMatchObject({ signedUp: 5, started: 4, complete: 1 });
+    expect(f.now).toMatchObject({ after_code: 1, chat: 1, details: 1, bio: 1, complete: 1 });
+  });
+});
