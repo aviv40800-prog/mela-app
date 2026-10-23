@@ -6,7 +6,7 @@ import { Check, Heart, Loader2, Mail, Sparkles, X } from "lucide-react";
 import { api } from "@/lib/client";
 import { Photo } from "../Photo";
 
-type Candidate = { id: number; name: string; age: number | null; location: string | null; photo: string | null; compatibility: number; likedThem: boolean };
+type Candidate = { id: number; name: string; age: number | null; location: string | null; photo: string | null; compatibility: number; likedThem: boolean; memberLiked: boolean };
 type Suggestion = {
   id: number;
   createdAt: string;
@@ -194,7 +194,8 @@ export function SuggestMatchPanel({ userId, name }: { userId: number; name: stri
                     <span className="block text-[14px] font-medium">{c.name}</span>
                     <span className="block text-[12px] text-mute">{[c.age, c.location].filter(Boolean).join(" · ")}</span>
                   </span>
-                  {c.likedThem && <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[11px] text-gold-3">כבר עשה/תה לייק</span>}
+                  {c.likedThem && <span className="rounded-full bg-gold/15 px-2 py-0.5 text-[11px] text-gold-3">עשה/תה לייק ל{firstName(name)}</span>}
+                  {c.memberLiked && <span className="rounded-full bg-fg/[0.06] px-2 py-0.5 text-[11px] text-mute">{firstName(name)} כבר עשה/תה לייק</span>}
                   <span className="tabular text-[13px] font-semibold text-gold-2">{c.compatibility}%</span>
                 </button>
               </li>

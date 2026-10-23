@@ -283,3 +283,24 @@ describe("where sign-up stopped (admin)", () => {
     expect(f.now).toMatchObject({ after_code: 1, chat: 1, details: 1, bio: 1, complete: 1 });
   });
 });
+
+import { likesReceived, likesSent, tasteSummary } from "@/lib/likes-admin";
+
+describe("likes on the admin page", () => {
+  it("lists who a member liked and who liked them, with where each one stands", () => {
+    const me = member("אורית", "female");
+    const [a, b, c, d] = ["אבי", "בני", "גדי", "דני"].map((n) => member(n, "male"));
+    swipe(me.id, a.id, "like"); // waiting
+    swipe(me.id, b.id, "like");
+    swipe(b.id, me.id, "like"); // match
+    swipe(me.id, c.id, "like");
+    swipe(c.id, me.id, "pass"); // c declined
+    swipe(d.id, me.id, "like"); // d liked me…
+    swipe(me.id, d.id, "pass"); // …and I passed
+    const sent = Object.fromEntries(likesSent(me.id).map((r) => [r.id, r.state]));
+    expect(sent).toEqual({ [a.id]: "waiting", [b.id]: "match", [c.id]: "declined" });
+    const got = Object.fromEntries(likesReceived(me.id).map((r) => [r.id, r.state]));
+    expect(got).toEqual({ [b.id]: "match", [d.id]: "declined" });
+    expect(tasteSummary(likesSent(me.id))).toContain("29");
+  });
+});

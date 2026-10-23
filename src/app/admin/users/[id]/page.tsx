@@ -9,6 +9,7 @@ import { AdminPhotos } from "@/components/admin/AdminPhotos";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { SuggestMatchPanel } from "@/components/admin/SuggestMatchPanel";
 import { signupStage } from "@/lib/signup-stage";
+import { likesReceived, likesSent, tasteSummary, type LikeRow, type LikeState } from "@/lib/likes-admin";
 
 const SEX: Record<string, string> = { male: "גבר", female: "אישה", everyone: "כולם" };
 
@@ -17,6 +18,9 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   if (!d) notFound();
   const { user: u, prompts, subscription: sub, stats, matches } = d;
   const stage = signupStage(u);
+  const sent = likesSent(u.id);
+  const received = likesReceived(u.id);
+  const taste = tasteSummary(sent);
 
   return (
     <>
@@ -102,6 +106,15 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
             )}
           </Card>
 
+          <Card title={`עשה/תה לייק ל־ (${sent.length})`}>
+            {taste && <p className="mb-3 rounded-2xl bg-gold/[0.07] px-3.5 py-2.5 text-[13px] text-gold-3">{taste}</p>}
+            <LikeList rows={sent} states={{ waiting: "⏳ מחכה לתשובה", match: "💛 התאמה", declined: "✕ הצד השני דילג" }} empty="עוד לא עשה/תה לייק לאף אחד." />
+          </Card>
+
+          <Card title={`קיבל/ה לייק מ־ (${received.length})`}>
+            <LikeList rows={received} states={{ waiting: "⏳ עוד לא ענה/תה", match: "💛 התאמה", declined: "✕ דילג/ה" }} empty="עוד לא קיבל/ה לייקים." />
+          </Card>
+
           <Card title={`התאמות (${stats.matches})`}>
             {matches.length === 0 ? (
               <p className="text-sm text-mute">אין התאמות.</p>
@@ -180,6 +193,31 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
           <AdminUserActions userId={u.id} verified={u.is_verified} banned={u.is_banned} hasSub={!!sub && sub.status !== "canceled"} seeking={u.seeking} />
         </div>
       </div>
+    </>
+  );
+}
+
+/** Likes given or received, newest first; the first ones open, the rest behind "show all". */
+function LikeList({ rows, states, empty }: { rows: LikeRow[]; states: Record<LikeState, string>; empty: string }) {
+  if (rows.length === 0) return <p className="text-sm text-mute">{empty}</p>;
+  const item = (r: LikeRow) => (
+    <li key={`${r.id}-${r.state}`} className="flex items-center justify-between gap-3">
+      <UserChip id={r.id} name={r.name} photo={r.photo} sub={[r.age, r.location].filter(Boolean).join(" · ")} />
+      <span className="flex shrink-0 flex-col items-end gap-0.5">
+        <Badge tone={r.state === "match" ? "gold" : r.state === "declined" ? "mute" : "green"}>{states[r.state]}</Badge>
+        <span className="text-[11px] text-mute-2">{when(r.at)}</span>
+      </span>
+    </li>
+  );
+  return (
+    <>
+      <ul className="space-y-3">{rows.slice(0, 8).map(item)}</ul>
+      {rows.length > 8 && (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-[13px] text-gold-2">להציג את כל {rows.length}</summary>
+          <ul className="mt-3 space-y-3">{rows.slice(8).map(item)}</ul>
+        </details>
+      )}
     </>
   );
 }

@@ -60,6 +60,8 @@ export type SuggestionCandidate = {
   compatibility: number;
   /** They already liked this member (waiting for an answer). */
   likedThem: boolean;
+  /** This member already liked them (waiting for their answer). */
+  memberLiked: boolean;
 };
 
 /** Who could be suggested to `me`: mutually compatible, complete, real profiles not already matched, blocked or suggested. */
@@ -84,6 +86,7 @@ export function suggestionCandidates(me: User, limit = 40): SuggestionCandidate[
       photo: u.photos[0] ?? null,
       compatibility: compatibility(me.id, u.id),
       likedThem: swipeOf(u.id, me.id) === "pending",
+      memberLiked: swipeOf(me.id, u.id) === "pending",
     }))
     .sort((a, b) => Number(b.likedThem) - Number(a.likedThem) || b.compatibility - a.compatibility)
     .slice(0, limit);
