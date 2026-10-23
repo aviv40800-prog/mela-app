@@ -9,10 +9,8 @@ import type { Candidate } from "./types";
 export type AdmirerKind = "match" | "liked" | "passed";
 export type Admirer =
   | { id: number; kind: AdmirerKind; at: string; locked: false; matchId: number | null; card: Candidate }
-  | { id: number; kind: AdmirerKind; at: string; locked: true; photo: string | null };
-
-/** Free members see this many of the people who liked them; the rest are blurred until Premium. Matches are always open. */
-export const FREE_ADMIRERS = 1;
+  /** Who it is stays hidden: no id, name or photo leaves the server (a blurred placeholder card is shown). */
+  | { id: number; kind: "liked"; at: string; locked: true };
 
 type Row = { id: number; status: string; user_1_id: number; user_2_id: number; at: string };
 
@@ -32,14 +30,14 @@ export function admirers(meId: number, premium: boolean): Admirer[] {
     .all({ me: meId }) as Row[];
   const hidden = new Set((db.prepare("SELECT other_id FROM admirers_hidden WHERE user_id = ?").all(meId) as { other_id: number }[]).map((r) => r.other_id));
   const blocked = db.prepare("SELECT 1 FROM blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)");
-  let open = 0;
   return rows.flatMap((r): Admirer[] => {
     const otherId = r.user_1_id === meId ? r.user_2_id : r.user_1_id;
     const other = getUser(otherId);
     if (!other || other.is_banned || hidden.has(otherId) || blocked.get(meId, otherId, otherId, meId)) return [];
     if ((db.prepare("SELECT is_test FROM users WHERE id = ?").get(otherId) as { is_test: number }).is_test) return [];
     const kind: AdmirerKind = r.status === "matched" ? "match" : r.status === "pending" ? "liked" : "passed";
-    if (kind !== "match" && !premium && open++ >= FREE_ADMIRERS) return [{ id: otherId, kind, at: r.at, locked: true, photo: other.photos[0] ?? null }];
+    // Free members see their matches, and how many others liked them — who they are is Premium.
+    if (kind !== "match" && !premium) return [{ id: -r.id, kind: "liked", at: r.at, locked: true }];
     return [{ id: otherId, kind, at: r.at, locked: false, matchId: kind === "match" ? r.id : null, card: toCandidate(meId, otherId) }];
   });
 }

@@ -10,7 +10,7 @@ export const SITE = {
   instagram: "https://www.instagram.com/mela_dating",
   facebook: "https://www.facebook.com/share/1CrUjvVLg6/",
   /** Effective date of the current terms / privacy policy. */
-  legalUpdated: "15.10.2026",
+  legalUpdated: "23.10.2026",
 } as const;
 
 export const LEGAL_LINKS = [

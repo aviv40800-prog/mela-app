@@ -14,7 +14,7 @@ import type { Candidate, PublicProfile } from "@/lib/types";
 type Kind = "match" | "liked" | "passed";
 type Item =
   | { id: number; kind: Kind; at: string; locked: false; matchId: number | null; card: Candidate }
-  | { id: number; kind: Kind; at: string; locked: true; photo: string | null };
+  | { id: number; kind: Kind; at: string; locked: true };
 
 const BADGE: Record<Kind, string> = { match: "התאמה 💛", liked: "אהב/ה אותך", passed: "דילגת" };
 
@@ -101,9 +101,7 @@ export function AdmirersGallery({ me }: { me: MiniProfile }) {
             >
               {it.locked ? (
                 <Link href="/onboarding/plan" className="block h-full w-full" aria-label="לראות מי אהב/ה אותך עם Premium">
-                  <div className="h-full w-full scale-110 blur-xl">
-                    <Photo src={it.photo ?? undefined} name="?" className="h-full w-full" rounded="rounded-[24px]" />
-                  </div>
+                  <div className="h-full w-full bg-[radial-gradient(circle_at_50%_35%,rgba(233,182,92,0.35),rgba(120,30,45,0.6)_45%,rgba(30,8,12,0.95))] blur-md" />
                   <span className="absolute inset-0 grid place-items-center bg-ink/40">
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-b from-gold-3 to-gold text-[#2a1c12] shadow-[0_0_24px_rgba(184,137,43,0.55)]">
                       <Crown size={19} />
@@ -140,7 +138,7 @@ export function AdmirersGallery({ me }: { me: MiniProfile }) {
       </div>
       {locked > 0 && (
         <Link href="/onboarding/plan" className="mx-1 mt-1 flex items-center justify-center gap-2 rounded-2xl border border-gold/30 bg-gold/[0.07] px-4 py-3 text-[14px] font-semibold text-gold-2">
-          <Crown size={16} /> עוד {locked} אנשים אהבו אותך · לראות את כולם עם Premium
+          <Crown size={16} /> {locked === 1 ? "מישהו/י אהב/ה אותך" : `${locked} אנשים אהבו אותך`} · לגלות מי עם Premium
         </Link>
       )}
 

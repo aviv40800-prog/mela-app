@@ -132,6 +132,11 @@ export const PLANS = {
 } as const;
 
 export type PlanType = keyof typeof PLANS;
+/**
+ * New members pay the plan price right away: the app itself is free, so Premium has no trial (since Oct 2026).
+ * MELA_TRIAL=on brings the trial back. TRIAL_DAYS stays for members already in a trial and for the admin's "+7 trial days".
+ */
+export const trialEnabled = () => process.env.MELA_TRIAL === "on";
 export const TRIAL_DAYS = 7;
 /** Charged on the first day of the trial to verify the card (the plan price follows after TRIAL_DAYS). */
 export const TRIAL_FEE = 1;

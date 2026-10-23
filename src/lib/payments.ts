@@ -1,7 +1,7 @@
 import "server-only";
 import crypto from "node:crypto";
 import { db, tx } from "./db";
-import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "./content";
+import { PLANS, TRIAL_DAYS, trialEnabled, TRIAL_FEE, type PlanType } from "./content";
 import { notifyPayment } from "./notify";
 
 /**
@@ -57,7 +57,7 @@ export function createCheckout(user: { id: number; full_name: string | null; ema
   const terminal = process.env.TRANZILA_TERMINAL;
   if (!terminal) throw new Error("TRANZILA_TERMINAL is not set");
   const p = PLANS[plan];
-  const trial = !db.prepare("SELECT 1 FROM subscriptions WHERE user_id = ?").get(user.id); // one trial per member
+  const trial = trialEnabled() && !db.prepare("SELECT 1 FROM subscriptions WHERE user_id = ?").get(user.id); // one trial per member
   const now = new Date();
   const recurStart = trial ? new Date(now.getTime() + TRIAL_DAYS * 86_400_000) : addMonths(now, RECUR[plan].months);
   const order: PaymentOrder = {

@@ -235,7 +235,8 @@ describe("people who liked you (Picks)", () => {
 
     const free = admirers(me.id, false);
     expect(free.find((a) => a.id === matched.id)?.locked).toBe(false); // matches are always open
-    expect(free.filter((a) => a.kind !== "match" && !a.locked)).toHaveLength(1);
+    expect(free.filter((a) => a.kind !== "match")).toHaveLength(2); // they see how many…
+    expect(free.filter((a) => a.kind !== "match").every((a) => a.locked && a.id < 0 && !("card" in a))).toBe(true); // …but not who
 
     expect(reopenPassed(me.id, passed.id)).toBeGreaterThan(0);
     expect(admirers(me.id, true).find((a) => a.id === passed.id)?.kind).toBe("match");

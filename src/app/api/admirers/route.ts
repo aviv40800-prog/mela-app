@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
 import { admirers, hideAdmirer, reopenPassed } from "@/lib/admirers";
-import { getQuota, recordLike } from "@/lib/quota";
+import { getQuota } from "@/lib/quota";
 import { getUser, toPublic } from "@/lib/users";
 import { isTestUser } from "@/lib/test-account";
 
@@ -24,11 +24,10 @@ export const POST = handle(async (req: Request) => {
     hideAdmirer(user.id, otherId);
     return json({ ok: true });
   }
-  // Giving someone a second chance is a like: it uses the day's likes on the free plan.
+  // A second chance for someone who liked you is part of "see who liked you" — Premium.
   const quota = getQuota(user.id);
-  if (!quota.premium && quota.left === 0) return error("נגמרו הלייקים להיום", 429, { code: "like_limit", quota });
+  if (!quota.premium) return error("זה חלק מ־Premium", 403, { code: "premium_required" });
   const matchId = reopenPassed(user.id, otherId);
   if (!matchId) return error("הפרופיל כבר לא זמין", 404);
-  if (!quota.premium) recordLike(user.id);
   return json({ ok: true, matchId, other: toPublic(getUser(otherId)!), quota: getQuota(user.id) });
 });

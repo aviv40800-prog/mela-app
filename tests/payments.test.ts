@@ -17,7 +17,23 @@ function member() {
 }
 const paid = (orderId: string, sum: string, extra: Record<string, string> = {}) => ({ mela_order: orderId, Response: "000", sum, currency: "1", supplier: "melatest", TranzilaTK: "tok123", ccno: "4242", ...extra });
 
-beforeEach(() => db.exec("DELETE FROM users; DELETE FROM payment_orders; DELETE FROM payment_events; DELETE FROM provider_cancels;"));
+beforeEach(() => {
+  db.exec("DELETE FROM users; DELETE FROM payment_orders; DELETE FROM payment_events; DELETE FROM provider_cancels;");
+  process.env.MELA_TRIAL = "on"; // most of these cover the trial; the no-trial default has its own test below
+});
+
+describe("no trial (the default since Oct 2026)", () => {
+  it("a first subscription is charged the full plan price today and opens an active subscription", () => {
+    delete process.env.MELA_TRIAL;
+    const u = member();
+    const { fields, order } = createCheckout(u, "monthly_49");
+    expect(fields).toMatchObject({ sum: "49.00", recur_sum: "49.00" });
+    expect(order.trial).toBe(0);
+    expect(fields.recur_start_date > new Date(Date.now() + 27 * 86_400_000).toISOString().slice(0, 10)).toBe(true); // next charge in a month
+    expect(handleNotify(KEY, paid(order.id, "49.00"))).toEqual({ ok: true, note: "paid" });
+    expect(getSubscription(u.id)?.status).toBe("active");
+  });
+});
 
 describe("tranzila checkout", () => {
   it("a first subscription is ₪1 today and the plan price from day 7, monthly", () => {

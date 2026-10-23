@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { PLANS, TRIAL_DAYS, type PlanType } from "./content";
+import { PLANS, TRIAL_DAYS, trialEnabled, type PlanType } from "./content";
 import { accessUntil, isProviderBilled, queueProviderCancel, withdrawProviderCancel } from "./payments";
 
 export type SubscriptionStatus = "trialing" | "active" | "canceled" | "past_due";
@@ -36,7 +36,7 @@ export function hasAccess(sub: Subscription | null): boolean {
 }
 
 /**
- * Starts the 7‑day free trial. Nothing is charged today.
+ * Starts a subscription: paid from today, or (MELA_TRIAL=on) the 7‑day trial.
  *
  * Billing provider seam: with a real PSP you would create a customer + tokenised payment method here
  * (Stripe SetupIntent / Tranzila or Cardcom token), schedule the first charge for trial_ends_at, and
@@ -54,6 +54,15 @@ export function startTrial(userId: number, plan: PlanType, card?: CardMeta): Sub
       db.prepare("UPDATE subscriptions SET plan_type = ? WHERE user_id = ?").run(plan, userId);
       resumeSubscription(userId);
     }
+    saveCard();
+    return getSubscription(userId)!;
+  }
+  if (!trialEnabled()) {
+    // no trial: paid from today for the plan's period
+    db.prepare(
+      `INSERT INTO subscriptions (user_id, plan_type, status, current_period_end, provider_ref)
+       VALUES (?, ?, 'active', datetime('now', ?), ?)`,
+    ).run(userId, plan, `+${PLANS[plan].months} months`, `${process.env.BILLING_PROVIDER ?? "mock"}:${userId}`);
     saveCard();
     return getSubscription(userId)!;
   }

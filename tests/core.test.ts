@@ -33,6 +33,7 @@ const PROFILE_BASE = { full_name: "בדיקה", age: 30, gender: "male" as const
 
 beforeEach(() => {
   db.exec("DELETE FROM users; DELETE FROM otp_codes;");
+  process.env.MELA_TRIAL = "on"; // the billing tests here cover the trial
 });
 
 describe("phone", () => {

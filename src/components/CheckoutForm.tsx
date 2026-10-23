@@ -96,7 +96,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
         <ArrowRight size={16} /> שינוי מסלול
       </Link>
       <h1 className="font-display text-[1.9rem] leading-tight font-bold">פרטי תשלום</h1>
-      <p className="mt-1.5 text-[14.5px] text-mute">{trial ? `${TRIAL_DAYS} ימי ניסיון, ביטול בכל רגע מהפרופיל.` : "חידוש מנוי Premium."}</p>
+      <p className="mt-1.5 text-[14.5px] text-mute">{trial ? `${TRIAL_DAYS} ימי ניסיון, ביטול בכל רגע מהפרופיל.` : "מתחדש אוטומטית, ביטול בכל רגע מהפרופיל."}</p>
 
       {demo && (
         <div className="mt-5 flex items-start gap-2 rounded-2xl border border-dashed border-gold/40 bg-gold/[0.05] px-4 py-3 text-[12.5px] text-gold-2">
@@ -228,7 +228,7 @@ export function CheckoutForm({ plan, trial, demo, holderDefault }: { plan: PlanT
               </motion.div>
               <h2 className="font-display mt-6 text-3xl font-bold">ברוכים הבאים ל־Premium</h2>
               <p className="mt-2 flex items-center justify-center gap-1.5 text-sm text-mute">
-                <ShieldCheck size={15} className="text-gold" /> {trial ? `${TRIAL_DAYS} ימי הניסיון התחילו עכשיו` : "המנוי חודש"}
+                <ShieldCheck size={15} className="text-gold" /> {trial ? `${TRIAL_DAYS} ימי הניסיון התחילו עכשיו` : "המנוי פעיל"}
               </p>
             </div>
           </motion.div>

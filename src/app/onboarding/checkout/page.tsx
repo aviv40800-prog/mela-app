@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requirePageUser } from "@/lib/guard";
 import { getSubscription, hasAccess, isMockBilling } from "@/lib/billing";
-import { PLANS, type PlanType } from "@/lib/content";
+import { PLANS, trialEnabled, type PlanType } from "@/lib/content";
 import { OnboardingProgress } from "@/components/ui/OnboardingProgress";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { TranzilaCheckout } from "@/components/TranzilaCheckout";
@@ -17,9 +17,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     <div className="flex flex-1 flex-col">
       {welcome && <OnboardingProgress step={9} label="תשלום" />}
       {isTranzilaBilling() ? (
-        <TranzilaCheckout plan={plan as PlanType} trial={!sub} />
+        <TranzilaCheckout plan={plan as PlanType} trial={trialEnabled() && !sub} />
       ) : (
-        <CheckoutForm plan={plan as PlanType} trial={!sub} demo={isMockBilling()} holderDefault={user.full_name ?? ""} />
+        <CheckoutForm plan={plan as PlanType} trial={trialEnabled() && !sub} demo={isMockBilling()} holderDefault={user.full_name ?? ""} />
       )}
     </div>
   );

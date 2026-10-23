@@ -1,8 +1,12 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { DiscoverView } from "@/components/DiscoverView";
 import { requirePageUser } from "@/lib/guard";
 
 export default async function DiscoverPage() {
   const me = await requirePageUser("member");
+  // chose a Premium plan on the home page before signing up: checkout comes now that the profile is ready
+  if ((await cookies()).get("mela_plan")) redirect("/premium");
   return (
     <main className="px-3 pt-[max(env(safe-area-inset-top),12px)]">
       <DiscoverView
