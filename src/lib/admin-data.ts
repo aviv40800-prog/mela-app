@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { getPrompts, getUser, type User } from "./users";
+import { getPrompts, getUser, type Gender, type User } from "./users";
 import { getSubscription } from "./billing";
 import { unseenCount } from "./matching";
 
@@ -106,11 +106,32 @@ export const USER_FILTERS = {
   trialing: { label: "בניסיון", where: "s.status = 'trialing'" },
   active: { label: "משלמים", where: "s.status = 'active' AND u.is_demo = 0" },
   incomplete: { label: "פרופיל חלקי", where: "(u.full_name IS NULL OR u.bio IS NULL)" },
+  women: { label: "נשים", where: "u.is_demo = 0 AND u.is_test = 0 AND u.gender = 'female'" },
+  men: { label: "גברים", where: "u.is_demo = 0 AND u.is_test = 0 AND u.gender = 'male'" },
   nophoto: { label: "בלי תמונה", where: "u.is_demo = 0 AND u.photos = '[]'" },
   demo: { label: "דמו", where: "u.is_demo = 1" },
   banned: { label: "מושעים", where: "u.is_banned = 1" },
 } as const;
 export type UserFilter = keyof typeof USER_FILTERS;
+
+/** Real members by gender: how many signed up, how many Discover shows (complete profile), how many pay. */
+export function genderSplit() {
+  const rows = db
+    .prepare(
+      `SELECT u.gender,
+         COUNT(*) AS total,
+         SUM(u.is_banned = 0 AND u.full_name IS NOT NULL AND u.age IS NOT NULL AND u.location IS NOT NULL AND u.occupation IS NOT NULL
+             AND u.bio IS NOT NULL AND (SELECT COUNT(*) FROM cultural_prompts cp WHERE cp.user_id = u.id) >= 2) AS visible,
+         SUM(EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status IN ('active', 'trialing'))) AS paying
+       FROM users u WHERE u.is_demo = 0 AND u.is_test = 0 GROUP BY u.gender`,
+    )
+    .all() as { gender: Gender | null; total: number; visible: number | null; paying: number | null }[];
+  const of = (g: Gender) => {
+    const r = rows.find((x) => x.gender === g);
+    return { total: r?.total ?? 0, visible: r?.visible ?? 0, paying: r?.paying ?? 0 };
+  };
+  return { female: of("female"), male: of("male"), unknown: rows.find((x) => x.gender === null)?.total ?? 0 };
+}
 
 export function listUsers({ q = "", filter = "all", page = 1, perPage = 25 }: { q?: string; filter?: UserFilter; page?: number; perPage?: number }) {
   const where: string[] = [USER_FILTERS[filter]?.where ?? "1 = 1"];

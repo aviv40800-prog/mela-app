@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BadgeCheck, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { listUsers, USER_FILTERS, type UserFilter } from "@/lib/admin-data";
-import { Badge, PageHeader, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
+import { genderSplit, listUsers, USER_FILTERS, type UserFilter } from "@/lib/admin-data";
+import { Badge, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
 import { CleanupPanel } from "@/components/admin/CleanupPanel";
 import { adminEmails } from "@/lib/admin";
 import { getUser } from "@/lib/users";
@@ -16,6 +16,7 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
   const q = sp.q ?? "";
   const { rows, total, pages } = listUsers({ q, filter, page, perPage: filter === "real" || filter === "demo" ? 200 : 25 });
   const admins = adminEmails();
+  const split = genderSplit();
   // where each member who hasn't finished their profile stopped
   const stage = (id: number) => {
     const u = getUser(id);
@@ -31,6 +32,20 @@ export default async function AdminUsers({ searchParams }: { searchParams: SP })
       <PageHeader eyebrow="ניהול" title="משתמשים">
         <span className="tabular text-sm text-mute">{total.toLocaleString("he-IL")} תוצאות</span>
       </PageHeader>
+
+      <div className="mb-5 grid grid-cols-2 gap-3">
+        {(
+          [
+            ["women", "נשים", split.female, "מוצגות", "משלמות"],
+            ["men", "גברים", split.male, "מוצגים", "משלמים"],
+          ] as const
+        ).map(([f, label, g, shown, pay]) => (
+          <Link key={f} href={href({ filter: f, page: 1 })} className="block transition hover:opacity-90">
+            <Stat label={label} value={g.total} accent={f === filter} sub={`${g.visible} ${shown} בגילוי · ${g.paying} ${pay}`} />
+          </Link>
+        ))}
+      </div>
+      {split.unknown > 0 && <p className="-mt-3 mb-4 text-[12px] text-mute-2">{split.unknown} נרשמו ועוד לא בחרו מגדר</p>}
 
       <form className="flex flex-wrap items-center gap-3" action="/admin/users">
         <input type="hidden" name="filter" value={filter} />

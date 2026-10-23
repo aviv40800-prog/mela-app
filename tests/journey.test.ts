@@ -304,3 +304,19 @@ describe("likes on the admin page", () => {
     expect(tasteSummary(likesSent(me.id))).toContain("29");
   });
 });
+
+import { genderSplit } from "@/lib/admin-data";
+
+describe("women / men on the admin users page", () => {
+  it("counts real members by gender, how many Discover shows and how many pay", () => {
+    const before = genderSplit();
+    member("שירה", "female");
+    member("אלון", "male");
+    createEmailUser("nogender@x.com");
+    const after = genderSplit();
+    expect(after.female.total - before.female.total).toBe(1);
+    expect(after.female.visible - before.female.visible).toBe(1);
+    expect(after.male.total - before.male.total).toBe(1);
+    expect(after.unknown - before.unknown).toBe(1);
+  });
+});
