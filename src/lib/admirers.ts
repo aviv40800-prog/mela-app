@@ -15,15 +15,15 @@ export type Admirer =
 type Row = { id: number; status: string; user_1_id: number; user_2_id: number; at: string };
 
 /**
- * "People who liked you" in Picks, newest first: matches, likes waiting for an answer, and likes the member passed on
- * (so they can give someone a second chance). Without the people they removed, blocked, or who left.
+ * "People who liked you" in Picks, newest first: likes waiting for an answer, and likes the member passed on
+ * (so they can give someone a second chance). Matches live in the Matches tab. Without the people they removed,
+ * blocked, or who left.
  */
 export function admirers(meId: number, premium: boolean): Admirer[] {
   const rows = db
     .prepare(
-      `SELECT m.id, m.status, m.user_1_id, m.user_2_id, COALESCE(m.matched_at, m.declined_at, m.created_at) AS at FROM matches m
-       WHERE (m.status = 'matched' AND (m.user_1_id = :me OR m.user_2_id = :me))
-          OR (m.user_2_id = :me AND m.status = 'pending')
+      `SELECT m.id, m.status, m.user_1_id, m.user_2_id, COALESCE(m.declined_at, m.created_at) AS at FROM matches m
+       WHERE (m.user_2_id = :me AND m.status = 'pending')
           OR (m.user_2_id = :me AND m.status = 'rejected' AND m.declined_at IS NOT NULL)
        ORDER BY at DESC, m.id DESC`,
     )

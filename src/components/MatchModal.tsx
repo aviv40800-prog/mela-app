@@ -80,7 +80,7 @@ export function MatchModal({ me, other, matchId, onClose }: { me: MiniProfile; o
         </div>
 
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }} className="mt-8 text-[15px] text-mute">
-          את/ה ו{first} אהבתם אחד את השני. הודעת וואטסאפ כבר בדרך 💛
+          גם {first} בחר/ה בך 💛 עכשיו זה הרגע לשלוח הודעה ראשונה.
         </motion.p>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }} className="mt-8 space-y-3">
           <Link href={`/matches/${matchId}`} className="btn-gold w-full text-[16px]">

@@ -19,8 +19,8 @@ type Item =
 const BADGE: Record<Kind, string> = { match: "התאמה 💛", liked: "אהב/ה אותך", passed: "דילגת" };
 
 /**
- * Picks: "people who liked you", side by side (no swiping): matches, likes waiting for an answer, and likes the member
- * passed on — maybe today's "no" is tomorrow's "let's see". Free members see one admirer; Premium sees them all.
+ * Picks: "people who liked you", side by side (no swiping): likes waiting for an answer, and likes the member passed
+ * on — maybe today's "no" is tomorrow's "let's see". Free members see how many; Premium sees who.
  */
 export function AdmirersGallery({ me }: { me: MiniProfile }) {
   const [items, setItems] = useState<Item[] | null>(null);

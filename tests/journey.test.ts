@@ -216,7 +216,7 @@ describe("departures (admin)", () => {
 import { admirers, hideAdmirer, reopenPassed } from "@/lib/admirers";
 
 describe("people who liked you (Picks)", () => {
-  it("lists matches, waiting likes and likes I passed on; free sees one admirer; remove and second chance work", () => {
+  it("lists waiting likes and likes I passed on; free sees how many, not who; remove and second chance work", () => {
     const me = member("מירב", "female");
     const waiting = member("אלון", "male");
     const passed = member("בני", "male");
@@ -231,15 +231,15 @@ describe("people who liked you (Picks)", () => {
 
     const all = admirers(me.id, true);
     const kinds = Object.fromEntries(all.map((a) => [a.id, a.kind]));
-    expect(kinds).toEqual({ [waiting.id]: "liked", [passed.id]: "passed", [matched.id]: "match" });
+    expect(kinds).toEqual({ [waiting.id]: "liked", [passed.id]: "passed" }); // matches live in the Matches tab
+    expect(matched.id).toBeTruthy();
 
     const free = admirers(me.id, false);
-    expect(free.find((a) => a.id === matched.id)?.locked).toBe(false); // matches are always open
-    expect(free.filter((a) => a.kind !== "match")).toHaveLength(2); // they see how many…
-    expect(free.filter((a) => a.kind !== "match").every((a) => a.locked && a.id < 0 && !("card" in a))).toBe(true); // …but not who
+    expect(free).toHaveLength(2); // they see how many…
+    expect(free.every((a) => a.locked && a.id < 0 && !("card" in a))).toBe(true); // …but not who
 
     expect(reopenPassed(me.id, passed.id)).toBeGreaterThan(0);
-    expect(admirers(me.id, true).find((a) => a.id === passed.id)?.kind).toBe("match");
+    expect(admirers(me.id, true).map((a) => a.id)).not.toContain(passed.id); // now a match
     expect(reopenPassed(me.id, theyPassed.id)).toBeNull();
 
     hideAdmirer(me.id, waiting.id);

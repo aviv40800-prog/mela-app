@@ -7,7 +7,7 @@ import { Check, Crown, Loader2, Lock } from "lucide-react";
 import { haptic } from "@/lib/client";
 import { PLANS, TRIAL_DAYS, TRIAL_FEE, type PlanType } from "@/lib/content";
 
-const PERKS = ["לייקים ללא הגבלה", "כל 3 הבחירות האישיות בכל יום", "לראות מי אהב/ה אותך", "צ'אט בזמן אמת + פתיחים מהבית", "התראת וואטסאפ על כל התאמה"];
+const PERKS = ["לייקים ללא הגבלה", "כל 3 הבחירות האישיות בכל יום", "לראות מי אהב/ה אותך", "צ'אט בזמן אמת + פתיחים מהבית"];
 
 function chargeDate() {
   const d = new Date();
