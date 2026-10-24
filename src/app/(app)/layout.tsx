@@ -1,7 +1,8 @@
 import { requirePageUser } from "@/lib/guard";
 import { db } from "@/lib/db";
 import { RealtimeShell } from "@/components/Realtime";
-import { getCheckin } from "@/lib/checkin";
+import { featuredQuestion, getCheckin } from "@/lib/checkin";
+import { FeaturedQuestion } from "@/components/FeaturedQuestion";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePageUser("member");
@@ -14,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <RealtimeShell meId={user.id} initialUnread={n} profileDot={getCheckin(user.id).questions.length > 0}>
       <div className="mx-auto min-h-dvh w-full max-w-md pb-28">{children}</div>
+      <FeaturedQuestion question={featuredQuestion(user.id)} />
     </RealtimeShell>
   );
 }

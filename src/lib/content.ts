@@ -85,7 +85,14 @@ export const BONUS_QUESTIONS = [
   { key: "sigd_where", cat: "culture", a: "סיגד בירושלים עם כולם", b: "סיגד בקהילה הקרובה" },
   { key: "buna_ritual", cat: "culture", a: "בונה כל שבת", b: "בונה רק באירועים" },
   { key: "wedding_style", cat: "culture", a: "חתונה מסורתית מלאה", b: "שילוב של מסורתי ומודרני" },
+  { key: "shabbat_breakfast", cat: "culture", a: "פיטפיט 🌶️", b: "גחנון 🍅", title: "שבת בבוקר ☀️ מה על השולחן אצלך?" },
 ] as const;
+
+/**
+ * "Question of the week": until `until` it pops once for everyone who opens the app and hasn't answered,
+ * and comes first in the swipe pauses. The admin overview shows how the community answered.
+ */
+export const FEATURED_QUESTION: { key: string; until: string } | null = { key: "shabbat_breakfast", until: "2026-10-24T20:59:00Z" }; // מוצאי שבת 23:59
 
 export const ALL_QUESTIONS = [...QUIZ_QUESTIONS, ...BONUS_QUESTIONS];
 

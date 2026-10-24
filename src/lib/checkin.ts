@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./db";
-import { ALL_QUESTIONS, BONUS_QUESTIONS, QUIZ_QUESTIONS } from "./content";
+import { ALL_QUESTIONS, BONUS_QUESTIONS, FEATURED_QUESTION, QUIZ_QUESTIONS } from "./content";
 
 /** A new batch of "improve your profile" questions opens every CHECKIN_EVERY_DAYS days. */
 export const CHECKIN_EVERY_DAYS = 3;
@@ -91,7 +91,30 @@ export function sharedAnswers(me: number, other: number, limit = 3): string[] {
  */
 export function nextQuestions(userId: number, n = 3): { questions: Q[]; remaining: number } {
   const answered = answeredKeys(userId);
+  const featured = featuredQuestion(userId, answered);
+  if (featured) answered.add(featured.key); // asked first, not twice
   const core = smartPick(answered, n, QUIZ_QUESTIONS);
-  const questions = core.length >= n ? core : [...core, ...smartPick(answered, n - core.length, BONUS_QUESTIONS)];
+  const rest = core.length >= n ? core : [...core, ...smartPick(answered, n - core.length, BONUS_QUESTIONS)];
+  const questions = featured ? [featured, ...rest].slice(0, n) : rest;
+  if (featured) answered.delete(featured.key);
   return { questions, remaining: ALL_QUESTIONS.filter((q) => !answered.has(q.key)).length };
+}
+
+/** The question of the week, while it runs and only for a member who hasn't answered it yet. */
+export function featuredQuestion(userId: number, answered = answeredKeys(userId), now = Date.now()): Q | null {
+  if (!FEATURED_QUESTION || now > Date.parse(FEATURED_QUESTION.until) || answered.has(FEATURED_QUESTION.key)) return null;
+  return ALL_QUESTIONS.find((q) => q.key === FEATURED_QUESTION!.key) ?? null;
+}
+
+/** How the community answered the question of the week (real members only) — for the admin overview. */
+export function featuredResults(): { q: Q; a: number; b: number } | null {
+  const q = FEATURED_QUESTION && ALL_QUESTIONS.find((x) => x.key === FEATURED_QUESTION!.key);
+  if (!q) return null;
+  const r = db
+    .prepare(
+      `SELECT SUM(qa.choice = 'a') AS a, SUM(qa.choice = 'b') AS b FROM quiz_answers qa JOIN users u ON u.id = qa.user_id
+       WHERE qa.question_key = ? AND u.is_demo = 0 AND u.is_test = 0`,
+    )
+    .get(q.key) as { a: number | null; b: number | null };
+  return { q, a: r.a ?? 0, b: r.b ?? 0 };
 }

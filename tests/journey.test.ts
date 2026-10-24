@@ -320,3 +320,31 @@ describe("women / men on the admin users page", () => {
     expect(after.unknown - before.unknown).toBe(1);
   });
 });
+
+import { vi } from "vitest";
+import { featuredQuestion, featuredResults, nextQuestions } from "@/lib/checkin";
+import { FEATURED_QUESTION } from "@/lib/content";
+
+describe("question of the week", () => {
+  it("comes first until answered or until it ends, and the admin sees how people answered", () => {
+    if (!FEATURED_QUESTION) return;
+    const key = FEATURED_QUESTION.key;
+    const end = Date.parse(FEATURED_QUESTION.until);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(end - 3_600_000);
+    try {
+      const u = member("מיכל", "female");
+      expect(featuredQuestion(u.id)?.key).toBe(key);
+      expect(nextQuestions(u.id).questions[0].key).toBe(key);
+      expect(featuredQuestion(u.id, undefined, end + 1)).toBeNull(); // over
+
+      const before = featuredResults()!;
+      db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, 'a')").run(u.id, key);
+      expect(featuredQuestion(u.id)).toBeNull();
+      expect(nextQuestions(u.id).questions.map((q) => q.key)).not.toContain(key);
+      expect(featuredResults()!.a - before.a).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

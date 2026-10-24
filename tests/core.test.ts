@@ -393,12 +393,13 @@ describe("improve-your-profile check-ins", () => {
   });
 
   it("asks 3 questions at sign-up and offers the rest three at a time", async () => {
-    const { ONBOARDING_QUIZ, QUIZ_QUESTIONS } = await import("@/lib/content");
+    const { ONBOARDING_QUIZ, QUIZ_QUESTIONS, FEATURED_QUESTION } = await import("@/lib/content");
     const { nextQuestions } = await import("@/lib/checkin");
     expect(ONBOARDING_QUIZ).toHaveLength(3);
     const u = member("א", "male");
     const ins = db.prepare("INSERT INTO quiz_answers (user_id, question_key, choice) VALUES (?, ?, 'a')");
     ONBOARDING_QUIZ.forEach((q) => ins.run(u.id, q.key));
+    if (FEATURED_QUESTION) ins.run(u.id, FEATURED_QUESTION.key); // the question of the week jumps the queue while it runs
     const first = nextQuestions(u.id);
     expect(first.questions).toHaveLength(3);
     expect(first.questions.every((q) => QUIZ_QUESTIONS.some((c) => c.key === q.key))).toBe(true);

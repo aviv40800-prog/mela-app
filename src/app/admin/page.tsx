@@ -4,6 +4,7 @@ import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } 
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
 import { departures } from "@/lib/departures";
+import { featuredResults } from "@/lib/checkin";
 import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
@@ -19,6 +20,7 @@ export default function AdminOverview() {
   const ai = aiUsageStats();
   const left = departures(8);
   const funnel = signupFunnel();
+  const fq = featuredResults();
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
@@ -45,6 +47,34 @@ export default function AdminOverview() {
         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-danger/30 bg-danger/[0.06] px-4 py-3 text-sm text-danger">
           <AlertTriangle size={16} /> {o.webhookFailures7d} שליחות וואטסאפ נכשלו השבוע — בדקו את הגדרות ה־webhook.
         </div>
+      )}
+
+      {fq && (
+        <Card title={`שאלת השבוע · ${"title" in fq.q ? fq.q.title : `${fq.q.a} או ${fq.q.b}`}`} className="mt-4">
+          {fq.a + fq.b === 0 ? (
+            <p className="text-sm text-mute">עוד אף אחד לא ענה.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {(["a", "b"] as const).map((k) => {
+                const pct = Math.round((fq[k] / (fq.a + fq.b)) * 100);
+                return (
+                  <div key={k} className="text-sm">
+                    <div className="mb-1 flex justify-between">
+                      <span className="font-semibold">{fq.q[k]}</span>
+                      <span className="tabular text-mute">
+                        {pct}% · {fq[k]}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-fg/[0.06]">
+                      <div className="h-full rounded-full bg-gold" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-[12px] text-mute-2">{fq.a + fq.b} ענו (משתמשים אמיתיים בלבד)</p>
+            </div>
+          )}
+        </Card>
       )}
 
       <Card title="הרשמה בשיחה עם AI" className="mt-4">

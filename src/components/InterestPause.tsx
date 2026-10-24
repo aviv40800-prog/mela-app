@@ -6,8 +6,9 @@ import { Lock, PenLine } from "lucide-react";
 import { api, haptic } from "@/lib/client";
 import { QUESTION_CATEGORIES } from "@/lib/content";
 
-type Question = { key: string; cat: string; a: string; b: string };
-export type Pause = { kind: "quiz"; questions: Question[] } | { kind: "community" };
+type Question = { key: string; cat: string; a: string; b: string; title?: string };
+/** `featured`: the question of the week, popped on opening the app — not between swipes. */
+export type Pause = { kind: "quiz"; questions: Question[]; featured?: boolean } | { kind: "community" };
 
 const OFF_KEY = "mela:quiz-offer-off";
 const COUNT_KEY = "mela:swipes-since-offer";
@@ -80,7 +81,7 @@ export function InterestPause({ pause, onClose }: { pause: Pause; onClose: (answ
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-fg/20" />
         {pause.kind === "quiz" ? (
-          <QuizPause questions={pause.questions} onAnswered={() => setAnswered(true)} onClose={close} />
+          <QuizPause questions={pause.questions} featured={pause.featured} onAnswered={() => setAnswered(true)} onClose={close} />
         ) : (
           <CommunityPause onClose={close} />
         )}
@@ -120,7 +121,7 @@ function Saved({ title, line, children }: { title: string; line: string; childre
   );
 }
 
-function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; onAnswered: () => void; onClose: () => void }) {
+function QuizPause({ questions, featured, onAnswered, onClose }: { questions: Question[]; featured?: boolean; onAnswered: () => void; onClose: () => void }) {
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<"ask" | "write" | "saved">("ask");
   const [picked, setPicked] = useState<"a" | "b" | null>(null);
@@ -158,7 +159,7 @@ function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; 
 
   return (
     <div className="flex min-h-[420px] flex-col gap-4 pb-3">
-      <PauseHeader label={`רגע של עניין · ${idx + 1} מתוך ${questions.length}`} onSkip={onClose} />
+      <PauseHeader label={featured ? "שאלת השבת" : `רגע של עניין · ${idx + 1} מתוך ${questions.length}`} onSkip={onClose} />
       <AnimatePresence mode="wait" initial={false}>
         {phase === "saved" ? (
           <Saved
@@ -166,7 +167,7 @@ function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; 
             line={agree !== null ? `${agree}% מהקהילה ענו כמוך. מעכשיו נתחשב בזה כשנציע לך אנשים.` : "התשובה נשמרה ותעזור לנו להכיר אותך טוב יותר."}
           >
             <button onClick={onClose} className="btn-gold w-full">
-              חזרה לסווייפים
+              {featured ? "סגירה" : "חזרה לסווייפים"}
             </button>
             {left > 0 && (
               <button onClick={next} className="btn-ghost w-full">
@@ -194,7 +195,7 @@ function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; 
         ) : (
           <motion.div key={`q-${idx}`} {...swap} className="flex flex-col gap-3">
             <span className="w-fit rounded-full bg-gold/12 px-3 py-1 text-[11.5px] font-semibold text-gold-2">{QUESTION_CATEGORIES[q.cat] ?? q.cat}</span>
-            <h2 className="font-display text-[1.65rem] leading-tight font-bold">מה יותר את/ה?</h2>
+            <h2 className="font-display text-[1.65rem] leading-tight font-bold">{q.title ?? "מה יותר את/ה?"}</h2>
             <div role="radiogroup" aria-label="תשובות" className="flex flex-col gap-2.5">
               {(["a", "b"] as const).map((k, n) => {
                 const on = picked === k;
@@ -234,6 +235,7 @@ function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; 
             <button onClick={() => setPhase("write")} className="flex min-h-11 w-fit items-center gap-1.5 text-[14.5px] text-gold-2">
               <PenLine size={15} /> או לכתוב תשובה משלך
             </button>
+            {!featured && (
             <button
               onClick={() => {
                 store.set(OFF_KEY, "1");
@@ -243,6 +245,7 @@ function QuizPause({ questions, onAnswered, onClose }: { questions: Question[]; 
             >
               לא להציג הפוגות שאלות יותר
             </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

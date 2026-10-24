@@ -81,6 +81,7 @@ export function SwipeTutorial() {
     <AnimatePresence>
       {show && (
         <motion.div
+          data-swipe-tutorial
           className="fixed inset-0 z-[60] flex flex-col bg-ink/95 backdrop-blur-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
