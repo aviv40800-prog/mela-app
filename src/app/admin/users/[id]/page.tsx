@@ -9,6 +9,7 @@ import { AdminPhotos } from "@/components/admin/AdminPhotos";
 import { AdminUserActions } from "@/components/admin/AdminUserActions";
 import { SuggestMatchPanel } from "@/components/admin/SuggestMatchPanel";
 import { signupStage } from "@/lib/signup-stage";
+import { MISSING_LABEL, visibilityFor, type Missing } from "@/lib/visibility";
 import { likesReceived, likesSent, tasteSummary, type LikeRow, type LikeState } from "@/lib/likes-admin";
 
 const SEX: Record<string, string> = { male: "גבר", female: "אישה", everyone: "כולם" };
@@ -21,6 +22,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
   const sent = likesSent(u.id);
   const received = likesReceived(u.id);
   const taste = tasteSummary(sent);
+  const vis = visibilityFor(u);
 
   return (
     <>
@@ -154,6 +156,40 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
               }
             />
           </div>
+
+          {vis && vis.total + vis.noGender > 0 && (
+            <Card title={`למה לא רואה יותר? (${vis.seeking === "male" ? "גברים" : vis.seeking === "female" ? "נשים" : "כולם"} באתר: ${vis.total})`}>
+              <dl className="space-y-2 text-sm">
+                {(
+                  [
+                    ["עוד לא ראה/תה (מוצגים לו/ה)", vis.unseen, "green"],
+                    ["כבר ראה/תה (לייק או דילוג)", vis.seen, "mute"],
+                    ["מחוץ לטווח הגיל/מרחק שבחר/ה", vis.outOfRange, "mute"],
+                    ["לא מוצגים: פרופיל לא שלם", vis.incomplete, "red"],
+                    ["לא מחפשים את המגדר שלו/ה", vis.notLookingForMe, "mute"],
+                    ["מושעים", vis.banned, "mute"],
+                  ] as const
+                )
+                  .filter(([, n]) => n > 0)
+                  .map(([label, n, tone]) => (
+                    <div key={label} className="flex justify-between gap-3">
+                      <dt className={tone === "red" ? "text-danger" : tone === "green" ? "text-success" : "text-mute"}>{label}</dt>
+                      <dd className="tabular font-semibold">{n}</dd>
+                    </div>
+                  ))}
+              </dl>
+              {vis.incomplete > 0 && (
+                <p className="mt-3 text-[12.5px] leading-relaxed text-mute">
+                  חסר להם:{" "}
+                  {(Object.entries(vis.missing) as [Missing, number][])
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([f, n]) => `${MISSING_LABEL[f]} (${n})`)
+                    .join(" · ")}
+                </p>
+              )}
+              {vis.noGender > 0 && <p className="mt-2 text-[12px] text-mute-2">ועוד {vis.noGender} נרשמו ועצרו לפני שבחרו מגדר (לא נספרים למעלה).</p>}
+            </Card>
+          )}
 
           <Card title="מנוי">
             {sub ? (

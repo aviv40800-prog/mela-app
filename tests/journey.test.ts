@@ -419,3 +419,21 @@ describe("AI matchmaker queue", () => {
     expect(day.value).toBe("2026-10-25");
   });
 });
+
+import { visibilityFor } from "@/lib/visibility";
+
+describe("why a member doesn't see more (admin)", () => {
+  it("splits everyone they could be looking for into seen, unseen, incomplete and the rest", () => {
+    const me = member("רחל", "female");
+    const [seen, fresh, half, gay] = ["א", "ב", "ג", "ד"].map((n) => member(n, "male"));
+    swipe(me.id, seen.id, "pass");
+    db.prepare("UPDATE users SET bio = NULL WHERE id = ?").run(half.id);
+    db.prepare("DELETE FROM cultural_prompts WHERE user_id = ?").run(half.id);
+    db.prepare("UPDATE users SET seeking = 'male' WHERE id = ?").run(gay.id);
+    createVerifiedUser("+972521111999"); // stopped before choosing a gender
+    const v = visibilityFor(getUser(me.id)!)!;
+    expect(v).toMatchObject({ total: 4, seen: 1, unseen: 1, incomplete: 1, notLookingForMe: 1, noGender: 1 });
+    expect(v.missing).toEqual({ bio: 1, prompts: 1 });
+    expect(discoverFeed(getUser(me.id)!).candidates.map((c) => c.id)).toEqual([fresh.id]);
+  });
+});
