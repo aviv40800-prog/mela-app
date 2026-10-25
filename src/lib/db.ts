@@ -351,6 +351,10 @@ export function migrate(db: DatabaseSync) {
     decided_at   TEXT,
     UNIQUE (member_id, candidate_id)
   )`);
+  // Why a member deleted their account (optional — they may skip): one of DEPARTURE_REASONS, plus free text for "other".
+  const depCols = new Set((db.prepare("PRAGMA table_info(departures)").all() as { name: string }[]).map((c) => c.name));
+  if (!depCols.has("reason")) db.exec("ALTER TABLE departures ADD COLUMN reason TEXT");
+  if (!depCols.has("reason_text")) db.exec("ALTER TABLE departures ADD COLUMN reason_text TEXT");
   // Second chance: a passed profile offered again after the member sharpened their answers — once per person.
   db.exec(
     "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",

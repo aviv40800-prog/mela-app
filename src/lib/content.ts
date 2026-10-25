@@ -215,3 +215,12 @@ export const CONVO_QUESTIONS = {
     "איך נראה אצלך חג טוב עם המשפחה?",
   ],
 } as const;
+
+/** "Why are you leaving?" — asked before an account is deleted (always skippable). */
+export const DEPARTURE_REASONS = {
+  found_here: "מצאתי זוגיות בזכותכם 💛",
+  found_elsewhere: "מצאתי זוגיות במקום אחר",
+  no_faith: "לא מאמין/ה שאמצא כאן אהבה",
+  other: "אחר",
+} as const;
+export type DepartureReason = keyof typeof DEPARTURE_REASONS;

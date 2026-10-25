@@ -437,3 +437,16 @@ describe("why a member doesn't see more (admin)", () => {
     expect(discoverFeed(getUser(me.id)!).candidates.map((c) => c.id)).toEqual([fresh.id]);
   });
 });
+
+describe("why members leave", () => {
+  it("keeps the optional reason (and the text only for 'other')", () => {
+    db.exec("DELETE FROM departures");
+    recordDeparture(member("א", "male"), { reason: "found_here", text: "לא אמור להישמר" });
+    recordDeparture(member("ב", "female"), { reason: "other", text: "  יותר מדי מרחק  " });
+    recordDeparture(member("ג", "female")); // skipped the question
+    const d = departures();
+    expect(d.total).toBe(3);
+    expect(d.reasons).toEqual(expect.arrayContaining([{ reason: "found_here", n: 1 }, { reason: "other", n: 1 }]));
+    expect(d.recent.map((r) => [r.reason, r.reason_text])).toEqual([[null, null], ["other", "יותר מדי מרחק"], ["found_here", null]]);
+  });
+});

@@ -9,6 +9,7 @@ import { alertWaitingMembers } from "@/lib/match-alerts";
 import { isAdmin } from "@/lib/admin";
 import { deleteOwnAccount } from "@/lib/safety";
 import { recordDeparture } from "@/lib/departures";
+import { DEPARTURE_REASONS, type DepartureReason } from "@/lib/content";
 import { destroySession } from "@/lib/session";
 
 export const GET = handle(async () => {
@@ -34,14 +35,19 @@ export const PUT = handle(async (req: Request) => {
   return json({ ok: true, next: nextOnboardingStep(updated) });
 });
 
-const DeleteBody = z.object({ confirm: z.literal("מחיקה") });
+const DeleteBody = z.object({
+  confirm: z.literal("מחיקה"),
+  reason: z.enum(Object.keys(DEPARTURE_REASONS) as [DepartureReason, ...DepartureReason[]]).optional(),
+  reasonText: z.string().max(300).optional(),
+});
 
 /** The member deletes their own account and everything in it. Asks for the word "מחיקה" typed in, as a safeguard. */
 export const DELETE = handle(async (req: Request) => {
   const user = await requireUser();
   if (isAdmin(user)) return error("חשבון מנהל לא נמחק מכאן", 403);
-  if (!DeleteBody.safeParse(await req.json().catch(() => null)).success) return error("כדי למחוק, הקלד/י ״מחיקה״");
-  recordDeparture(user);
+  const body = DeleteBody.safeParse(await req.json().catch(() => null));
+  if (!body.success) return error("כדי למחוק, הקלד/י ״מחיקה״");
+  recordDeparture(user, body.data.reason ? { reason: body.data.reason, text: body.data.reasonText } : undefined);
   deleteOwnAccount(user.id);
   await destroySession();
   return json({ ok: true });

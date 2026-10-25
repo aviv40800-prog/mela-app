@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, LogOut } from "lucide-react";
+import { DEPARTURE_REASONS, type DepartureReason } from "@/lib/content";
 import { api, haptic } from "@/lib/client";
 
 export function MembershipActions({ canceled }: { canceled: boolean }) {
@@ -76,10 +77,12 @@ export function LogoutRow() {
   );
 }
 
-/** Delete my account: a quiet link that opens a confirmation where the member types "מחיקה". */
+/** Delete my account: a quiet link → "why are you leaving?" (skippable) → a confirmation where the member types "מחיקה". */
 export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"closed" | "why" | "confirm">("closed");
+  const [reason, setReason] = useState<DepartureReason | null>(null);
+  const [reasonText, setReasonText] = useState("");
   const [word, setWord] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -88,7 +91,7 @@ export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
     setBusy(true);
     setErr(null);
     try {
-      await api("/api/me", { method: "DELETE", json: { confirm: word.trim() } });
+      await api("/api/me", { method: "DELETE", json: { confirm: word.trim(), ...(reason && { reason }), ...(reason === "other" && reasonText.trim() && { reasonText: reasonText.trim() }) } });
       router.replace("/");
       router.refresh();
     } catch (e) {
@@ -97,11 +100,65 @@ export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
     }
   }
 
+  const close = () => {
+    setStep("closed");
+    setReason(null);
+    setReasonText("");
+    setWord("");
+  };
+
   return (
     <div className="mt-4 text-center">
       <AnimatePresence mode="wait" initial={false}>
-        {open ? (
+        {step === "why" ? (
+          <motion.div key="why" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="surface rounded-2xl p-4 text-right">
+            <p className="text-[15px] font-semibold">לפני שהולכים, למה החלטת לעזוב?</p>
+            <p className="mt-1 text-[12.5px] text-mute">זה עוזר לנו להשתפר. לא חובה.</p>
+            <div role="radiogroup" aria-label="סיבת העזיבה" className="mt-3 flex flex-col gap-2">
+              {(Object.keys(DEPARTURE_REASONS) as DepartureReason[]).map((k) => (
+                <button
+                  key={k}
+                  role="radio"
+                  aria-checked={reason === k}
+                  onClick={() => setReason(k)}
+                  className={`min-h-12 rounded-[14px] border px-4 text-start text-[14.5px] transition-colors ${reason === k ? "border-gold bg-gold/12 font-medium" : "border-line-2 hover:border-gold/50"}`}
+                >
+                  {DEPARTURE_REASONS[k]}
+                </button>
+              ))}
+            </div>
+            {reason === "other" && (
+              <>
+                <label htmlFor="leave-why" className="sr-only">
+                  פירוט
+                </label>
+                <textarea
+                  id="leave-why"
+                  value={reasonText}
+                  onChange={(e) => setReasonText(e.target.value)}
+                  rows={3}
+                  maxLength={300}
+                  autoFocus
+                  placeholder="רוצה לפרט? (לא חובה)"
+                  className="field mt-2 w-full resize-none text-[14px] leading-relaxed"
+                />
+              </>
+            )}
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setStep("confirm")} disabled={!reason} className="btn-gold flex-1 py-2.5 text-sm">
+                המשך
+              </button>
+              <button onClick={() => (setReason(null), setStep("confirm"))} className="btn-ghost flex-1 py-2.5 text-sm">
+                דלג
+              </button>
+            </div>
+            <button onClick={close} className="mt-2 w-full py-1.5 text-center text-[12.5px] text-mute transition hover:text-cream">
+              התחרטתי, אני נשאר/ת
+            </button>
+          </motion.div>
+        ) : step === "confirm" ? (
           <motion.div key="confirm" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="surface rounded-2xl p-4 text-right">
+            {reason === "found_here" && <p className="mb-2 text-[15px] font-semibold text-gold-2">מזל טוב! 💛 שמחים שמצאתם אחד את השני.</p>}
             <p className="text-[14px] font-semibold text-danger">מחיקת החשבון לצמיתות</p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-mute">
               הפרופיל, התמונות, ההתאמות וכל השיחות יימחקו, ואי אפשר יהיה לשחזר אותם.
@@ -119,7 +176,7 @@ export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
             />
             {err && <p className="mt-2 text-[13px] text-danger">{err}</p>}
             <div className="mt-3 flex gap-2">
-              <button onClick={() => setOpen(false)} className="btn-gold flex-1 py-2.5 text-sm">
+              <button onClick={close} className="btn-gold flex-1 py-2.5 text-sm">
                 ביטול
               </button>
               <button onClick={remove} disabled={busy || word.trim() !== "מחיקה"} className="btn-ghost flex-1 py-2.5 text-sm text-danger">
@@ -128,7 +185,7 @@ export function DeleteAccount({ hasActivePlan }: { hasActivePlan: boolean }) {
             </div>
           </motion.div>
         ) : (
-          <motion.button key="ask" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(true)} className="py-2 text-[12.5px] text-mute-2 transition hover:text-danger">
+          <motion.button key="ask" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setStep("why")} className="py-2 text-[12.5px] text-mute-2 transition hover:text-danger">
             מחיקת החשבון
           </motion.button>
         )}

@@ -4,6 +4,7 @@ import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } 
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
 import { departures } from "@/lib/departures";
+import { DEPARTURE_REASONS } from "@/lib/content";
 import { featuredResults } from "@/lib/checkin";
 import { pendingCount } from "@/lib/auto-suggest";
 import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
@@ -233,6 +234,15 @@ export default function AdminOverview() {
           <span>30 יום: <b className="tabular">{left.month}</b></span>
           <span className="text-mute">סה״כ: <span className="tabular">{left.total}</span></span>
         </div>
+        {left.reasons.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2 text-[12.5px]">
+            {left.reasons.map((r) => (
+              <span key={r.reason} className="rounded-full border border-line-2 px-3 py-1">
+                {DEPARTURE_REASONS[r.reason]} · <b className="tabular">{r.n}</b>
+              </span>
+            ))}
+          </div>
+        )}
         {left.recent.length === 0 ? (
           <p className="text-sm text-mute">עוד אף אחד לא מחק חשבון.</p>
         ) : (
@@ -250,6 +260,12 @@ export default function AdminOverview() {
                   <span>{d.likes} לייקים · {d.passes} דילוגים · {d.matches} התאמות · {d.messages} הודעות</span>
                   <span className="text-mute-2">· {when(d.left_at)}</span>
                 </span>
+                {d.reason && (
+                  <span className="basis-full text-[12.5px] text-gold-2">
+                    למה: {DEPARTURE_REASONS[d.reason]}
+                    {d.reason_text && <span className="text-mute"> · ״{d.reason_text}״</span>}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
