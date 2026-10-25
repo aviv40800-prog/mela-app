@@ -296,6 +296,8 @@ export function migrate(db: DatabaseSync) {
   if (!cols.has("is_test")) db.exec("ALTER TABLE users ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0");
   // "Only a few minutes left" — one reminder to members who verified but didn't finish their profile.
   if (!cols.has("signup_reminder_at")) db.exec("ALTER TABLE users ADD COLUMN signup_reminder_at TEXT");
+  // The second "finish your profile" email: the evening after signing up, 21:00 Israel time.
+  if (!cols.has("signup_reminder2_at")) db.exec("ALTER TABLE users ADD COLUMN signup_reminder2_at TEXT");
   // Personal matchmaking: the team suggests two members to each other, each with a note on why.
   db.exec(`CREATE TABLE IF NOT EXISTS match_suggestions (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,

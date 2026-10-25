@@ -450,3 +450,28 @@ describe("why members leave", () => {
     expect(d.recent.map((r) => [r.reason, r.reason_text])).toEqual([[null, null], ["other", "יותר מדי מרחק"], ["found_here", null]]);
   });
 });
+
+import { secondReminderDue, sendSecondReminders } from "@/lib/reminders";
+
+describe("second 'finish your profile' email", () => {
+  it("is due from 21:00 Israel time the day after signing up", () => {
+    // signed up Sunday 25.10 at 14:00 Israel (11:00 UTC)
+    expect(secondReminderDue("2026-10-25 11:00:00", new Date("2026-10-25T19:00:00Z"))).toBe(false); // same evening
+    expect(secondReminderDue("2026-10-25 11:00:00", new Date("2026-10-26T17:00:00Z"))).toBe(false); // Monday 19:00
+    expect(secondReminderDue("2026-10-25 11:00:00", new Date("2026-10-26T19:05:00Z"))).toBe(true); // Monday 21:05
+    expect(secondReminderDue("2026-10-25 11:00:00", new Date("2026-10-28T08:00:00Z"))).toBe(true); // later: already stuck
+    // 23:30 Israel on Sunday is still Sunday: the next evening, not the one after
+    expect(secondReminderDue("2026-10-25 21:30:00", new Date("2026-10-26T19:05:00Z"))).toBe(true);
+  });
+
+  it("goes once, only to verified members who still haven't finished", () => {
+    const stuck = createVerifiedUser("+972521212121");
+    const done = member("גמור", "male");
+    db.prepare("UPDATE users SET email = ?, email_verified = 1, created_at = datetime('now', '-3 days') WHERE id = ?").run("stuck@x.com", stuck.id);
+    db.prepare("UPDATE users SET email = ?, email_verified = 1, created_at = datetime('now', '-3 days') WHERE id = ?").run("done@x.com", done.id);
+    expect(sendSecondReminders()).toBe(1);
+    expect(sendSecondReminders()).toBe(0);
+    const marked = db.prepare("SELECT COUNT(*) AS n FROM users WHERE signup_reminder2_at IS NOT NULL AND id IN (?, ?)").get(stuck.id, done.id) as { n: number };
+    expect(marked.n).toBe(2); // the finished one is marked too, so it's never looked at again
+  });
+});
