@@ -3,6 +3,13 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.VITEST) return;
   const { sendSecondReminders, sendSignupReminders } = await import("./lib/reminders");
   const { maybeRunNightly } = await import("./lib/auto-suggest");
+  const { saveStuckChats } = await import("./lib/chat-save");
+  try {
+    const n = saveStuckChats();
+    if (n) console.log(`[chat-save] saved ${n} finished sign-up chat(s) that were never approved`);
+  } catch (e) {
+    console.error("[chat-save] catch-up failed", (e as Error).message);
+  }
   const tick = () => {
     try {
       const n = sendSignupReminders();

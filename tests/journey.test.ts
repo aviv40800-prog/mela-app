@@ -475,3 +475,53 @@ describe("second 'finish your profile' email", () => {
     expect(marked.n).toBe(2); // the finished one is marked too, so it's never looked at again
   });
 });
+
+import { saveChatProfile, saveStuckChats } from "@/lib/chat-save";
+import { PARTNER_PROMPT } from "@/lib/ai-onboarding";
+
+describe("the sign-up chat saves the profile as soon as it's done", () => {
+  const draft = {
+    full_name: "נורית",
+    age: 27,
+    gender: "female",
+    seeking: "male",
+    location: "נתניה",
+    occupation: "אחות",
+    bio: "אוהבת משפחה, ים ובונה של שישי עם החברות",
+    religiosity: "traditional",
+    partner_religiosity: "any",
+    marital_status: "single",
+    looking_for: "serious",
+    photos: [],
+    photos_skipped: true,
+    prompts: [
+      { question_key: "talk_for_hours", answer_text: "על מוזיקה אתיופית" },
+      { question_key: PARTNER_PROMPT, answer_text: "מישהו עם ערכים ולב טוב" },
+    ],
+  };
+  const chat = (id: number, d: object) =>
+    db.prepare("INSERT OR REPLACE INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, ?, ?, 8)").run(id, JSON.stringify([{ role: "user", text: "היי" }]), JSON.stringify(d));
+
+  it("saves a finished chat, and leaves an unfinished one alone", () => {
+    const done = createEmailUser("nurit@x.com");
+    chat(done.id, draft);
+    expect(saveChatProfile(getUser(done.id)!)).toBe(true);
+    expect(getUser(done.id)).toMatchObject({ full_name: "נורית", location: "נתניה", gender: "female" });
+
+    const half = createEmailUser("half2@x.com");
+    chat(half.id, { ...draft, bio: undefined });
+    expect(saveChatProfile(getUser(half.id)!)).toBe(false);
+    expect(getUser(half.id)!.full_name).toBeNull();
+  });
+
+  it("catches up members who finished before this, once", () => {
+    db.exec("DELETE FROM app_settings WHERE key = 'stuck_chats_saved'; DELETE FROM onboarding_chats");
+    const stuck = createEmailUser("stuck2@x.com");
+    chat(stuck.id, draft);
+    expect(saveStuckChats()).toBe(1);
+    expect(getUser(stuck.id)!.full_name).toBe("נורית");
+    const later = createEmailUser("later@x.com");
+    chat(later.id, draft);
+    expect(saveStuckChats()).toBe(0); // one-time only
+  });
+});

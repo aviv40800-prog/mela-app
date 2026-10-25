@@ -393,8 +393,8 @@ function Reveal({ draft, onFix, onDone }: { draft: Draft; onFix: () => void; onD
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-1 flex-col items-center gap-4 pb-6">
       <div className="text-center">
-        <span className="text-[13px] text-gold-3">הכול מוכן</span>
-        <h1 className="font-display text-[1.9rem] font-bold">ככה יראו אותך</h1>
+        <span className="text-[13px] text-gold-3">ככה יראו אותך</span>
+        <h1 className="font-display text-[1.9rem] font-bold">הפרופיל שלך באוויר! 🎉</h1>
       </div>
       <motion.article
         initial={{ rotateY: -70, opacity: 0, scale: 0.9 }}
