@@ -5,6 +5,7 @@ import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
 import { departures } from "@/lib/departures";
 import { featuredResults } from "@/lib/checkin";
+import { pendingCount } from "@/lib/auto-suggest";
 import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
@@ -21,6 +22,7 @@ export default function AdminOverview() {
   const left = departures(8);
   const funnel = signupFunnel();
   const fq = featuredResults();
+  const waiting = pendingCount();
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
@@ -42,6 +44,12 @@ export default function AdminOverview() {
         <Stat label="לייקים / הודעות (24ש׳)" value={`${o.likes24h} / ${o.messages24h}`} />
         <Stat label="פרופילים חלקיים" value={o.incomplete} sub={`${o.demoUsers} פרופילי דמו · ${o.banned} מושעים`} />
       </div>
+
+      {waiting > 0 && (
+        <Link href="/admin/suggestions" className="mt-4 flex items-center justify-between gap-2 rounded-2xl border border-gold/35 bg-gold/[0.07] px-4 py-3 text-sm font-semibold text-gold-2">
+          💛 {waiting} הצעות שידוך של ה־AI מחכות לאישור שלך <ArrowLeft size={15} />
+        </Link>
+      )}
 
       {o.webhookFailures7d > 0 && (
         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-danger/30 bg-danger/[0.06] px-4 py-3 text-sm text-danger">

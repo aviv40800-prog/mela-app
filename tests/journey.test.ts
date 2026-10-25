@@ -348,3 +348,74 @@ describe("question of the week", () => {
     }
   });
 });
+
+import { activityBoost, rankScore, tasteFit, tasteOf } from "@/lib/taste";
+import { buildQueue, pendingQueue, approveQueued, rejectQueued, maybeRunNightly } from "@/lib/auto-suggest";
+
+describe("learning from likes", () => {
+  const set = (id: number, sql: string, ...v: (string | number)[]) => db.prepare(`UPDATE users SET ${sql} WHERE id = ?`).run(...v, id);
+  it("learns the ages and places a member likes, and puts those people first in Discover", () => {
+    const me = member("יונתן", "male");
+    const liked = ["א", "ב", "ג", "ד"].map((n) => member(n, "female"));
+    liked.forEach((u) => (set(u.id, "age = ?, location = ?", 26, "נתניה"), swipe(me.id, u.id, "like")));
+    const t = tasteOf(me.id)!;
+    expect(t).toMatchObject({ likes: 4, ageLo: 26, ageHi: 26 });
+    const near = member("קרובה", "female");
+    set(near.id, "age = ?, location = ?", 27, "נתניה");
+    const far = member("רחוקה", "female");
+    set(far.id, "age = ?, location = ?", 38, "אילת");
+    expect(tasteFit(t, getUser(near.id)!)).toBeGreaterThan(tasteFit(t, getUser(far.id)!) + 10);
+    expect(tasteOf(near.id)).toBeNull(); // not enough likes to learn from
+    const deck = discoverFeed(getUser(me.id)!).candidates.map((c) => c.id);
+    expect(deck.indexOf(near.id)).toBeLessThan(deck.indexOf(far.id));
+  });
+
+  it("a like waiting for you and recent activity count, a month away counts against", () => {
+    const me = member("דן", "male");
+    const a = member("פעילה", "female");
+    const b = member("נעלמה", "female");
+    set(a.id, "last_seen_at = datetime('now', '-1 day')");
+    set(b.id, "last_seen_at = datetime('now', '-60 days')");
+    expect(activityBoost(getUser(a.id)!)).toBeGreaterThan(activityBoost(getUser(b.id)!));
+    const m = getUser(me.id)!;
+    expect(rankScore(m, getUser(b.id)!, 80, true)).toBeGreaterThan(rankScore(m, getUser(b.id)!, 80, false) + 20);
+  });
+});
+
+describe("AI matchmaker queue", () => {
+  it("drafts suggestions for active members, sends only what the team approves, and never repeats a pair", async () => {
+    delete process.env.ANTHROPIC_API_KEY; // plain notes, no AI call in tests
+    db.exec("DELETE FROM suggestion_queue");
+    const active = (u: { id: number }) => db.prepare("UPDATE users SET last_seen_at = datetime('now') WHERE id = ?").run(u.id);
+    const [m1, m2] = [member("עומר", "male"), member("איתי", "male")];
+    const [w1, w2] = [member("שירה", "female"), member("נועה", "female")];
+    [m1, m2, w1, w2].forEach(active);
+    const quiet = member("ישן", "male"); // never seen → not suggested for
+
+    const { created } = await buildQueue();
+    expect(created).toBe(4); // each man with each woman: two per person per night
+    const q = pendingQueue();
+    const people = q.flatMap((x) => [x.member.id, x.candidate.id]);
+    expect(new Set(people).size).toBe(4);
+    expect(people).not.toContain(quiet.id);
+    expect(q[0].noteA.length).toBeGreaterThan(10);
+    expect(q.every((x) => !x.ai)).toBe(true);
+
+    approveQueued(1, q[0].id, q[0].noteA, q[0].noteB);
+    q.slice(1).forEach((x) => rejectQueued(x.id));
+    expect(pendingQueue()).toHaveLength(0);
+    const sent = db.prepare("SELECT COUNT(*) AS n FROM match_suggestions WHERE (user_a = ? AND user_b = ?)").get(q[0].member.id, q[0].candidate.id) as { n: number };
+    expect(sent.n).toBe(1);
+
+    // sent or rejected, a pair is never drafted again
+    expect((await buildQueue()).created).toBe(0);
+  });
+
+  it("runs once an evening, Israel time", async () => {
+    db.exec("DELETE FROM app_settings WHERE key = 'auto_suggest_day'");
+    expect(await maybeRunNightly(new Date("2026-10-25T10:00:00Z"))).toBe(0); // 13:00 in Israel — too early
+    await maybeRunNightly(new Date("2026-10-25T17:00:00Z")); // 19:00 — runs
+    const day = db.prepare("SELECT value FROM app_settings WHERE key = 'auto_suggest_day'").get() as { value: string };
+    expect(day.value).toBe("2026-10-25");
+  });
+});

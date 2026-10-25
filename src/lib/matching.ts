@@ -7,6 +7,7 @@ import { insertMessage } from "./chat";
 import { promptQuestion } from "./content";
 import { cityDistanceKm } from "./cities";
 import { sharedAnswers } from "./checkin";
+import { rankScore, type Taste } from "./taste";
 
 export type MatchStatus = "pending" | "matched" | "rejected";
 type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null };
@@ -116,11 +117,14 @@ export function toCandidate(me: number, id: number): Candidate {
 }
 
 export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candidate[] {
+  const tastes = new Map<number, Taste | null>();
   return candidateIds(me, 200, ignorePrefs)
     .map((id) => toCandidate(me.id, id))
-    // members with a photo first, then by compatibility
-    .sort((a, b) => Number(b.photos.length > 0) - Number(a.photos.length > 0) || b.compatibility - a.compatibility)
-    .slice(0, limit);
+    .map((c) => ({ c, rank: rankScore(me, getUser(c.id)!, c.compatibility, c.likedYou, tastes) }))
+    // members with a photo first, then by who fits best — what they said, who they like, and who'd like them back
+    .sort((a, b) => Number(b.c.photos.length > 0) - Number(a.c.photos.length > 0) || b.rank - a.rank)
+    .slice(0, limit)
+    .map((x) => x.c);
 }
 
 /**
@@ -145,8 +149,9 @@ export function dailyPicks(me: User): Candidate[] {
     }[]
   ).map((r) => r.id);
   if (ids.length === 0) {
+    const tastes = new Map<number, Taste | null>();
     const picks = candidateIds(me, 200)
-      .map((id) => ({ id, score: compatibility(me.id, id) }))
+      .map((id) => ({ id, score: Math.round(rankScore(me, getUser(id)!, compatibility(me.id, id), likedMe(me.id, id), tastes)) }))
       .sort((a, b) => b.score - a.score)
       .slice(0, 3);
     const ins = db.prepare("INSERT OR IGNORE INTO daily_picks (user_id, pick_user_id, pick_date, score) VALUES (?, ?, ?, ?)");

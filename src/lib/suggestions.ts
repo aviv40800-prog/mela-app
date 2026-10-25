@@ -1,6 +1,7 @@
 import "server-only";
 import { db, tx } from "./db";
 import { COMPATIBLE, compatibility, toCandidate, type Candidate } from "./matching";
+import { rankScore, type Taste } from "./taste";
 import { getUser, isProfileComplete, type User } from "./users";
 import { mailMember } from "./member-mail";
 
@@ -75,21 +76,25 @@ export function suggestionCandidates(me: User, limit = 40): SuggestionCandidate[
          AND NOT EXISTS (SELECT 1 FROM match_suggestions s WHERE (s.user_a = :me AND s.user_b = u.id) OR (s.user_a = u.id AND s.user_b = :me))`,
     )
     .all({ me: me.id, seeking: me.seeking, gender: me.gender }) as { id: number }[];
+  const tastes = new Map<number, Taste | null>();
   return rows
     .map((r) => getUser(r.id)!)
     .filter((u) => isProfileComplete(u))
-    .map((u) => ({
+    .map((u) => ({ u, compatibility: compatibility(me.id, u.id) }))
+    .map(({ u, compatibility }) => ({
       id: u.id,
       name: u.full_name ?? "",
       age: u.age,
       location: u.location,
       photo: u.photos[0] ?? null,
-      compatibility: compatibility(me.id, u.id),
+      compatibility,
       likedThem: swipeOf(u.id, me.id) === "pending",
       memberLiked: swipeOf(me.id, u.id) === "pending",
+      rank: rankScore(me, u, compatibility, swipeOf(u.id, me.id) === "pending", tastes),
     }))
-    .sort((a, b) => Number(b.likedThem) - Number(a.likedThem) || b.compatibility - a.compatibility)
-    .slice(0, limit);
+    .sort((a, b) => Number(b.likedThem) - Number(a.likedThem) || b.rank - a.rank)
+    .slice(0, limit)
+    .map(({ rank: _rank, ...c }) => c);
 }
 
 export type SuggestionView = {
