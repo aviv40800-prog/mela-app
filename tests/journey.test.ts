@@ -525,3 +525,32 @@ describe("the sign-up chat saves the profile as soon as it's done", () => {
     expect(saveStuckChats()).toBe(0); // one-time only
   });
 });
+
+import { statsSnapshot } from "@/lib/stats";
+import { GET as statsGET } from "@/app/api/admin/stats/route";
+
+describe("read-only stats for the team", () => {
+  it("counts the money funnel and describes payers without personal details", () => {
+    const m = member("משלם", "male");
+    swipe(m.id, member("את", "female").id, "like");
+    db.prepare("INSERT INTO payment_orders (id, user_id, plan_type, first_sum, recur_sum, recur_start, status, paid_at) VALUES ('o1', ?, 'monthly_49', 49, 49, date('now'), 'paid', datetime('now'))").run(m.id);
+    const s = statsSnapshot();
+    expect(s.money.funnel).toMatchObject({ likedSomeone: 1, startedCheckout: 1, paid: 1 });
+    expect(s.money.revenue7d).toBe(49);
+    expect(s.money.payers).toHaveLength(1);
+    expect(s.money.payers[0]).toMatchObject({ gender: "male", ageBand: "25–29", likesSentBefore: 0, plan: "monthly_49" });
+    const text = JSON.stringify(s);
+    expect(text).not.toContain("משלם"); // no names
+    expect(text).not.toContain("+97252"); // no phones
+  });
+
+  it("is closed without the right token", async () => {
+    delete process.env.MELA_STATS_TOKEN;
+    expect((await statsGET(new Request("http://x/api/admin/stats"))).status).toBe(404);
+    process.env.MELA_STATS_TOKEN = "a-very-long-secret-token-123";
+    expect((await statsGET(new Request("http://x/api/admin/stats", { headers: { authorization: "Bearer nope" } }))).status).toBe(401);
+    const ok = await statsGET(new Request("http://x/api/admin/stats", { headers: { authorization: "Bearer a-very-long-secret-token-123" } }));
+    expect(ok.status).toBe(200);
+    delete process.env.MELA_STATS_TOKEN;
+  });
+});
