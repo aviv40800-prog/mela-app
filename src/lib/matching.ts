@@ -10,7 +10,7 @@ import { sharedAnswers } from "./checkin";
 import { rankScore, type Taste } from "./taste";
 
 export type MatchStatus = "pending" | "matched" | "rejected";
-type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null };
+type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null; declined_at: string | null };
 
 export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[] };
 
@@ -74,7 +74,10 @@ function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
        WHERE ${COMPATIBLE}
          AND (:amin IS NULL OR u.age >= :amin) AND (:amax IS NULL OR u.age <= :amax)
          AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = :me AND m.user_2_id = u.id)
-         AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = u.id AND m.user_2_id = :me AND m.status <> 'pending')
+         AND NOT EXISTS (SELECT 1 FROM blocks b WHERE (b.blocker_id = :me AND b.blocked_id = u.id) OR (b.blocker_id = u.id AND b.blocked_id = :me))
+         -- a match, or a like of theirs I already passed on, is done; someone who passed on me is shown again (a like reopens it)
+         AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.user_1_id = u.id AND m.user_2_id = :me
+                           AND (m.status = 'matched' OR (m.status = 'rejected' AND m.declined_at IS NOT NULL)))
        ORDER BY u.id DESC LIMIT 1000`,
     )
     .all({
@@ -101,6 +104,11 @@ export function unseenCount(me: User): { inRange: number; all: number } {
   return { inRange: candidateIds(me, 1000).length, all: candidateIds(me, 1000, true).length };
 }
 
+/** `other` passed on `me` (and `me` hasn't answered): shown again, after fresh faces. */
+function passedOn(other: number, me: number): boolean {
+  return !!db.prepare("SELECT 1 FROM matches WHERE user_1_id = ? AND user_2_id = ? AND status = 'rejected' AND declined_at IS NULL").get(other, me);
+}
+
 function likedMe(me: number, other: number): boolean {
   return !!db.prepare("SELECT 1 FROM matches WHERE user_1_id = ? AND user_2_id = ? AND status = 'pending'").get(other, me);
 }
@@ -120,7 +128,8 @@ export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candid
   const tastes = new Map<number, Taste | null>();
   return candidateIds(me, 200, ignorePrefs)
     .map((id) => toCandidate(me.id, id))
-    .map((c) => ({ c, rank: rankScore(me, getUser(c.id)!, c.compatibility, c.likedYou, tastes) }))
+    // people who passed on the member come back too, but after everyone who hasn't seen them yet
+    .map((c) => ({ c, rank: rankScore(me, getUser(c.id)!, c.compatibility, c.likedYou, tastes) - (passedOn(c.id, me.id) ? 30 : 0) }))
     // members with a photo first, then by who fits best — what they said, who they like, and who'd like them back
     .sort((a, b) => Number(b.c.photos.length > 0) - Number(a.c.photos.length > 0) || b.rank - a.rank)
     .slice(0, limit)
@@ -190,10 +199,13 @@ export function swipe(
         if (comment && action === "like") insertMessage(theirs.id, meId, formatComment(comment));
         return { status, matchId: theirs.id, isNewMatch: status === "matched", recorded: true };
       }
-      // They already passed: record my swipe as rejected so the card doesn't come back.
+      // They passed on me earlier. A like gives them a second look: their pass is cleared and my like waits for them
+      // (it shows as "liked you" on their side). A pass just records mine.
+      if (action === "like" && !theirs.declined_at) db.prepare("DELETE FROM matches WHERE id = ?").run(theirs.id);
     }
 
-    const status: MatchStatus = action === "like" && theirs?.status !== "rejected" ? "pending" : "rejected";
+    const reopened = action === "like" && theirs?.status === "rejected" && !theirs.declined_at;
+    const status: MatchStatus = action === "like" && (theirs?.status !== "rejected" || reopened) ? "pending" : "rejected";
     const { lastInsertRowid } = db.prepare("INSERT INTO matches (user_1_id, user_2_id, status) VALUES (?, ?, ?)").run(meId, targetId, status);
     const matchId = Number(lastInsertRowid);
     if (comment && status === "pending") insertMessage(matchId, meId, formatComment(comment));

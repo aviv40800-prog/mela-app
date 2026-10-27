@@ -167,7 +167,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                     ["מחוץ לטווח הגיל/מרחק שבחר/ה", vis.outOfRange, "mute"],
                     ["לא מוצגים: פרופיל לא שלם", vis.incomplete, "red"],
                     ["לא מחפשים את המגדר שלו/ה", vis.notLookingForMe, "mute"],
-                    ["מושעים", vis.banned, "mute"],
+                    ["מושעים או חסומים", vis.banned, "mute"],
                   ] as const
                 )
                   .filter(([, n]) => n > 0)
@@ -178,6 +178,11 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
                     </div>
                   ))}
               </dl>
+              {vis.passedOnMe > 0 && (
+                <p className="mt-3 text-[12.5px] leading-relaxed text-mute">
+                  מתוך מי שעוד לא ראה/תה, {vis.passedOnMe} דילגו עליו/ה בעבר. הם מוצגים לו/ה שוב, אחרי הפרצופים החדשים, ולייק מחזיר אותו/ה אליהם.
+                </p>
+              )}
               {vis.incomplete > 0 && (
                 <p className="mt-3 text-[12.5px] leading-relaxed text-mute">
                   חסר להם:{" "}

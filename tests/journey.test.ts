@@ -554,3 +554,23 @@ describe("read-only stats for the team", () => {
     delete process.env.MELA_STATS_TOKEN;
   });
 });
+
+describe("people who passed on you come back", () => {
+  it("shows them after fresh faces, and a like gives them a second look", () => {
+    const me = member("עמנואל", "male");
+    const [passer, fresh] = [member("דילגה", "female"), member("חדשה", "female")];
+    swipe(passer.id, me.id, "pass");
+    const deck = discoverFeed(getUser(me.id)!).candidates.map((c) => c.id);
+    expect(deck).toEqual([fresh.id, passer.id]);
+    expect(visibilityFor(getUser(me.id)!)).toMatchObject({ unseen: 2, passedOnMe: 1, seen: 0 });
+
+    swipe(me.id, passer.id, "like");
+    // her pass is cleared: she sees him again, as someone who liked her
+    const hers = discoverFeed(getUser(passer.id)!).candidates;
+    expect(hers.find((c) => c.id === me.id)?.likedYou).toBe(true);
+    // she passes again: done for good on both sides
+    swipe(passer.id, me.id, "pass");
+    expect(discoverFeed(getUser(me.id)!).candidates.map((c) => c.id)).not.toContain(passer.id);
+    expect(discoverFeed(getUser(passer.id)!).candidates.map((c) => c.id)).not.toContain(me.id);
+  });
+});
