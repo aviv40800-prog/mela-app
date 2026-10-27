@@ -7,8 +7,10 @@ import { Logo } from "./Logo";
 import { SwipeDeck } from "./SwipeDeck";
 import { PreferencesSheet } from "./PreferencesSheet";
 import { SwipeTutorial } from "./SwipeTutorial";
+import { ShowProfile } from "./ShowProfile";
 import type { MiniProfile } from "./MatchModal";
 import type { Prefs } from "./PreferencesFields";
+import type { ShowProfile as Show } from "@/lib/suggestions";
 
 // \u2066…\u2069 isolates the number range as left-to-right inside the Hebrew line ("22–33", not "33–22").
 function summary(p: Prefs) {
@@ -17,7 +19,7 @@ function summary(p: Prefs) {
   return `${age} · ${dist}`;
 }
 
-export function DiscoverView({ me, prefs: initial }: { me: MiniProfile; prefs: Prefs }) {
+export function DiscoverView({ me, prefs: initial, show = null }: { me: MiniProfile; prefs: Prefs; show?: Show | null }) {
   const [prefs, setPrefs] = useState(initial);
   const [open, setOpen] = useState(false);
   const [version, setVersion] = useState(0);
@@ -36,8 +38,8 @@ export function DiscoverView({ me, prefs: initial }: { me: MiniProfile; prefs: P
       </header>
       {/* Remount → reload the deck with the new preferences */}
       <SwipeDeck key={version} source="discover" me={me} />
-      {/* First visit: a short walkthrough of which way is like and which is pass */}
-      <SwipeTutorial />
+      {/* First visit: a short walkthrough of which way is like and which is pass (not over a profile opened from a link) */}
+      {show ? <ShowProfile show={show} me={me} /> : <SwipeTutorial />}
       <AnimatePresence>
         {open && (
           <PreferencesSheet

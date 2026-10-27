@@ -160,26 +160,47 @@ export function suggestionsFor(userId: number): SuggestionView[] {
 
 const first = (name: string | null) => (name ?? "").trim().split(/\s+/)[0] ?? "";
 
-function suggestionEmail(to: User, other: User, note: string) {
+/**
+ * The suggestion email, worded for where things stand: `youLiked` — the recipient already liked them (nothing to
+ * do but wait); `theyLiked` — the other side already liked the recipient (one like away from a chat). The button
+ * opens the other person's profile directly.
+ */
+function suggestionEmail(to: User, other: User, note: string, state: "fresh" | "youLiked" | "theyLiked" = "fresh") {
   const she = to.gender === "female";
   const otherIsHe = other.gender === "male";
-  const about = [first(other.full_name), other.age, other.location ? `מ${other.location}` : null].filter(Boolean).join(", ");
+  const name = first(other.full_name);
+  const about = [name, other.age, other.location ? `מ${other.location}` : null].filter(Boolean).join(", ");
+  const lines =
+    state === "youLiked"
+      ? [
+          `היי ${first(to.full_name)},`,
+          `גם השדכנית שלנו חושבת ש${name} ${otherIsHe ? "מתאים" : "מתאימה"} לך 💛 (${about})`,
+          "",
+          "למה חשבנו עליכם:",
+          note,
+          "",
+          `הלייק שלך כבר ${otherIsHe ? "אצלו" : "אצלה"}, והצענו ${otherIsHe ? "לו" : "לה"} גם אותך. ברגע ש${otherIsHe ? "הוא יחזיר" : "היא תחזיר"} לייק, תיפתח ביניכם שיחה.`,
+        ]
+      : [
+          `היי ${first(to.full_name)},`,
+          `עברנו על הפרופיל שלך, ויש ${otherIsHe ? "מישהו" : "מישהי"} שאנחנו ממש רוצים ${she ? "שתכירי" : "שתכיר"}: ${about}.`,
+          ...(state === "theyLiked" ? ["", `ויש עוד משהו: ${otherIsHe ? "הוא כבר עשה" : "היא כבר עשתה"} לך לייק 👀`] : []),
+          "",
+          "למה חשבנו עליכם:",
+          note,
+          "",
+          state === "theyLiked"
+            ? `אם גם ${she ? "את מרגישה" : "אתה מרגיש"} שיש פה משהו, ${she ? "עשי" : "עשה"} ${otherIsHe ? "לו" : "לה"} לייק, ותיפתח ביניכם שיחה מיד.`
+            : `אם גם ${she ? "את מרגישה" : "אתה מרגיש"} שיש פה משהו, ${she ? "עשי" : "עשה"} ${otherIsHe ? "לו" : "לה"} לייק. אם ${otherIsHe ? "גם הוא יעשה" : "גם היא תעשה"} לך, תיפתח ביניכם שיחה.`,
+        ];
   mailMember(to.id, {
-    subject: `💛 השדכנית של MELA מצאה ${otherIsHe ? "בשבילך מישהו" : "בשבילך מישהי"}`,
-    lines: [
-      `היי ${first(to.full_name)},`,
-      `עברנו על הפרופיל שלך, ויש ${otherIsHe ? "מישהו" : "מישהי"} שאנחנו ממש רוצים ${she ? "שתכירי" : "שתכיר"}: ${about}.`,
-      "",
-      "למה חשבנו עליכם:",
-      note,
-      "",
-      `אם גם ${she ? "את מרגישה" : "אתה מרגיש"} שיש פה משהו, ${she ? "עשי" : "עשה"} ${otherIsHe ? "לו" : "לה"} לייק. אם ${otherIsHe ? "גם הוא יעשה" : "גם היא תעשה"} לך, תיפתח ביניכם שיחה.`,
-      "",
-      "בהצלחה,",
-      "צוות MELA",
-    ],
-    link: "/discover",
-    cta: `לצפייה בפרופיל של ${first(other.full_name)} 💛`,
+    subject:
+      state === "theyLiked"
+        ? `💛 השדכנית של MELA מצאה ${otherIsHe ? "בשבילך מישהו, והוא כבר עשה לך לייק" : "בשבילך מישהי, והיא כבר עשתה לך לייק"}`
+        : `💛 השדכנית של MELA מצאה ${otherIsHe ? "בשבילך מישהו" : "בשבילך מישהי"}`,
+    lines: [...lines, "", "בהצלחה,", "צוות MELA"],
+    link: `/discover?show=${other.id}`,
+    cta: `לצפייה בפרופיל של ${name} 💛`,
   });
 }
 
@@ -247,6 +268,10 @@ export function createSuggestion(adminId: number, aId: number, bId: number, note
   if (swipeOf(aId, bId) === "matched" || swipeOf(bId, aId) === "matched") throw new SuggestionError("הם כבר בהתאמה");
   if (findPair(aId, bId)) throw new SuggestionError("כבר הצעתם אותם אחד לשני");
 
+  const liked = new Map([
+    [`${aId}-${bId}`, swipeOf(aId, bId) === "pending"],
+    [`${bId}-${aId}`, swipeOf(bId, aId) === "pending"],
+  ]);
   const id = tx(() => {
     const { lastInsertRowid } = db
       .prepare("INSERT INTO match_suggestions (user_a, user_b, note_a, note_b, created_by) VALUES (?, ?, ?, ?, ?)")
@@ -256,8 +281,10 @@ export function createSuggestion(adminId: number, aId: number, bId: number, note
     ).run(aId, bId, bId, aId);
     return Number(lastInsertRowid);
   });
-  suggestionEmail(a!, b!, noteA.trim());
-  suggestionEmail(b!, a!, noteB.trim());
+  // where things stood before the suggestion (a like waiting either way changes what each side is told)
+  const state = (to: number, other: number) => (liked.get(`${to}-${other}`) ? "youLiked" : liked.get(`${other}-${to}`) ? "theyLiked" : "fresh");
+  suggestionEmail(a!, b!, noteA.trim(), state(aId, bId));
+  suggestionEmail(b!, a!, noteB.trim(), state(bId, aId));
   const canEmail = (u: User) => !!(u.email && u.email_verified);
   return { id, emailed: { a: canEmail(a!), b: canEmail(b!) } };
 }
@@ -293,4 +320,27 @@ export function markSuggestionSeen(meId: number, otherId: number) {
 /** A like on a personal suggestion is on the house — it doesn't use up the daily likes. */
 export function isOpenSuggestion(meId: number, otherId: number): boolean {
   return !!findPair(meId, otherId) && swipeOf(meId, otherId) === null;
+}
+
+export type ShowProfile = { card: Candidate; he: boolean; state: "open" | "liked" | "passed" | "matched"; matchId: number | null; note: string | null };
+
+/**
+ * A profile opened straight from a link (the suggestion email): the card, where the member stands with them, and the
+ * team's note if they were suggested. Null when there's nothing to show (gone, suspended, blocked, themselves).
+ */
+export function profileToShow(me: User, otherId: number): ShowProfile | null {
+  const other = getUser(otherId);
+  if (!other || other.id === me.id || other.is_banned || blocked(me.id, otherId) || !isProfileComplete(other)) return null;
+  const mine = swipeOf(me.id, otherId);
+  const theirs = swipeOf(otherId, me.id);
+  const matched = mine === "matched" || theirs === "matched";
+  const pair = findPair(me.id, otherId);
+  if (pair) markSuggestionSeen(me.id, otherId);
+  return {
+    card: toCandidate(me.id, otherId),
+    he: other.gender === "male",
+    state: matched ? "matched" : mine === "pending" ? "liked" : mine === "rejected" ? "passed" : "open",
+    matchId: matched ? matchBetween(me.id, otherId) : null,
+    note: pair ? (pair.user_a === me.id ? pair.note_a : pair.note_b) : null,
+  };
 }

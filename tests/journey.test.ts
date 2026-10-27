@@ -574,3 +574,19 @@ describe("people who passed on you come back", () => {
     expect(discoverFeed(getUser(passer.id)!).candidates.map((c) => c.id)).not.toContain(me.id);
   });
 });
+
+import { profileToShow } from "@/lib/suggestions";
+
+describe("a suggestion when one side already liked", () => {
+  it("opens the profile from the link, showing where the member stands", () => {
+    const her = member("זהבה", "female");
+    const him = member("ורדה", "male");
+    swipe(her.id, him.id, "like"); // she liked him before the team suggested them
+    createSuggestion(1, her.id, him.id, "זהבה, שניכם מאשדוד", "ורדה, שניכם מאשדוד");
+    expect(profileToShow(getUser(her.id)!, him.id)).toMatchObject({ state: "liked", note: "זהבה, שניכם מאשדוד", he: true });
+    expect(profileToShow(getUser(him.id)!, her.id)).toMatchObject({ state: "open", note: "ורדה, שניכם מאשדוד", he: false });
+    expect(profileToShow(getUser(him.id)!, him.id)).toBeNull();
+    swipe(him.id, her.id, "like");
+    expect(profileToShow(getUser(her.id)!, him.id)?.state).toBe("matched");
+  });
+});
