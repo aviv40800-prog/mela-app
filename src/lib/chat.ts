@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { publish, type ChatMessage } from "./events";
+import { notifyNewMessage } from "./message-mail";
 
 type Row = Omit<ChatMessage, "is_read"> & { is_read: number };
 const hydrate = (r: Row): ChatMessage => ({ ...r, is_read: !!r.is_read });
@@ -18,6 +19,7 @@ export function sendMessage(matchId: number, senderId: number, recipientId: numb
   const msg = insertMessage(matchId, senderId, text);
   publish(recipientId, { type: "message", matchId, message: msg });
   publish(senderId, { type: "message", matchId, message: msg });
+  notifyNewMessage(matchId, senderId, recipientId);
   return msg;
 }
 

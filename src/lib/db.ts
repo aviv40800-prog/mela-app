@@ -338,6 +338,11 @@ export function migrate(db: DatabaseSync) {
     messages         INTEGER NOT NULL DEFAULT 0,
     premium          INTEGER NOT NULL DEFAULT 0
   )`);
+  // Emails sent per Israel day and kind (see email-budget.ts), and when a member was last emailed about a chat.
+  db.exec("CREATE TABLE IF NOT EXISTS email_counts (day TEXT NOT NULL, kind TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, kind))");
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS message_mail (match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE, user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, notified_at TEXT NOT NULL, PRIMARY KEY (match_id, user_id))",
+  );
   // The AI matchmaker's nightly drafts: a pair and the "why we thought of you" notes, waiting for the team's OK.
   db.exec(`CREATE TABLE IF NOT EXISTS suggestion_queue (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,

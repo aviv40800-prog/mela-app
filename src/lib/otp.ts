@@ -22,7 +22,7 @@ export async function issueOtp(key: string): Promise<{ devCode?: string }> {
   ).run(key, hash(key, code), Date.now() + TTL_MS);
 
   const isEmail = key.includes("@");
-  if (isEmail) await sendEmail({ to: key, ...codeEmail(code) });
+  if (isEmail) await sendEmail({ to: key, ...codeEmail(code), kind: "code" });
   else await sendSms(key, `קוד האימות שלך ל־MELA: ${code}`);
   // With a console provider we hand the code back so the flow works without a real sender: always in dev,
   // and in production only when MELA_SHOW_OTP=1 (preview/demo deploys — anyone can then sign in as anyone).

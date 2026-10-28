@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { sendEmail } from "./email";
+import { emailAllowed } from "./email-budget";
 import { SITE, SITE_URL } from "./site";
 
 /**
@@ -22,7 +23,8 @@ function notify(subject: string, lines: string[], link: string) {
   const text = [...lines, "", url].join("\n");
   const html = `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6">${lines.map((l) => `<div>${esc(l)}</div>`).join("")}<p><a href="${url}">לצפייה בפאנל הניהול</a></p></div>`;
   for (const addr of to) {
-    sendEmail({ to: addr, subject, text, html }).catch((e) => console.error("[notify] failed", (e as Error).message));
+    if (!emailAllowed("team")) return void console.warn("[notify] daily email budget reached — team email skipped");
+    sendEmail({ to: addr, subject, text, html, kind: "team" }).catch((e) => console.error("[notify] failed", (e as Error).message));
   }
 }
 

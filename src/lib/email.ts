@@ -1,4 +1,5 @@
 import "server-only";
+import { countEmail, type EmailKind } from "./email-budget";
 
 /**
  * Transactional email (sign-in codes). Providers, chosen by EMAIL_PROVIDER:
@@ -53,7 +54,7 @@ export function emailFrom(provider = emailProvider()): string {
   return set || DEFAULT_FROM();
 }
 
-type Mail = { to: string; subject: string; html: string; text: string };
+type Mail = { to: string; subject: string; html: string; text: string; kind?: EmailKind };
 
 export async function sendEmail(mail: Mail): Promise<void> {
   const provider = emailProvider();
@@ -65,6 +66,7 @@ export async function sendEmail(mail: Mail): Promise<void> {
   for (const p of chain) {
     try {
       const id = await deliver(p, mail);
+      countEmail(mail.kind ?? "other");
       console.info(`[email] sent via ${p} to ${masked}${id ? ` (id ${id})` : ""}`);
       return;
     } catch (e) {

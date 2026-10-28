@@ -7,6 +7,7 @@ import { departures } from "@/lib/departures";
 import { DEPARTURE_REASONS } from "@/lib/content";
 import { featuredResults } from "@/lib/checkin";
 import { pendingCount } from "@/lib/auto-suggest";
+import { emailsToday } from "@/lib/email-budget";
 import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
@@ -24,6 +25,8 @@ export default function AdminOverview() {
   const funnel = signupFunnel();
   const fq = featuredResults();
   const waiting = pendingCount();
+  const mails = emailsToday();
+  const KIND: Record<string, string> = { code: "קודי כניסה", message: "הודעות", reminder: "תזכורות", suggestion: "הצעות", alert: "מצטרפים חדשים", team: "לצוות", other: "אחר" };
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
   return (
@@ -51,6 +54,22 @@ export default function AdminOverview() {
           💛 {waiting} הצעות שידוך של ה־AI מחכות לאישור שלך <ArrowLeft size={15} />
         </Link>
       )}
+
+      <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${mails.total >= mails.cap * 0.7 ? "border-danger/35 bg-danger/[0.06]" : "border-line-2"}`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span>
+            📧 מיילים היום: <b className="tabular">{mails.total}</b> מתוך <span className="tabular">{mails.cap}</span>
+          </span>
+          <span className="text-[12px] text-mute">
+            {Object.entries(mails.byKind)
+              .map(([k, n]) => `${KIND[k] ?? k} ${n}`)
+              .join(" · ") || "עוד לא נשלחו"}
+          </span>
+        </div>
+        {mails.total >= mails.cap * 0.7 && (
+          <p className="mt-1.5 text-[12.5px] text-danger">מתקרבים לתקרה היומית: התראות על הודעות ותזכורות נעצרות ב־{Math.floor((mails.cap * 220) / 300)}, קודי כניסה תמיד יוצאים. אם זה קורה הרבה, כדאי לשדרג את Brevo.</p>
+        )}
+      </div>
 
       {o.webhookFailures7d > 0 && (
         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-danger/30 bg-danger/[0.06] px-4 py-3 text-sm text-danger">

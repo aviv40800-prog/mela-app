@@ -45,6 +45,7 @@ export function alertWaitingMembers(newcomer: User): number {
   for (const r of fits) {
     mark.run(r.id);
     mailMember(r.id, {
+      kind: "alert",
       subject: "💛 מישהו חדש שמתאים לך הצטרף ל-MELA",
       lines: ["ההתאמה הבאה שלך אולי כבר כאן:", "פרופיל חדש שמתאים לחיפוש שלך הצטרף עכשיו ל-MELA.", "", "(אפשר לכבות את ההתראות במסך ההתאמות, תחת ״ההתאמה הבאה בדרך אלייך״.)"],
       link: "/discover",

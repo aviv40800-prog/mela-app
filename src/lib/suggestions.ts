@@ -194,6 +194,7 @@ function suggestionEmail(to: User, other: User, note: string, state: "fresh" | "
             : `אם גם ${she ? "את מרגישה" : "אתה מרגיש"} שיש פה משהו, ${she ? "עשי" : "עשה"} ${otherIsHe ? "לו" : "לה"} לייק. אם ${otherIsHe ? "גם הוא יעשה" : "גם היא תעשה"} לך, תיפתח ביניכם שיחה.`,
         ];
   mailMember(to.id, {
+    kind: "suggestion",
     subject:
       state === "theyLiked"
         ? `💛 השדכנית של MELA מצאה ${otherIsHe ? "בשבילך מישהו, והוא כבר עשה לך לייק" : "בשבילך מישהי, והיא כבר עשתה לך לייק"}`
@@ -229,6 +230,7 @@ export function nudgeToChat(suggestionId: number, toId: number): { emailed: bool
   const liked = likedBack ? (otherIsHe ? "החזיר לך לייק" : "החזירה לך לייק") : otherIsHe ? "עשה לך לייק" : "עשתה לך לייק";
   const note = toIsA ? r.note_a : r.note_b;
   mailMember(to.id, {
+    kind: "suggestion",
     subject: `${first(to.full_name)}, ${name} ${liked} 💛`,
     lines: [
       `היי ${first(to.full_name)},`,

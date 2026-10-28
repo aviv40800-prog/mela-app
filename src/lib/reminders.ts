@@ -32,6 +32,7 @@ export function sendSignupReminders(): number {
     }
     mark.run(id);
     mailMember(id, {
+      kind: "reminder",
       subject: "נשארו לך רק כמה דקות 💛",
       lines: [
         "היי, כאן MELA 🤎",
@@ -88,6 +89,7 @@ export function sendSecondReminders(now = new Date()): number {
     const link = `/signup?email=${encodeURIComponent(u.email)}`;
     if (signupStage(u).stage === "unsaved") {
       mailMember(id, {
+      kind: "reminder",
         subject: "הפרופיל שלך מוכן, נשאר רק לאשר 💛",
         lines: [hi, "סיימת את כל השאלות, והפרופיל שלך כבר מוכן. נשאר רק ללחוץ \"אישור\", ומאותו רגע יראו אותך.", "", "כרגע הפרופיל שלך עוד לא מופיע לאף אחד.", "", "MELA, השדכנית של העדה 🤎"],
         link,
@@ -95,6 +97,7 @@ export function sendSecondReminders(now = new Date()): number {
       });
     } else {
       mailMember(id, {
+      kind: "reminder",
         subject: name ? `${name}, שמרנו לך את המקום 💛` : "שמרנו לך את המקום 💛",
         lines: [
           hi,

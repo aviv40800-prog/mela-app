@@ -30,3 +30,8 @@ export function subscribe(userId: number, listener: (e: RealtimeEvent) => void):
   bus.on(`user:${userId}`, listener);
   return () => bus.off(`user:${userId}`, listener);
 }
+
+/** The member has the site open right now (a live stream is connected) — they'll see a new message as it comes. */
+export function isOnline(userId: number): boolean {
+  return bus.listenerCount(`user:${userId}`) > 0;
+}

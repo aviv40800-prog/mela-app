@@ -590,3 +590,52 @@ describe("a suggestion when one side already liked", () => {
     expect(profileToShow(getUser(her.id)!, him.id)?.state).toBe("matched");
   });
 });
+
+import { emailAllowed, countEmail, emailsToday } from "@/lib/email-budget";
+import { messageMailDue, record } from "@/lib/message-mail";
+
+describe("new-message emails", () => {
+  const chat = () => {
+    const a = member("שולחת", "female");
+    const b = member("מקבל", "male");
+    swipe(a.id, b.id, "like");
+    const { matchId } = swipe(b.id, a.id, "like");
+    return { a, b, matchId };
+  };
+  const msg = (matchId: number, from: number, at: string) =>
+    db.prepare("INSERT INTO messages (match_id, sender_id, text_content, sent_at) VALUES (?, ?, 'היי', ?)").run(matchId, from, at);
+
+  it("one per chat until it's read, and at most one an hour", () => {
+    db.exec("DELETE FROM message_mail");
+    const { a, b, matchId } = chat();
+    expect(messageMailDue(matchId, b.id)).toBe(false); // nothing unread
+    msg(matchId, a.id, new Date(Date.now() - 60_000).toISOString());
+    expect(messageMailDue(matchId, b.id)).toBe(true);
+    record(matchId, b.id);
+    msg(matchId, a.id, new Date().toISOString());
+    expect(messageMailDue(matchId, b.id)).toBe(false); // still hasn't read the first
+
+    // he reads; next day she writes again → a new email
+    db.prepare("UPDATE messages SET is_read = 1 WHERE match_id = ?").run(matchId);
+    record(matchId, b.id, new Date(Date.now() - 2 * 3_600_000).toISOString());
+    msg(matchId, a.id, new Date().toISOString());
+    expect(messageMailDue(matchId, b.id)).toBe(true);
+
+    // another chat emailed him a minute ago → wait for the hour
+    const other = chat();
+    record(other.matchId, b.id);
+    expect(messageMailDue(matchId, b.id)).toBe(false);
+  });
+
+  it("keeps the daily email budget for sign-in codes", () => {
+    db.exec("DELETE FROM email_counts");
+    expect(emailAllowed("message")).toBe(true);
+    for (let i = 0; i < 220; i++) countEmail("message");
+    expect(emailAllowed("message")).toBe(false);
+    expect(emailAllowed("suggestion")).toBe(true);
+    for (let i = 0; i < 60; i++) countEmail("suggestion");
+    expect(emailAllowed("suggestion")).toBe(false);
+    expect(emailAllowed("code")).toBe(true);
+    expect(emailsToday()).toMatchObject({ total: 280, cap: 300, byKind: { message: 220, suggestion: 60 } });
+  });
+});
