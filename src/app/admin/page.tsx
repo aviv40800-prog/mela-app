@@ -8,6 +8,7 @@ import { DEPARTURE_REASONS } from "@/lib/content";
 import { featuredResults } from "@/lib/checkin";
 import { pendingCount } from "@/lib/auto-suggest";
 import { emailsToday } from "@/lib/email-budget";
+import { premiumTabStats } from "@/lib/plan-views";
 import { STAGE_LABEL, signupFunnel, type Stage } from "@/lib/signup-stage";
 import { TestSignupButton } from "@/components/admin/TestSignupButton";
 import { Badge, Card, PageHeader, Stat, SUB_BADGE, UserChip, when } from "@/components/admin/ui";
@@ -26,6 +27,7 @@ export default function AdminOverview() {
   const fq = featuredResults();
   const waiting = pendingCount();
   const mails = emailsToday();
+  const tab = premiumTabStats();
   const KIND: Record<string, string> = { code: "קודי כניסה", message: "הודעות", reminder: "תזכורות", suggestion: "הצעות", alert: "מצטרפים חדשים", team: "לצוות", other: "אחר" };
   const usd = (n: number) => `$${n < 1 ? n.toFixed(3) : n.toFixed(2)}`;
 
@@ -69,6 +71,15 @@ export default function AdminOverview() {
         {mails.total >= mails.cap * 0.7 && (
           <p className="mt-1.5 text-[12.5px] text-danger">מתקרבים לתקרה היומית: התראות על הודעות ותזכורות נעצרות ב־{Math.floor((mails.cap * 220) / 300)}, קודי כניסה תמיד יוצאים. אם זה קורה הרבה, כדאי לשדרג את Brevo.</p>
         )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2 rounded-2xl border border-line-2 px-4 py-3 text-sm">
+        <span>
+          👑 לשונית Premium: <b className="tabular">{tab.opened7d}</b> נכנסו לחבילות השבוע, <b className="tabular">{tab.paid7d}</b> מהם שילמו
+        </span>
+        <span className="text-[12px] text-mute tabular">
+          מההתחלה: {tab.openedTotal} נכנסו · {tab.paidTotal} שילמו
+        </span>
       </div>
 
       {o.webhookFailures7d > 0 && (

@@ -18,7 +18,19 @@ export const useRealtime = (listener: Listener) => {
 };
 
 /** One EventSource per tab, shared by every screen. Also drives the unread badge and match toasts. */
-export function RealtimeShell({ meId, initialUnread, profileDot = false, children }: { meId: number; initialUnread: number; profileDot?: boolean; children: React.ReactNode }) {
+export function RealtimeShell({
+  meId,
+  initialUnread,
+  profileDot = false,
+  premium = false,
+  children,
+}: {
+  meId: number;
+  initialUnread: number;
+  profileDot?: boolean;
+  premium?: boolean;
+  children: React.ReactNode;
+}) {
   const listeners = useRef(new Set<Listener>());
   const [unread, setUnread] = useState(initialUnread);
   const [toast, setToast] = useState<string | null>(null);
@@ -81,7 +93,7 @@ export function RealtimeShell({ meId, initialUnread, profileDot = false, childre
           </motion.div>
         )}
       </AnimatePresence>
-      <BottomNav unread={unread} profileDot={profileDot} />
+      <BottomNav unread={unread} profileDot={profileDot} premium={premium} />
     </Ctx.Provider>
   );
 }

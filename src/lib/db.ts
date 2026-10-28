@@ -366,6 +366,10 @@ export function migrate(db: DatabaseSync) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS second_chances (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, target_id))",
   );
+  // Who opened the plans page, from where (e.g. the Premium tab), once per member per source per day.
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS plan_views (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, source TEXT NOT NULL, day TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, source, day))",
+  );
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   // Provider-billed subscriptions: the date the recurring charges start from.

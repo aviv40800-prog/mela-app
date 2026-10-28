@@ -6,6 +6,7 @@ import { departures } from "./departures";
 import { featuredResults } from "./checkin";
 import { aiUsageStats } from "./ai-onboarding";
 import { FREE_DAILY_LIKES } from "./quota";
+import { premiumTabStats } from "./plan-views";
 
 /**
  * Numbers only, for the read-only stats endpoint (GET /api/admin/stats with MELA_STATS_TOKEN): how the community
@@ -131,6 +132,7 @@ export function statsSnapshot() {
       mrr: o.mrr,
       conversionPct: o.conversion,
       funnel: moneyFunnel(),
+      premiumTab: premiumTabStats(),
       ...revenue(),
       payers: payers(),
     },

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { RealtimeShell } from "@/components/Realtime";
 import { featuredQuestion, getCheckin } from "@/lib/checkin";
 import { FeaturedQuestion } from "@/components/FeaturedQuestion";
+import { isPremium } from "@/lib/quota";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requirePageUser("member");
@@ -13,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     )
     .get(user.id, user.id, user.id) as { n: number };
   return (
-    <RealtimeShell meId={user.id} initialUnread={n} profileDot={getCheckin(user.id).questions.length > 0}>
+    <RealtimeShell meId={user.id} initialUnread={n} profileDot={getCheckin(user.id).questions.length > 0} premium={isPremium(user.id)}>
       <div className="mx-auto min-h-dvh w-full max-w-md pb-28">{children}</div>
       <FeaturedQuestion question={featuredQuestion(user.id)} />
     </RealtimeShell>

@@ -15,7 +15,20 @@ function chargeDate() {
   return d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
 }
 
-export function PlanPicker({ firstName, returning, welcome, freeLikes }: { firstName: string; returning: boolean; welcome: boolean; freeLikes: number }) {
+export function PlanPicker({
+  firstName,
+  returning,
+  welcome,
+  freeLikes,
+  fromNav = false,
+}: {
+  firstName: string;
+  returning: boolean;
+  welcome: boolean;
+  freeLikes: number;
+  /** Opened from the Premium tab: "maybe later" goes back to where they were. */
+  fromNav?: boolean;
+}) {
   const router = useRouter();
   const [plan, setPlan] = useState<PlanType>("quarterly_119");
   const [busy, setBusy] = useState(false);
@@ -147,7 +160,7 @@ export function PlanPicker({ firstName, returning, welcome, freeLikes }: { first
           {busy ? <Loader2 className="animate-spin" size={18} /> : returning ? "המשך לתשלום" : `המשך · ${TRIAL_DAYS} ימי ניסיון`}
         </button>
         <button
-          onClick={() => router.replace("/discover")}
+          onClick={() => (fromNav ? router.back() : router.replace("/discover"))}
           className={welcome ? "btn-ghost mt-2.5 w-full py-3 text-[14px]" : "mt-2 w-full py-2.5 text-center text-sm text-mute transition hover:text-cream"}
         >
           {welcome ? `להמשיך בחינם — ${freeLikes} לייקים ביום, בלי כרטיס אשראי` : "אולי אחר כך"}
