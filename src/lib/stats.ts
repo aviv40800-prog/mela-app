@@ -107,6 +107,31 @@ function engagement() {
   };
 }
 
+/** How many profiles members go through in a day (likes + passes), free vs premium now — for a daily profile cap. */
+function swipeDays() {
+  const rows = all<{ user_id: number; day: string; n: number; premium: number }>(
+    `SELECT m.user_1_id AS user_id, date(m.created_at, '+2 hours') AS day, COUNT(*) AS n,
+       EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = m.user_1_id AND s.status IN ('active', 'trialing')) AS premium
+     FROM matches m JOIN users u ON u.id = m.user_1_id WHERE ${REAL} AND m.created_at >= datetime('now', '-14 days')
+     GROUP BY m.user_1_id, day`,
+  );
+  const sum = (premium: number) => {
+    const r = rows.filter((x) => x.premium === premium);
+    const over = (k: number) => r.filter((x) => x.n >= k);
+    return {
+      memberDays: r.length,
+      members: new Set(r.map((x) => x.user_id)).size,
+      median: r.length ? r.map((x) => x.n).sort((a, b) => a - b)[Math.floor(r.length / 2)] : 0,
+      daysOver15: over(15).length,
+      daysOver25: over(25).length,
+      daysOver40: over(40).length,
+      membersOver25: new Set(over(25).map((x) => x.user_id)).size,
+      swipesBeyond25: r.reduce((t, x) => t + Math.max(0, x.n - 25), 0),
+    };
+  };
+  return { last14d: { free: sum(0), premium: sum(1) } };
+}
+
 export function statsSnapshot() {
   const o = overview();
   const ai = aiUsageStats();
@@ -136,7 +161,7 @@ export function statsSnapshot() {
       ...revenue(),
       payers: payers(),
     },
-    engagement: engagement(),
+    engagement: { ...engagement(), swipeDays: swipeDays() },
     departures: { week: left.week, month: left.month, total: left.total, reasons: left.reasons },
     featuredQuestion: fq ? { key: fq.q.key, a: fq.q.a, b: fq.q.b, answeredA: fq.a, answeredB: fq.b } : null,
     aiSignup: { enabled: ai.enabled, today: ai.today, month: ai.month },
