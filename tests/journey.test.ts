@@ -544,6 +544,21 @@ describe("read-only stats for the team", () => {
     expect(text).not.toContain("+97252"); // no phones
   });
 
+  it("counts chats active in the last 24h / 72h / 7 days, and which had both sides write", () => {
+    const a = member("אבי", "male"), b = member("בת", "female"), c = member("כרמל", "female");
+    const chat = (x: number, y: number) =>
+      Number(db.prepare("INSERT INTO matches (user_1_id, user_2_id, status, matched_at) VALUES (?, ?, 'matched', datetime('now'))").run(x, y).lastInsertRowid);
+    const say = (match: number, from: number, ago: string) =>
+      db.prepare("INSERT INTO messages (match_id, sender_id, text_content, sent_at) VALUES (?, ?, 'היי', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?))").run(match, from, ago);
+    const ab = chat(a.id, b.id), ac = chat(a.id, c.id);
+    say(ab, a.id, "-2 hours"); say(ab, b.id, "-1 hours"); // both sides, today
+    say(ac, a.id, "-50 hours"); say(ac, c.id, "-6 days"); // one side in 72h, both within the week
+    const s = statsSnapshot().engagement.activeChats;
+    expect(s.last24h).toEqual({ chats: 1, bothSides: 1, messages: 2 });
+    expect(s.last72h).toEqual({ chats: 2, bothSides: 1, messages: 3 });
+    expect(s.last7d).toEqual({ chats: 2, bothSides: 2, messages: 4 });
+  });
+
   it("is closed without the right token", async () => {
     delete process.env.MELA_STATS_TOKEN;
     expect((await statsGET(new Request("http://x/api/admin/stats"))).status).toBe(404);

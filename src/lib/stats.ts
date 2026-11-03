@@ -107,6 +107,25 @@ function engagement() {
   };
 }
 
+/** Chats with a message in the window (both members real), how many had both sides write in it, and messages sent. */
+function activeChats() {
+  const window = (hours: number) => {
+    const since = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${hours} hours')`; // sent_at is ISO with T and Z
+    return one<{ chats: number; bothSides: number | null; messages: number | null }>(
+      `SELECT COUNT(*) AS chats, SUM(senders >= 2) AS bothSides, SUM(sent) AS messages FROM (
+         SELECT g.match_id, COUNT(DISTINCT g.sender_id) AS senders, COUNT(*) AS sent FROM messages g
+         JOIN matches m ON m.id = g.match_id JOIN users a ON a.id = m.user_1_id JOIN users b ON b.id = m.user_2_id
+         WHERE g.sent_at >= ${since} AND a.is_demo = 0 AND a.is_test = 0 AND b.is_demo = 0 AND b.is_test = 0
+         GROUP BY g.match_id)`,
+    );
+  };
+  const row = (hours: number) => {
+    const r = window(hours);
+    return { chats: r.chats, bothSides: r.bothSides ?? 0, messages: r.messages ?? 0 };
+  };
+  return { last24h: row(24), last72h: row(72), last7d: row(24 * 7) };
+}
+
 /** How many profiles members go through in a day (likes + passes), free vs premium now — for a daily profile cap. */
 function swipeDays() {
   const rows = all<{ user_id: number; day: string; n: number; premium: number }>(
@@ -161,7 +180,7 @@ export function statsSnapshot() {
       ...revenue(),
       payers: payers(),
     },
-    engagement: { ...engagement(), swipeDays: swipeDays() },
+    engagement: { ...engagement(), activeChats: activeChats(), swipeDays: swipeDays() },
     departures: { week: left.week, month: left.month, total: left.total, reasons: left.reasons },
     featuredQuestion: fq ? { key: fq.q.key, a: fq.q.a, b: fq.q.b, answeredA: fq.a, answeredB: fq.b } : null,
     aiSignup: { enabled: ai.enabled, today: ai.today, month: ai.month },
