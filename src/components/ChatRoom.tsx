@@ -89,6 +89,25 @@ export function ChatRoom({
   const markRead = () => void api(`/api/matches/${matchId}/read`, { method: "POST" }).catch(() => {});
   useEffect(markRead, [matchId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // iPhone Safari doesn't shrink the page for the keyboard — it slides the whole page up, pushing the header off the
+  // top and leaving a gap under the composer. While the keyboard is open, size the chat to the visible area above it.
+  const [kb, setKb] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return;
+    const update = () => {
+      const open = window.innerHeight - v.height > 120; // Android already resizes the layout, so this stays false there
+      setKb(open ? { height: v.height, top: v.offsetTop } : null);
+      if (open) requestAnimationFrame(() => scroller.current?.scrollTo({ top: scroller.current.scrollHeight }));
+    };
+    v.addEventListener("resize", update);
+    v.addEventListener("scroll", update);
+    return () => {
+      v.removeEventListener("resize", update);
+      v.removeEventListener("scroll", update);
+    };
+  }, []);
+
   const initialScroll = useRef(true);
   useLayoutEffect(() => {
     const el = scroller.current;
@@ -185,7 +204,10 @@ export function ChatRoom({
   }
 
   return (
-    <main className="flex h-dvh flex-col">
+    <main
+      className={kb ? "fixed inset-x-0 top-0 z-30 flex flex-col overflow-hidden" : "flex h-dvh flex-col"}
+      style={kb ? { height: kb.height, transform: `translateY(${kb.top}px)` } : undefined}
+    >
       <header className="relative z-10 flex items-center gap-3 border-b border-line bg-ink/70 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3 backdrop-blur-2xl">
         <Link href="/matches" className="grid h-10 w-10 place-items-center rounded-full text-mute transition hover:bg-fg/5 hover:text-cream" aria-label="חזרה">
           <ArrowRight size={21} />
@@ -462,7 +484,7 @@ export function ChatRoom({
           e.preventDefault();
           void send(text);
         }}
-        className="flex items-end gap-2 border-t border-line bg-ink/80 px-3 pt-3 backdrop-blur-2xl safe-bottom"
+        className={`flex items-end gap-2 border-t border-line bg-ink/80 px-3 pt-3 backdrop-blur-2xl ${kb ? "pb-2" : "safe-bottom"}`}
       >
         <div className="field flex-1 !rounded-[24px] !p-0">
           <textarea
