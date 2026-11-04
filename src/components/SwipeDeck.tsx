@@ -216,7 +216,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         animate={offer && !match ? { scale: 0.94, opacity: 0.45, filter: "blur(6px)" } : { scale: 1, opacity: 1, filter: "blur(0px)" }}
         transition={{ type: "spring", stiffness: 300, damping: 34 }}
       >
-        {top.suggestion && !second && <SuggestionNote key={top.id} note={top.suggestion.note} />}
+        {top.suggestion && !second && <SuggestionNote key={`note-${top.id}`} note={top.suggestion.note} />}
         {second && (
           <button
             onClick={() => setDeck([])}
