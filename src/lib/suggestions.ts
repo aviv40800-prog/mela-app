@@ -304,8 +304,9 @@ export function suggestedCards(me: User): (Candidate & { suggestion: { note: str
     const mineIsA = r.user_a === me.id;
     const otherId = mineIsA ? r.user_b : r.user_a;
     const other = getUser(otherId);
-    // Gone, blocked, or the other side already said no: nothing to offer.
-    if (!other || other.is_banned || blocked(me.id, otherId) || swipeOf(otherId, me.id) === "rejected") return [];
+    // Gone, blocked, the other side already said no, or they already matched (her like came first, his closed it): nothing to offer.
+    const theirs = swipeOf(otherId, me.id);
+    if (!other || other.is_banned || blocked(me.id, otherId) || theirs === "rejected" || theirs === "matched") return [];
     db.prepare(`UPDATE match_suggestions SET ${mineIsA ? "seen_a_at" : "seen_b_at"} = COALESCE(${mineIsA ? "seen_a_at" : "seen_b_at"}, datetime('now')) WHERE id = ?`).run(r.id);
     return [{ ...toCandidate(me.id, otherId), suggestion: { note: mineIsA ? r.note_a : r.note_b } }];
   });
