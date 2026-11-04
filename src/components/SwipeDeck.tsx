@@ -226,6 +226,17 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
           </button>
         )}
         <AnimatePresence>
+          {top.outsideRange && !widened && !second && !top.suggestion && (
+            <motion.div
+              key="outside"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="on-dark pointer-events-none absolute inset-x-0 top-14 z-20 mx-auto w-fit max-w-[88%] rounded-full border border-gold/30 bg-black/60 px-4 py-1.5 text-center text-[12px] text-cream/90 backdrop-blur-md"
+            >
+              קצת מחוץ לטווח שבחרת
+            </motion.div>
+          )}
           {widened && !second && !top.suggestion && (
             <motion.button
               initial={{ opacity: 0, y: -8 }}

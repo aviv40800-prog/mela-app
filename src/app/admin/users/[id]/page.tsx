@@ -146,13 +146,13 @@ export default async function AdminUserPage({ params }: { params: Promise<{ id: 
               value={stats.unseen.inRange}
               accent={stats.unseen.inRange === 0}
               sub={
-                stats.unseen.inRange === 0
-                  ? stats.unseen.all
-                    ? `נגמרו בטווח שבחר/ה · ${stats.unseen.all} מחוץ לטווח`
-                    : "נגמרו — הזמן לשידוך אישי"
-                  : stats.unseen.all > stats.unseen.inRange
-                    ? `+${stats.unseen.all - stats.unseen.inRange} מחוץ לטווח הגיל/מרחק`
-                    : undefined
+                [
+                  stats.unseen.inRange === 0 && !stats.unseen.nearRange && !stats.unseen.all ? "נגמרו — הזמן לשידוך אישי" : null,
+                  stats.unseen.nearRange ? `+${stats.unseen.nearRange} בטווח המורחב (מוצגים אחרי)` : null,
+                  stats.unseen.all > stats.unseen.inRange + stats.unseen.nearRange ? `+${stats.unseen.all - stats.unseen.inRange - stats.unseen.nearRange} רחוקים יותר` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || undefined
               }
             />
           </div>

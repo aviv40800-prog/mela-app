@@ -23,6 +23,8 @@ export type Candidate = PublicProfile & {
   locked?: boolean;
   /** A personal suggestion from the MELA team, with their note on why. */
   suggestion?: { note: string };
+  /** Just outside the member's age/distance range: shown once everyone inside it has been seen. */
+  outsideRange?: boolean;
 };
 export type ChatMessage = { id: number; match_id: number; sender_id: number; text_content: string; is_read: boolean; sent_at: string };
 export type RealtimeEvent =

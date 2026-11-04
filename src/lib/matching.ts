@@ -12,7 +12,7 @@ import { rankScore, type Taste } from "./taste";
 export type MatchStatus = "pending" | "matched" | "rejected";
 type MatchRow = { id: number; user_1_id: number; user_2_id: number; status: MatchStatus; created_at: string; matched_at: string | null; declined_at: string | null };
 
-export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[] };
+export type Candidate = PublicProfile & { compatibility: number; likedYou: boolean; distanceKm: number | null; shared: string[]; outsideRange?: boolean };
 
 /** SQL fragment: other users with a complete profile who are mutually compatible by gender preference with :me. */
 export const COMPATIBLE = `
@@ -66,8 +66,29 @@ export function compatibility(me: number, other: number): number {
   return Math.max(50, Math.min(99, score));
 }
 
+/**
+ * The member's age/distance range made 50% wider (half the extra on each side of the age range; at least a year,
+ * never under 18). Used to keep Discover going once everyone inside their own range has been seen.
+ */
+export function widerRange(me: Pick<User, "pref_age_min" | "pref_age_max" | "pref_distance_km">) {
+  const { pref_age_min: lo, pref_age_max: hi, pref_distance_km: km } = me;
+  const pad = lo != null && hi != null ? Math.max(1, Math.round((hi - lo) * 0.25)) : 2;
+  return {
+    amin: lo == null ? null : Math.max(18, lo - pad),
+    amax: hi == null ? null : hi + pad,
+    km: km == null ? null : Math.round(km * 1.5),
+  };
+}
+
+/** Narrowed the age or distance range — only they get the wider-range extras. */
+const hasRange = (me: User) => me.pref_age_min != null || me.pref_age_max != null || me.pref_distance_km != null;
+
+type Range = "exact" | "wider" | "none";
+
 /** Discovery candidates honouring the member's preferences: gender, age range and max distance. */
-function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
+function candidateIds(me: User, limit: number, range: Range | boolean = "exact"): number[] {
+  if (typeof range === "boolean") range = range ? "none" : "exact";
+  const wide = range === "wider" ? widerRange(me) : null;
   const rows = db
     .prepare(
       `SELECT u.id, u.location FROM users u
@@ -84,10 +105,10 @@ function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
       me: me.id,
       seeking: me.seeking,
       gender: me.gender,
-      amin: ignorePrefs ? null : me.pref_age_min,
-      amax: ignorePrefs ? null : me.pref_age_max,
+      amin: range === "none" ? null : wide ? wide.amin : me.pref_age_min,
+      amax: range === "none" ? null : wide ? wide.amax : me.pref_age_max,
     }) as { id: number; location: string | null }[];
-  const maxKm = ignorePrefs ? null : me.pref_distance_km;
+  const maxKm = range === "none" ? null : wide ? wide.km : me.pref_distance_km;
   return rows
     .filter((r) => {
       if (!maxKm) return true;
@@ -99,9 +120,10 @@ function candidateIds(me: User, limit: number, ignorePrefs = false): number[] {
 }
 
 /** How many profiles the member hasn't seen yet in Discover: within their age/distance range, and overall. */
-export function unseenCount(me: User): { inRange: number; all: number } {
-  if (!me.gender) return { inRange: 0, all: 0 };
-  return { inRange: candidateIds(me, 1000).length, all: candidateIds(me, 1000, true).length };
+export function unseenCount(me: User): { inRange: number; nearRange: number; all: number } {
+  if (!me.gender) return { inRange: 0, nearRange: 0, all: 0 };
+  const inRange = candidateIds(me, 1000).length;
+  return { inRange, nearRange: hasRange(me) ? candidateIds(me, 1000, "wider").length - inRange : 0, all: candidateIds(me, 1000, "none").length };
 }
 
 /** `other` passed on `me` (and `me` hasn't answered): shown again, after fresh faces. */
@@ -124,9 +146,10 @@ export function toCandidate(me: number, id: number): Candidate {
   };
 }
 
-export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candidate[] {
+export function discoveryDeck(me: User, limit = 20, range: Range | boolean = "exact", skip: Set<number> = new Set()): Candidate[] {
   const tastes = new Map<number, Taste | null>();
-  return candidateIds(me, 200, ignorePrefs)
+  return candidateIds(me, 200, range)
+    .filter((id) => !skip.has(id))
     .map((id) => toCandidate(me.id, id))
     // people who passed on the member come back too, but after everyone who hasn't seen them yet
     .map((c) => ({ c, rank: rankScore(me, getUser(c.id)!, c.compatibility, c.likedYou, tastes) - (passedOn(c.id, me.id) ? 30 : 0) }))
@@ -137,15 +160,21 @@ export function discoveryDeck(me: User, limit = 20, ignorePrefs = false): Candid
 }
 
 /**
- * The Discover feed. When the member's age/distance range leaves nobody (common while the community is
- * small), show people just outside it instead of an empty screen, and say so (`widened`).
+ * The Discover feed. Members who narrowed their age/distance range see everyone inside it first, then people
+ * just outside it (a range 50% wider), each marked `outsideRange`. Only when even that leaves nobody (common
+ * while the community is small) does it drop the range altogether, and say so (`widened`). Their saved range
+ * is never changed.
  */
 export function discoverFeed(me: User, limit = 20): { candidates: Candidate[]; widened: boolean; swipes: number } {
   const swipes = (db.prepare("SELECT COUNT(*) AS n FROM matches WHERE user_1_id = ?").get(me.id) as { n: number }).n;
   const candidates = discoveryDeck(me, limit);
-  const hasPrefs = me.pref_age_min != null || me.pref_age_max != null || me.pref_distance_km != null;
-  if (candidates.length || !hasPrefs) return { candidates, widened: false, swipes };
-  const wider = discoveryDeck(me, limit, true);
+  if (!hasRange(me)) return { candidates, widened: false, swipes };
+  if (candidates.length < limit) {
+    const near = discoveryDeck(me, limit - candidates.length, "wider", new Set(candidates.map((c) => c.id)));
+    candidates.push(...near.map((c) => ({ ...c, outsideRange: true })));
+  }
+  if (candidates.length) return { candidates, widened: false, swipes };
+  const wider = discoveryDeck(me, limit, "none");
   return { candidates: wider, widened: wider.length > 0, swipes };
 }
 

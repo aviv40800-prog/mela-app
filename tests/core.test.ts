@@ -294,6 +294,30 @@ describe("discovery preferences", () => {
     updatePreferences(me.id, { seeking: "male", pref_age_min: null, pref_age_max: null, pref_distance_km: null });
     expect(discoveryDeck(getUser(me.id)!).map((c) => c.id)).toEqual(expect.arrayContaining([near.id, far.id, unknown.id, older.id]));
   });
+
+  it("after the member's own range, shows people in a range 50% wider — marked, and after everyone inside it", async () => {
+    const { updatePreferences } = await import("@/lib/users");
+    const { discoverFeed, widerRange } = await import("@/lib/matching");
+    expect(widerRange({ pref_age_min: 25, pref_age_max: 33, pref_distance_km: 40 })).toEqual({ amin: 23, amax: 35, km: 60 });
+    expect(widerRange({ pref_age_min: 19, pref_age_max: 21, pref_distance_km: null })).toEqual({ amin: 18, amax: 22, km: null });
+    const me = member("מצמצמת", "female", "male");
+    const inside = member("בטווח", "male");
+    const near = member("קצת מבוגר", "male");
+    const far = member("הרבה מבוגר", "male");
+    db.prepare("UPDATE users SET age = 30 WHERE id = ?").run(inside.id);
+    db.prepare("UPDATE users SET age = 35 WHERE id = ?").run(near.id);
+    db.prepare("UPDATE users SET age = 50 WHERE id = ?").run(far.id);
+    updatePreferences(me.id, { seeking: "male", pref_age_min: 25, pref_age_max: 33, pref_distance_km: null });
+    const feed = discoverFeed(getUser(me.id)!, 1000);
+    const ids = feed.candidates.map((c) => c.id);
+    expect(ids).toContain(inside.id);
+    expect(ids).toContain(near.id);
+    expect(ids).not.toContain(far.id);
+    expect(ids.indexOf(inside.id)).toBeLessThan(ids.indexOf(near.id));
+    expect(feed.candidates.find((c) => c.id === near.id)?.outsideRange).toBe(true);
+    expect(feed.candidates.find((c) => c.id === inside.id)?.outsideRange).toBeUndefined();
+    expect(getUser(me.id)!.pref_age_max).toBe(33); // their saved range is untouched
+  });
 });
 
 describe("improve-your-profile check-ins", () => {

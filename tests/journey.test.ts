@@ -190,7 +190,7 @@ describe("unseen profiles (admin)", () => {
     const me = member("יונתן", "male");
     const a = member("הדס", "female");
     member("ליאת", "female");
-    expect(unseenCount(me)).toEqual({ inRange: 2, all: 2 });
+    expect(unseenCount(me)).toEqual({ inRange: 2, nearRange: 0, all: 2 });
     swipe(me.id, a.id, "pass");
     expect(unseenCount(me).inRange).toBe(1);
   });
