@@ -657,3 +657,47 @@ describe("new-message emails", () => {
     expect(emailsToday()).toMatchObject({ total: 280, cap: 300, byKind: { message: 220, suggestion: 60 } });
   });
 });
+
+import { handleUpayNotify, readUpay, applyUpay, recentUpayEvents } from "@/lib/upay";
+import { getSubscription, hasAccess } from "@/lib/billing";
+
+describe("UPay server updates", () => {
+  const KEY = "upay-test-key-0123456789";
+  it("logs every call, turns on Premium only for a clear ₪49 charge from a known email, and lets the admin apply the rest", () => {
+    process.env.UPAY_NOTIFY_KEY = KEY;
+    const m = member("משלם", "male");
+    db.prepare("UPDATE users SET email = 'payer@x.co' WHERE id = ?").run(m.id);
+    expect(readUpay({ Email: "Payer@X.co ", Amount: "49.00", TransactionId: "77", Status: "000", CardNumber: "4580123412341234" })).toEqual({
+      email: "payer@x.co",
+      sum: 49,
+      txid: "77",
+      success: 1,
+    });
+
+    expect(handleUpayNotify("wrong", { email: "payer@x.co", sum: "49", status: "000" }, null).ok).toBe(false);
+    expect(hasAccess(getSubscription(m.id))).toBe(false);
+
+    // a test charge of ₪5: logged, not applied
+    expect(handleUpayNotify(KEY, { email: "payer@x.co", sum: "5", status: "000", transactionid: "t1" }, null).note).toMatch(/₪5/);
+    expect(hasAccess(getSubscription(m.id))).toBe(false);
+
+    // the real thing
+    expect(handleUpayNotify(KEY, { email: "payer@x.co", sum: "49", status: "000", transactionid: "t2", cardnum: "4580123412341234" }, null).note).toBe("ok");
+    const sub = getSubscription(m.id)!;
+    expect(sub).toMatchObject({ status: "active", plan_type: "monthly_49", provider_ref: "upay:t2" });
+    expect(recentUpayEvents(1)[0].payload).not.toContain("4580123412341234");
+    // the same call again changes nothing
+    expect(handleUpayNotify(KEY, { email: "payer@x.co", sum: "49", status: "000", transactionid: "t2" }, null).note).toBe("duplicate");
+
+    // next month's charge extends by a month
+    handleUpayNotify(KEY, { email: "payer@x.co", sum: "49", status: "000", transactionid: "t3" }, null);
+    expect(new Date(getSubscription(m.id)!.current_period_end + "Z").getTime()).toBeGreaterThan(new Date(sub.current_period_end + "Z").getTime() + 25 * 86_400_000);
+
+    // unknown email: waits for the admin
+    expect(handleUpayNotify(KEY, { email: "other@x.co", sum: "49", status: "000", transactionid: "t4" }, null).note).toMatch(/לשייך/);
+    const other = member("אחר", "female");
+    applyUpay(recentUpayEvents(1)[0].id, other.id);
+    expect(hasAccess(getSubscription(other.id))).toBe(true);
+    expect(() => applyUpay(recentUpayEvents(1)[0].id, other.id)).toThrow();
+  });
+});

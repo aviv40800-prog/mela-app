@@ -370,6 +370,21 @@ export function migrate(db: DatabaseSync) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS plan_views (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, source TEXT NOT NULL, day TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, source, day))",
   );
+  // UPay (יופיי): every server-to-server call, its fields read loosely, and whether Premium was turned on from it.
+  db.exec(`CREATE TABLE IF NOT EXISTS upay_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    accepted    INTEGER NOT NULL DEFAULT 0,
+    note        TEXT NOT NULL,
+    txid        TEXT,
+    email       TEXT,
+    sum         REAL,
+    success     INTEGER,
+    user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    applied_at  TEXT,
+    payload     TEXT NOT NULL,
+    source_ip   TEXT,
+    received_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
   // Card metadata only (never the number): brand, last 4 digits, expiry — for display and the PSP seam.
   const subCols = new Set((db.prepare("PRAGMA table_info(subscriptions)").all() as { name: string }[]).map((c) => c.name));
   // Provider-billed subscriptions: the date the recurring charges start from.
