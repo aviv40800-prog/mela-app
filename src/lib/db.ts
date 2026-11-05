@@ -370,6 +370,8 @@ export function migrate(db: DatabaseSync) {
   db.exec(
     "CREATE TABLE IF NOT EXISTS plan_views (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, source TEXT NOT NULL, day TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (user_id, source, day))",
   );
+  // One-off "add a photo" email (photo-nudge.ts): who already got it.
+  db.exec("CREATE TABLE IF NOT EXISTS photo_nudges (user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, sent_at TEXT NOT NULL DEFAULT (datetime('now')))");
   // UPay (יופיי): every server-to-server call, its fields read loosely, and whether Premium was turned on from it.
   db.exec(`CREATE TABLE IF NOT EXISTS upay_events (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,

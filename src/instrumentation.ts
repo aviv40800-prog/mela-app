@@ -5,6 +5,7 @@ export async function register() {
   const { maybeRunNightly } = await import("./lib/auto-suggest");
   const { saveStuckChats } = await import("./lib/chat-save");
   const { sweepUnreadMessages } = await import("./lib/message-mail");
+  const { sendPhotoNudges } = await import("./lib/photo-nudge");
   try {
     const n = saveStuckChats();
     if (n) console.log(`[chat-save] saved ${n} finished sign-up chat(s) that were never approved`);
@@ -19,6 +20,8 @@ export async function register() {
       if (nm) console.log(`[message-mail] emailed ${nm} member(s) about unread messages`);
       const n2 = sendSecondReminders();
       if (n2) console.log(`[reminders] sent ${n2} second signup reminder(s)`);
+      const np = sendPhotoNudges();
+      if (np) console.log(`[photo-nudge] emailed ${np} member(s) without a photo`);
     } catch (e) {
       console.error("[reminders] failed", (e as Error).message);
     }

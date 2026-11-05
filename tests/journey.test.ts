@@ -701,3 +701,19 @@ describe("UPay server updates", () => {
     expect(() => applyUpay(recentUpayEvents(1)[0].id, other.id)).toThrow();
   });
 });
+
+import { photoNudgeRecipients, sendPhotoNudges } from "@/lib/photo-nudge";
+
+describe("one-off 'add a photo' email", () => {
+  it("goes only to verified members with a complete profile and no photo, and only on Thursday evening", () => {
+    const none = member("בלי תמונה", "male");
+    const withPhoto = member("עם תמונה", "female");
+    db.prepare("UPDATE users SET email = 'np@x.co', email_verified = 1, photos = '[]' WHERE id = ?").run(none.id);
+    db.prepare(`UPDATE users SET email = 'wp@x.co', email_verified = 1, photos = '["/uploads/a.jpg"]' WHERE id = ?`).run(withPhoto.id);
+    const ids = photoNudgeRecipients();
+    expect(ids).toContain(none.id);
+    expect(ids).not.toContain(withPhoto.id);
+    expect(sendPhotoNudges(new Date("2026-11-05T10:00:00Z"))).toBe(0); // 12:00 in Israel: too early
+    expect(sendPhotoNudges(new Date("2026-11-06T17:00:00Z"))).toBe(0); // Friday: never
+  });
+});
