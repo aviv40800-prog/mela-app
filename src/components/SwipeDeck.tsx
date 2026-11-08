@@ -9,7 +9,7 @@ import { CommentSheet } from "./CommentSheet";
 import { MatchModal, type MiniProfile } from "./MatchModal";
 import { CardSkeleton } from "./ui/Skeleton";
 import { ApiError, api, haptic } from "@/lib/client";
-import { LikeLimitSheet, type Quota } from "./LikeLimitSheet";
+import { LikeLimitSheet, PassLimitSheet, type Quota } from "./LikeLimitSheet";
 import { InterestPause, countSwipeForOffer, startPause, type Pause } from "./InterestPause";
 import { DeckJourney } from "./DeckJourney";
 import type { Candidate, Prompt, PublicProfile } from "@/lib/types";
@@ -27,6 +27,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
   const [burst, setBurst] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [quota, setQuota] = useState<Quota | null>(null);
+  const [passWall, setPassWall] = useState(false);
   const [widened, setWidened] = useState(false);
   const [swipes, setSwipes] = useState<number | null>(null);
   const [offer, setOffer] = useState<Pause | null>(null);
@@ -71,12 +72,20 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
         animate(x, 0, { type: "spring", stiffness: 520, damping: 30, velocity: opts.velocity ?? 0 });
         return;
       }
+      // Out of passes for today: the same — the card springs back (a like still works).
+      if (action === "pass" && quota?.passesLeft === 0 && !top.suggestion && !second) {
+        haptic([30, 40, 30]);
+        setPassWall(true);
+        animate(x, 0, { type: "spring", stiffness: 520, damping: 30, velocity: opts.velocity ?? 0 });
+        return;
+      }
       busy.current = true;
       setSheet(null);
       haptic(action === "like" ? [12, 30, 18] : 8);
       if (action === "like") setBurst((b) => b + 1);
       const target = top;
       if (action === "like" && !top.suggestion && quota && quota.left !== null) setQuota({ ...quota, left: Math.max(0, quota.left - 1), used: quota.used + 1 });
+      if (action === "pass" && !top.suggestion && !second && quota?.passesLeft != null) setQuota({ ...quota, passesLeft: Math.max(0, quota.passesLeft - 1) });
 
       const request = api<SwipeResponse>("/api/swipe", { method: "POST", json: { targetId: target.id, action, comment: opts.comment, secondChance: second || undefined } })
         .then((res) => {
@@ -92,6 +101,11 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
             setQuota((q) => (q ? { ...q, left: 0 } : q));
             setPaywall(true);
             return false; // the like didn't happen — put the card back
+          }
+          if (e instanceof ApiError && e.code === "pass_limit") {
+            setQuota((q) => (q ? { ...q, passesLeft: 0 } : q));
+            setPassWall(true);
+            return false;
           }
           setError((e as Error).message);
           return true;
@@ -255,6 +269,7 @@ export function SwipeDeck({ source, me }: { source: "discover" | "picks"; me: Mi
 
       <ActionBar x={x} burst={burst} quota={quota} onPass={() => decide("pass")} onLike={() => decide("like")} />
       <AnimatePresence>{paywall && quota && <LikeLimitSheet quota={quota} onQuota={setQuota} onClose={() => setPaywall(false)} />}</AnimatePresence>
+      <AnimatePresence>{passWall && quota && <PassLimitSheet quota={quota} onClose={() => setPassWall(false)} />}</AnimatePresence>
 
       <AnimatePresence>
         {sheet && (
@@ -388,10 +403,20 @@ function ActionBar({ x, burst, quota, onPass, onLike }: { x: MotionValue<number>
         style={{ scale: passScale }}
         whileTap={{ scale: 0.82 }}
         onClick={onPass}
-        className="pointer-events-auto grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/80 text-cream/85 shadow-[0_14px_34px_-12px_rgba(90,52,26,0.285)] backdrop-blur-xl transition-colors hover:text-cream"
+        className="pointer-events-auto relative grid h-[62px] w-[62px] place-items-center rounded-full border border-fg/15 bg-ink-3/80 text-cream/85 shadow-[0_14px_34px_-12px_rgba(90,52,26,0.285)] backdrop-blur-xl transition-colors hover:text-cream"
         aria-label="דילוג"
       >
         <X size={28} strokeWidth={2.4} />
+        {quota && quota.passesLeft != null && quota.passesLeft <= 10 && (
+          <span
+            aria-label={quota.passesLeft === 0 ? "נגמרו הדילוגים להיום" : `נותרו ${quota.passesLeft} דילוגים היום`}
+            className={`tabular absolute -top-1 -right-1 grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-[11px] font-bold ring-2 ring-ink ${
+              quota.passesLeft === 0 ? "bg-ink-4 text-mute" : "bg-cream text-ink"
+            }`}
+          >
+            {quota.passesLeft}
+          </span>
+        )}
       </motion.button>
       <motion.button
         style={{ scale: likeScale }}

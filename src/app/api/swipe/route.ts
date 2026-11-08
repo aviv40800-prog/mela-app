@@ -2,7 +2,7 @@ import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
 import { swipe } from "@/lib/matching";
 import { getUser, toPublic } from "@/lib/users";
-import { getQuota, recordLike } from "@/lib/quota";
+import { getQuota, recordLike, recordPass } from "@/lib/quota";
 import { decideSecondChance, isSecondChance } from "@/lib/second-chance";
 import { isOpenSuggestion, markSuggestionSeen } from "@/lib/suggestions";
 import { isTestUser } from "@/lib/test-account";
@@ -25,12 +25,14 @@ export const POST = handle(async (req: Request) => {
   if (isTestUser(user.id)) return error("חשבון טסט: לא שולחים לייקים למשתמשים אמיתיים", 403);
   if (targetId === user.id || !getUser(targetId)) return error("פרופיל לא נמצא", 404);
   if (secondChance && !isSecondChance(user, targetId)) return error("הפרופיל כבר לא זמין", 404);
-  // Free tier: a fixed number of likes per Israel calendar day. Passes are never limited.
-  // A like on a personal suggestion from the team doesn't use up the day's likes.
-  const suggested = action === "like" && isOpenSuggestion(user.id, targetId);
-  if (action === "like" && !suggested) {
+  // Free tier: a fixed number of likes and of passes per Israel calendar day.
+  // A personal suggestion from the team, and a second look at someone passed before, don't use them up.
+  const suggested = isOpenSuggestion(user.id, targetId);
+  const counted = !suggested && !secondChance;
+  if (counted) {
     const quota = getQuota(user.id);
-    if (quota.left === 0) return error("נגמרו הלייקים להיום", 429, { code: "like_limit", quota });
+    if (action === "like" && quota.left === 0) return error("נגמרו הלייקים להיום", 429, { code: "like_limit", quota });
+    if (action === "pass" && quota.passesLeft === 0) return error("נגמרו הדילוגים להיום", 429, { code: "pass_limit", quota });
   }
   if (secondChance) {
     decideSecondChance(user.id, targetId, action === "like");
@@ -39,6 +41,6 @@ export const POST = handle(async (req: Request) => {
   }
   const result = swipe(user.id, targetId, action, comment);
   markSuggestionSeen(user.id, targetId);
-  if (action === "like" && result.recorded && !suggested && !getQuota(user.id).premium) recordLike(user.id);
+  if (result.recorded && counted && !getQuota(user.id).premium) (action === "like" ? recordLike : recordPass)(user.id);
   return json({ ...result, quota: getQuota(user.id), other: result.isNewMatch ? toPublic(getUser(targetId)!) : undefined });
 });

@@ -12,6 +12,8 @@ export type Quota = {
   used: number;
   left: number | null;
   resetsAt: string;
+  /** Passes left today (null = no limit). */
+  passesLeft?: number | null;
   share?: { shares: number; needed: number; bonus: number; claimed: boolean };
 };
 
@@ -162,6 +164,60 @@ export function LikeLimitSheet({ quota: initial, onClose, onQuota }: { quota: Qu
         </Link>
         <button onClick={onClose} className="relative mt-2 mb-2 w-full py-2.5 text-sm text-mute transition hover:text-cream">
           להמשיך לדפדף
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/** Shown when a free member has passed on the day's limit of profiles. Likes still work; Premium removes the limit. */
+export function PassLimitSheet({ quota, onClose }: { quota: Quota; onClose: () => void }) {
+  const [left, setLeft] = useState(() => countdown(quota.resetsAt));
+  useEffect(() => {
+    const t = setInterval(() => setLeft(countdown(quota.resetsAt)), 30_000);
+    return () => clearInterval(t);
+  }, [quota.resetsAt]);
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end bg-black/65 backdrop-blur-[6px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 380, damping: 38 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={(_, i) => (i.offset.y > 110 || i.velocity.y > 500) && onClose()}
+        onClick={(e) => e.stopPropagation()}
+        className="surface relative mx-auto w-full max-w-md overflow-hidden rounded-t-[34px] px-6 pt-3 text-center safe-bottom"
+        role="dialog"
+        aria-label="זהו להיום"
+      >
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(184,137,43,0.25),transparent)]" />
+        <div className="relative mx-auto mb-6 h-1 w-10 rounded-full bg-fg/20" />
+        <div className="relative text-5xl">💛</div>
+        <h2 className="font-display relative mt-4 text-[1.7rem] font-bold">זהו להיום</h2>
+        <p className="relative mt-2 text-[15px] leading-relaxed text-mute">
+          עברת היום על הרבה פרופילים. פרופילים חדשים, ועוד דילוגים, מחכים לך בעוד <b className="tabular text-cream">{left}</b> שעות.
+          <br />
+          על הפרופיל הזה עוד אפשר לעשות לייק 😉
+        </p>
+        <p className="relative mt-6 text-[13px] font-semibold text-gold-2">או בלי הגבלות, עם Premium:</p>
+        <ul className="relative mx-auto mt-3 max-w-xs space-y-2.5 text-right text-[14.5px]">
+          {["דילוגים ולייקים ללא הגבלה", "כל 3 הבחירות היומיות", "לראות מי כבר אהב/ה אותך"].map((t) => (
+            <li key={t} className="flex items-center gap-2.5">
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-gold/15 text-gold">
+                <Check size={12} strokeWidth={3} />
+              </span>
+              {t}
+            </li>
+          ))}
+        </ul>
+        <Link href="/onboarding/plan" className="btn-gold relative mt-5 w-full text-[16px]">
+          שדרוג ל־Premium
+        </Link>
+        <button onClick={onClose} className="relative mt-2 mb-2 w-full py-2.5 text-sm text-mute transition hover:text-cream">
+          סגירה
         </button>
       </motion.div>
     </motion.div>

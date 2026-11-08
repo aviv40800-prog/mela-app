@@ -717,3 +717,15 @@ describe("one-off 'add a photo' email", () => {
     expect(sendPhotoNudges(new Date("2026-11-06T17:00:00Z"))).toBe(0); // Friday: never
   });
 });
+
+import { FREE_DAILY_PASSES, getQuota as quotaOf, recordPass } from "@/lib/quota";
+
+describe("daily pass limit (free tier)", () => {
+  it("counts a free member's passes and stops at the day's limit; a like still works", () => {
+    const me = member("מדלג", "male");
+    expect(quotaOf(me.id).passesLeft).toBe(FREE_DAILY_PASSES);
+    for (let i = 0; i < FREE_DAILY_PASSES; i++) recordPass(me.id);
+    expect(quotaOf(me.id).passesLeft).toBe(0);
+    expect(quotaOf(me.id).left).toBeGreaterThan(0);
+  });
+});

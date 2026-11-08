@@ -46,7 +46,7 @@ export default function AdminOverview() {
         <Stat label="MRR (מנויים פעילים)" value={ils(o.mrr)} sub={`+${ils(o.trialMrr)} אם כל הניסיונות יומרו`} />
         <Stat label="התאמות" value={o.matches} sub={`+${o.matches7d} השבוע`} />
         <Stat label="חינמיים / Premium" value={`${o.freeUsers} / ${o.premiumNow}`} sub={`המרה ל־Premium: ${o.conversion}%`} />
-        <Stat label="מיצו את הלייקים היום" value={o.likeLimitHitsToday} sub="חינמיים שהגיעו למכסה — קהל חם לשדרוג" />
+        <Stat label="מיצו את הלייקים / הדילוגים היום" value={`${o.likeLimitHitsToday} / ${o.passLimitHitsToday}`} sub="חינמיים שהגיעו למכסה — קהל חם לשדרוג" />
         <Stat label="לייקים / הודעות (24ש׳)" value={`${o.likes24h} / ${o.messages24h}`} />
         <Stat label="פרופילים חלקיים" value={o.incomplete} sub={`${o.demoUsers} פרופילי דמו · ${o.banned} מושעים`} />
       </div>

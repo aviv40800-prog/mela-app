@@ -2,8 +2,13 @@ import "server-only";
 import { db, tx } from "./db";
 import { getSubscription, hasAccess } from "./billing";
 
-/** Likes per day on the free tier (no card). Passes are always unlimited. */
+/** Likes per day on the free tier (no card). */
 export const FREE_DAILY_LIKES = Math.max(1, Number(process.env.MELA_FREE_DAILY_LIKES) || 5);
+/**
+ * Passes per day on the free tier: someone who passes on 50 profiles in a row runs through the whole community on day
+ * one, sees an empty screen and leaves. This spreads it over days. Premium: no limit.
+ */
+export const FREE_DAILY_PASSES = Math.max(1, Number(process.env.MELA_FREE_DAILY_PASSES) || 25);
 /** Daily picks a free member can open (of 3). */
 export const FREE_DAILY_PICKS = 1;
 
@@ -19,6 +24,8 @@ export type Quota = {
   resetsAt: string;
   /** Extra likes earned by inviting friends: used once the day's likes run out, and they never expire. */
   banked?: number;
+  /** Passes left today (null = no limit). */
+  passesLeft?: number | null;
   /** Today's share-for-likes progress (free members only). */
   share?: { shares: number; needed: number; bonus: number; claimed: boolean };
 };
@@ -52,9 +59,9 @@ export function isPremium(userId: number): boolean {
 
 export function getQuota(userId: number): Quota {
   const resetsAt = nextIsraelMidnight();
-  if (isPremium(userId)) return { premium: true, limit: null, used: 0, left: null, resetsAt };
-  const row = db.prepare("SELECT likes, shares, bonus FROM daily_usage WHERE user_id = ? AND day = ?").get(userId, israelDay()) as
-    | { likes: number; shares: number; bonus: number }
+  if (isPremium(userId)) return { premium: true, limit: null, used: 0, left: null, resetsAt, passesLeft: null };
+  const row = db.prepare("SELECT likes, shares, bonus, passes FROM daily_usage WHERE user_id = ? AND day = ?").get(userId, israelDay()) as
+    | { likes: number; shares: number; bonus: number; passes: number }
     | undefined;
   const used = row?.likes ?? 0;
   const bonus = row?.bonus ?? 0;
@@ -67,6 +74,7 @@ export function getQuota(userId: number): Quota {
     left,
     resetsAt,
     banked,
+    passesLeft: Math.max(0, FREE_DAILY_PASSES - (row?.passes ?? 0)),
     share: { shares: Math.min(row?.shares ?? 0, SHARES_FOR_BONUS), needed: SHARES_FOR_BONUS, bonus: SHARE_BONUS_LIKES, claimed: bonus > 0 },
   };
 }
@@ -106,4 +114,12 @@ export function recordLike(userId: number) {
       "INSERT INTO daily_usage (user_id, day, likes) VALUES (?, ?, 1) ON CONFLICT(user_id, day) DO UPDATE SET likes = likes + 1",
     ).run(userId, day);
   });
+}
+
+/** Counts a pass on the free tier. */
+export function recordPass(userId: number) {
+  db.prepare("INSERT INTO daily_usage (user_id, day, likes, passes) VALUES (?, ?, 0, 1) ON CONFLICT(user_id, day) DO UPDATE SET passes = passes + 1").run(
+    userId,
+    israelDay(),
+  );
 }

@@ -403,6 +403,7 @@ export function migrate(db: DatabaseSync) {
   const usageCols = new Set((db.prepare("PRAGMA table_info(daily_usage)").all() as { name: string }[]).map((c) => c.name));
   if (!usageCols.has("shares")) db.exec("ALTER TABLE daily_usage ADD COLUMN shares INTEGER NOT NULL DEFAULT 0");
   if (!usageCols.has("bonus")) db.exec("ALTER TABLE daily_usage ADD COLUMN bonus INTEGER NOT NULL DEFAULT 0");
+  if (!usageCols.has("passes")) db.exec("ALTER TABLE daily_usage ADD COLUMN passes INTEGER NOT NULL DEFAULT 0");
 }
 
 /**
