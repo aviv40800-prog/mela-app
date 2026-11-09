@@ -729,3 +729,21 @@ describe("daily pass limit (free tier)", () => {
     expect(quotaOf(me.id).left).toBeGreaterThan(0);
   });
 });
+
+import { nudgeGroups, sendNudgeBatch } from "@/lib/profile-nudge";
+
+describe("trial batch: no photo / unfinished profile emails", () => {
+  it("splits members into the two groups, skips last-day sign-ups, and only runs on its day", () => {
+    const done = member("מלא בלי תמונה", "male");
+    db.prepare("UPDATE users SET email = 'nb1@x.co', email_verified = 1, photos = '[]', created_at = datetime('now', '-3 days') WHERE id = ?").run(done.id);
+    const half = member("לא סיים", "female");
+    db.prepare("UPDATE users SET email = 'nb2@x.co', email_verified = 1, bio = NULL, created_at = datetime('now', '-3 days') WHERE id = ?").run(half.id);
+    const fresh = member("חדש", "female");
+    db.prepare("UPDATE users SET email = 'nb3@x.co', email_verified = 1, bio = NULL WHERE id = ?").run(fresh.id);
+    const g = nudgeGroups();
+    expect(g.noPhoto.map((u) => u.id)).toContain(done.id);
+    expect(g.unfinished.map((u) => u.id)).toContain(half.id);
+    expect(g.unfinished.map((u) => u.id)).not.toContain(fresh.id);
+    expect(sendNudgeBatch(new Date("2026-11-10T12:00:00Z"))).toBe(0);
+  });
+});

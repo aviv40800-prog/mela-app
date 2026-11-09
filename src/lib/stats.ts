@@ -7,6 +7,7 @@ import { featuredResults } from "./checkin";
 import { aiUsageStats } from "./ai-onboarding";
 import { FREE_DAILY_LIKES } from "./quota";
 import { premiumTabStats } from "./plan-views";
+import { nudgeResults } from "./profile-nudge";
 
 /**
  * Numbers only, for the read-only stats endpoint (GET /api/admin/stats with MELA_STATS_TOKEN): how the community
@@ -180,7 +181,7 @@ export function statsSnapshot() {
       ...revenue(),
       payers: payers(),
     },
-    engagement: { ...engagement(), activeChats: activeChats(), swipeDays: swipeDays() },
+    engagement: { ...engagement(), activeChats: activeChats(), swipeDays: swipeDays(), profileNudges: nudgeResults() },
     departures: { week: left.week, month: left.month, total: left.total, reasons: left.reasons },
     featuredQuestion: fq ? { key: fq.q.key, a: fq.q.a, b: fq.q.b, answeredA: fq.a, answeredB: fq.b } : null,
     aiSignup: { enabled: ai.enabled, today: ai.today, month: ai.month },
