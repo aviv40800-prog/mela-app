@@ -208,8 +208,7 @@ export function recentPaymentEvents(limit = 100) {
   }[];
 }
 
-/** Billed by a standing order at the provider (Tranzila, or UPay for the monthly plan): a cancel must be stopped there too. */
-export const isProviderBilled = (providerRef: string | null) => !!providerRef && /^(tranzila|upay):/.test(providerRef);
+export const isProviderBilled = (providerRef: string | null) => !!providerRef?.startsWith("tranzila:");
 
 /** Ask the admin to stop this member's standing order in Tranzila (until cancels can be sent by API). */
 export function queueProviderCancel(userId: number, reason: "canceled" | "deleted") {
@@ -223,11 +222,11 @@ export function queueProviderCancel(userId: number, reason: "canceled" | "delete
     | undefined)?.confirmation ?? null;
   db.prepare("INSERT INTO provider_cancels (user_id, label, plan_type, last4, reason, txn_ref) VALUES (?, ?, ?, ?, ?, ?)").run(
     reason === "deleted" ? null : userId,
-    (row.provider_ref?.startsWith("upay:") ? "יופיי · " : "") + ([row.full_name, row.email].filter(Boolean).join(" · ") || `#${userId}`),
+    [row.full_name, row.email].filter(Boolean).join(" · ") || `#${userId}`,
     row.plan_type,
     row.payment_last4,
     reason,
-    row.provider_ref?.startsWith("upay:") ? row.provider_ref.slice(5) : ref,
+    ref,
   );
 }
 
