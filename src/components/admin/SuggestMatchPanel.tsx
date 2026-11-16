@@ -101,9 +101,10 @@ export function SuggestMatchPanel({ userId, name }: { userId: number; name: stri
     setBusy("draft");
     setErr(null);
     try {
-      const r = await api<{ noteA: string; noteB: string }>("/api/admin/suggestions/draft", { method: "POST", json: { a: userId, b: pick.id } });
+      const r = await api<{ noteA: string; noteB: string; ai: boolean }>("/api/admin/suggestions/draft", { method: "POST", json: { a: userId, b: pick.id } });
       setNoteMine(r.noteA);
       setNoteTheirs(r.noteB);
+      if (!r.ai) setErr("ה־AI לא זמין כרגע, אז מילאנו נימוק בסיסי ממה שמשותף להם. אפשר לערוך לפני השליחה.");
     } catch (e) {
       setErr((e as Error).message);
     } finally {
