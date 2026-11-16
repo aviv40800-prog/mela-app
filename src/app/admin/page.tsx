@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { overview, recentMatches, recentSignups, recentWebhooks, signupsByDay } from "@/lib/admin-data";
 import { SignupsChart } from "@/components/admin/SignupsChart";
 import { aiUsageStats } from "@/lib/ai-onboarding";
+import { aiHealth } from "@/lib/ai-health";
 import { departures } from "@/lib/departures";
 import { DEPARTURE_REASONS } from "@/lib/content";
 import { featuredResults } from "@/lib/checkin";
@@ -22,6 +23,7 @@ export default function AdminOverview() {
   const matches = recentMatches(6);
   const hooks = recentWebhooks(6);
   const ai = aiUsageStats();
+  const health = aiHealth();
   const left = departures(8);
   const funnel = signupFunnel();
   const fq = featuredResults();
@@ -117,6 +119,22 @@ export default function AdminOverview() {
       )}
 
       <Card title="הרשמה בשיחה עם AI" className="mt-4">
+        {ai.enabled && (
+          <div className={`mb-4 rounded-xl border px-3 py-2 text-[13px] ${health.down ? "border-danger/40 bg-danger/[0.07] text-danger" : "border-line-2 text-mute"}`}>
+            {health.down ? (
+              <>
+                ⚠️ ה־AI לא עונה מאז {when(health.downSince!)} — נרשמים חדשים מקבלים את הטופס. כנראה נגמר הקרדיט: console.anthropic.com ← Billing.
+                {health.lastError && (
+                  <span className="mt-1 block text-[11.5px] opacity-80" dir="ltr">
+                    {health.lastError}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>✅ ה־AI עונה{health.lastOk ? ` · שיחה אחרונה שהצליחה: ${when(health.lastOk)}` : ""}</>
+            )}
+          </div>
+        )}
         {ai.enabled ? (
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
             <div>

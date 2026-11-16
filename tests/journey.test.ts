@@ -703,3 +703,32 @@ describe("trial batch: no photo / unfinished profile emails", () => {
     expect(sendNudgeBatch(new Date("2026-11-10T12:00:00Z"))).toBe(0);
   });
 });
+
+import { aiHealth, aiResting, markAiDown, markAiOk } from "@/lib/ai-health";
+import { savePartialDraft } from "@/lib/ai-onboarding";
+
+describe("AI outage", () => {
+  it("marks the AI down on a failed call (sign-up chats rest for a while), and clears it on the next call that works", () => {
+    markAiOk();
+    expect(aiResting()).toBe(false);
+    markAiDown(new Error("Your credit balance is too low"));
+    expect(aiResting()).toBe(true);
+    expect(aiHealth()).toMatchObject({ down: true, lastError: "Your credit balance is too low" });
+    markAiOk();
+    expect(aiResting()).toBe(false);
+    expect(aiHealth().down).toBe(false);
+  });
+
+  it("keeps what the member told the chat on their profile, without overwriting what's there", () => {
+    const u = member("חצי שיחה", "female");
+    db.prepare("UPDATE users SET occupation = NULL, location = 'נתניה' WHERE id = ?").run(u.id);
+    db.prepare("INSERT OR REPLACE INTO onboarding_chats (user_id, messages, draft, turns) VALUES (?, '[]', ?, 3)").run(
+      u.id,
+      JSON.stringify({ occupation: "אחות", location: "אשדוד" }),
+    );
+    savePartialDraft(u.id);
+    const after = getUser(u.id)!;
+    expect(after.occupation).toBe("אחות");
+    expect(after.location).toBe("נתניה");
+  });
+});

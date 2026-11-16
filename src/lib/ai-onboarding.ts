@@ -7,6 +7,7 @@ import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, PARTNER_RELIGIOSITY, REL
 import { ProfileSchema } from "./profile-schema";
 import type { User } from "./users";
 import { notifyAiLimit } from "./notify";
+import { aiResting, markAiDown, markAiOk } from "./ai-health";
 
 /**
  * AI-guided sign-up: instead of a form, a new member chats with MELA's host. Each turn the model replies in
@@ -60,9 +61,28 @@ function alertNearLimit(limit: number) {
   if (fresh) notifyAiLimit({ used: n, limit, full: level === "full" });
 }
 
-/** AI chat for this member: on, and either they already started one or today's cap isn't reached. */
+/**
+ * The AI stopped answering in the middle of a member's chat: keep what they already told us on their profile (only
+ * empty fields), so the form they continue in starts from it.
+ */
+export function savePartialDraft(userId: number) {
+  const { draft } = loadChat(userId);
+  const cols = ["full_name", "age", "gender", "seeking", "location", "occupation", "bio", "religiosity", "partner_religiosity", "marital_status", "looking_for"] as const;
+  for (const c of cols) {
+    const v = draft[c];
+    if (v === undefined || v === null || v === "") continue;
+    db.prepare(`UPDATE users SET ${c} = ? WHERE id = ? AND ${c} IS NULL`).run(v, userId);
+  }
+  if (draft.photos?.length) db.prepare("UPDATE users SET photos = ? WHERE id = ? AND (photos IS NULL OR photos = '[]')").run(JSON.stringify(draft.photos), userId);
+}
+
+/** AI chat for this member: on, the AI is answering, and either they already started one or today's cap isn't reached. */
 export function aiOnboardingAvailable(userId: number): boolean {
   if (!aiOnboardingEnabled()) return false;
+  if (aiResting()) {
+    if (db.prepare("SELECT 1 FROM onboarding_chats WHERE user_id = ? AND turns > 0").get(userId)) savePartialDraft(userId);
+    return false;
+  }
   const limit = dailyLimit();
   if (!limit) return true;
   if (db.prepare("SELECT 1 FROM onboarding_chats WHERE user_id = ? AND turns > 0").get(userId)) return true;
@@ -513,6 +533,8 @@ export type ChatInput =
   | { bio: "accept" | "other"; text?: string };
 
 export class ChatError extends Error {}
+/** The AI didn't answer: the member continues in the form (with what they already told us). */
+export class AiDownError extends Error {}
 
 /** One step of the conversation. Direct inputs (chips, photos, bio approval) are applied without guessing. */
 export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> {
@@ -571,15 +593,18 @@ export async function chatTurn(user: User, input: ChatInput): Promise<ChatView> 
   let turn: Turn | null = null;
   try {
     turn = await callModel(user.id, messages, stateBlock(draft, missingFields(draft), answersIn(messages)));
+    markAiOk();
   } catch (e) {
     console.error("[ai-onboarding] model call failed", e);
+    markAiDown(e);
   }
   if (!turn) {
     // Keep what the member said (and any direct input) even when the model is unavailable.
     const next = view(messages, draft, missingFields(draft)[0] ?? "none").ask;
     if ("text" in input && next !== "none" && next !== "details") {
       saveChat(user.id, messages, draft, c.turns + 1);
-      throw new ChatError("משהו השתבש אצלי לרגע — אפשר לנסות שוב, או להשלים בטופס");
+      savePartialDraft(user.id);
+      throw new AiDownError("נמשיך מכאן בטופס קצר, עם מה שכבר סיפרת לנו 💛");
     }
     return finishTurn(user.id, messages, draft, c.turns + 1, null, next);
   }

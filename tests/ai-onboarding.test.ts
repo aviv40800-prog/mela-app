@@ -202,12 +202,16 @@ describe("AI onboarding chat", () => {
     expect(ai.partnerQuestion({})).toContain("בבן/בת הזוג");
   });
 
-  it("a failed model call on free text keeps the message and asks to retry", async () => {
+  it("a failed model call on free text keeps the message, sends the member to the form and rests the AI", async () => {
     const ai = await import("@/lib/ai-onboarding");
+    const health = await import("@/lib/ai-health");
     const u = createEmailUser("retry@example.com");
     turns.push(new Error("down"));
-    await expect(ai.chatTurn(u, { text: "היי" })).rejects.toThrow(/לנסות שוב/);
+    await expect(ai.chatTurn(u, { text: "היי" })).rejects.toBeInstanceOf(ai.AiDownError);
     expect(ai.loadChat(u.id).messages.at(-1)).toEqual({ role: "user", text: "היי" });
+    expect(ai.aiOnboardingAvailable(createEmailUser("next@example.com").id)).toBe(false); // new members get the form for now
+    health.markAiOk(); // the next call that works clears it
+    expect(ai.aiOnboardingAvailable(createEmailUser("later@example.com").id)).toBe(true);
   });
 
   it("falls back to the form without an API key", async () => {

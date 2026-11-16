@@ -49,6 +49,21 @@ export function notifyAiLimit(p: { used: number; limit: number; full: boolean })
   );
 }
 
+/** The AI stopped answering (often: out of credit). Once per outage. */
+export function notifyAiDown(error: string) {
+  const credit = /credit|balance|billing|quota/i.test(error);
+  notify(
+    "⚠️ MELA: ה-AI לא עונה — שיחת ההרשמה עברה לטופס",
+    [
+      credit ? "כנראה נגמר הקרדיט בחשבון ה-API של Anthropic." : "הפנייה ל-AI נכשלה (אולי נגמר הקרדיט, או תקלה זמנית).",
+      "בינתיים נרשמים חדשים מקבלים את טופס ההרשמה הרגיל, עם מה שכבר ענו בשיחה. אף אחד לא נתקע.",
+      "לבדוק ולהטעין: console.anthropic.com ← Settings ← Billing.",
+      `השגיאה: ${error.slice(0, 200)}`,
+    ],
+    "/admin",
+  );
+}
+
 /** A checkout was paid (trial fee or a renewal). */
 export function notifyPayment(p: { userId: number | null; email: string | null; plan: string; sum: number; trial: boolean }) {
   notify(`💳 תשלום חדש ב-MELA: ₪${p.sum}`, [`${p.trial ? "התחיל/ה תקופת ניסיון" : "חידוש מנוי"}: ${p.email ?? `#${p.userId}`}`, `מסלול: ${p.plan} · סכום: ₪${p.sum}`, `זמן: ${israelTime()}`], p.userId ? `/admin/users/${p.userId}` : "/admin/payments");

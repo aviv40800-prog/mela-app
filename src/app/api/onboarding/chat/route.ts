@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { handle, json, error, requireUser } from "@/lib/api";
-import { aiOnboardingAvailable, ChatError, chatTurn, DETAILS_FIELDS, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
+import { aiOnboardingAvailable, AiDownError, ChatError, chatTurn, DETAILS_FIELDS, FIELD_ORDER, getChat } from "@/lib/ai-onboarding";
 import { saveChatProfile } from "@/lib/chat-save";
 
 const Input = z.union([
@@ -28,6 +28,7 @@ export const POST = handle(async (req: Request) => {
     if (view.done) saveChatProfile(user);
     return json({ enabled: true, ...view });
   } catch (e) {
+    if (e instanceof AiDownError) return error(e.message, 503, { code: "ai_down" });
     if (e instanceof ChatError) return error(e.message, 422);
     throw e;
   }

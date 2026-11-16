@@ -3,6 +3,7 @@ import { handle, json, error, requireAdmin } from "@/lib/api";
 import { draftSuggestionNotes } from "@/lib/suggestion-draft";
 import { fallbackNotes } from "@/lib/auto-suggest";
 import { getUser } from "@/lib/users";
+import { markAiDown, markAiOk } from "@/lib/ai-health";
 
 /**
  * "✨ Write it for me": AI-drafted notes for both sides — returned for the admin to edit, never sent from here.
@@ -18,9 +19,12 @@ export const POST = handle(async (req: Request) => {
   if (!a || !b) return error("משתמש לא נמצא", 404);
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      return json({ ...(await draftSuggestionNotes(admin.id, a.id, b.id)), ai: true });
+      const notes = await draftSuggestionNotes(admin.id, a.id, b.id);
+      markAiOk();
+      return json({ ...notes, ai: true });
     } catch (e) {
       console.error("[suggestion-draft]", (e as Error).message);
+      markAiDown(e);
     }
   }
   return json({ ...fallbackNotes(a, b), ai: false });

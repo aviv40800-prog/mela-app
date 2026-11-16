@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { ArrowLeft, Camera, Check, Loader2, PenLine, RefreshCw } from "lucide-react";
-import { api, haptic, track } from "@/lib/client";
+import { ApiError, api, haptic, track } from "@/lib/client";
 import { compressImage, uploadPhoto } from "@/lib/upload";
 import { CULTURAL_PROMPTS, LOOKING_FOR, MARITAL_STATUS, RELIGIOSITY } from "@/lib/content";
 import type { ChatView, Draft } from "@/lib/ai-onboarding";
@@ -57,6 +57,8 @@ export function OnboardingChat({ initial }: { initial: ChatView }) {
       haptic(6);
     } catch (e) {
       setErr((e as Error).message);
+      // the AI isn't answering: continue in the form, which already has what they told us
+      if (e instanceof ApiError && e.code === "ai_down") setTimeout(() => router.replace("/onboarding/profile"), 1800);
       // keep the user's message visible; the server stored it too
     } finally {
       setBusy(false);
